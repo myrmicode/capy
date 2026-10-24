@@ -1,0 +1,8 @@
+# Configuration Supabase de Capy (projet hébergé en région UE).
+
+project_id = "capy"
+
+[functions.analyser-toile]
+# Pas de compte obligatoire : l'appli présente la clé « publishable » sur l'en-tête
+# apikey, et la fonction la vérifie elle-même (withSupabase, mode « publishable »).
+verify_jwt = false

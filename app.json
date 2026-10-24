@@ -42,7 +42,23 @@
           "enableBackgroundPlayback": false
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Capy utilise l’appareil photo pour photographier la toile de la fiche de l’école. La photo est recadrée sur l’appareil et n’est jamais conservée.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Capy a besoin de vos photos pour importer la toile de la fiche de l’école. La photo n’est jamais conservée.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

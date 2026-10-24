@@ -73,9 +73,9 @@ function ContenuParents() {
           </Text>
         )}
         <Bouton
-          titre={profil.toile ? 'Nouvelle fiche de l’école' : 'Saisir la toile de la fiche'}
+          titre={profil.toile ? 'Scanner une nouvelle fiche' : 'Scanner la toile de la fiche'}
           variante={profil.toile ? 'secondaire' : 'principal'}
-          onPress={() => router.push('/toile/saisie')}
+          onPress={() => router.push('/toile/photo')}
         />
       </Section>
 
