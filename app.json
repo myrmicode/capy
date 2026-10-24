@@ -1,25 +1,39 @@
 {
   "expo": {
-    "name": "capy-tmp",
-    "slug": "capy-tmp",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "name": "Capy",
+    "slug": "capy",
+    "scheme": "capy",
+    "version": "0.1.0",
+    "orientation": "default",
+    "icon": "./assets/capy/icone-appli-carree.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#faf9f5",
+        "foregroundImage": "./assets/capy/icone-appli-carree.png"
       },
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/capy/icone-appli-carree.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/capy/icone-appli-carree.png",
+          "imageWidth": 200,
+          "backgroundColor": "#faf9f5"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }
