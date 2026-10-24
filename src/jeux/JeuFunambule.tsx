@@ -14,14 +14,14 @@ import { INTERVALLES_LIGNE } from '@/exercices/modeles/ce2/ligneGraduee';
 import { mascotte } from '@/mascotte';
 import { couleurs, espaces, formes, typo } from '@/theme';
 
-import type { PropsJeu } from './types';
+import type { PropsJeuNombre } from './types';
 
 const MARGE = 40;
 const TAILLE_CAPY = 64;
 const HAUTEUR = 150;
 const Y_FIL = 96;
 
-export function JeuFunambule({ exercice, actif, onRepondre }: PropsJeu) {
+export function JeuFunambule({ exercice, actif, onRepondre }: PropsJeuNombre) {
   const { debut, pas } = exercice.donnees;
   const fin = debut + INTERVALLES_LIGNE * pas;
   const [largeur, setLargeur] = useState(0);

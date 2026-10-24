@@ -1,11 +1,11 @@
 import type { Classe } from '@/config/classes';
 import type { DomaineId } from '@/config/domaines';
-import { creerAlea, modelesPour, type Exercice } from '@/exercices';
+import { creerAlea, modelesPour, type ExerciceQuelconque } from '@/exercices';
 import { JEUX, type JeuId } from '@/jeux/registre';
 
 export interface QuestionEtape {
   jeu: JeuId;
-  exercice: Exercice;
+  exercice: ExerciceQuelconque;
 }
 
 export interface ParametresEtape {
@@ -55,7 +55,7 @@ export function genererEtape({
     const varies = candidats.filter((m) => m.id !== dernierModele);
     const choisis = varies.length > 0 ? varies : candidats;
 
-    let exercice: Exercice | null = null;
+    let exercice: ExerciceQuelconque | null = null;
     for (let essai = 0; essai < ESSAIS_PAR_QUESTION && !exercice; essai++) {
       const modele = alea.choix(choisis);
       const ex = modele.generer(classe, alea.entier(0, 2 ** 31 - 1), { histoire: jeu.histoire });

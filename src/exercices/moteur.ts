@@ -70,6 +70,7 @@ export function definirModele<D extends Donnees>(def: DefinitionModele<D>): Mode
         const { enonce, question, indice, explication, autresQuestions } = histoire(d, reponse);
         const distracteurs = choisirDistracteurs(reponse, def.erreursTypiques(d), alea);
         return {
+          nature: 'nombre',
           modeleId: def.id,
           domaine: def.domaine,
           classe,

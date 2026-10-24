@@ -26,7 +26,9 @@ export interface ReglesClasse<D extends Donnees> {
   reponse: Intervalle;
 }
 
+/** Exercice dont la réponse est un nombre (mathématiques). */
 export interface Exercice {
+  nature: 'nombre';
   modeleId: string;
   domaine: DomaineId;
   classe: Classe;
@@ -97,3 +99,52 @@ export interface ModeleExercice {
   /** `histoire` impose une variante d'histoire (index dans `histoires`), utile pour un mini-jeu illustré. */
   generer: (classe: Classe, graine: number, options?: { histoire?: number }) => Exercice;
 }
+
+// --- Exercices dont la réponse est un mot ou un groupe de mots (français) ---
+
+/** Morceau de phrase affiché (un mot ou un groupe), que l'enfant peut toucher. */
+export interface Segment {
+  texte: string;
+  /** Mis en valeur dans la phrase (mot dont on demande la nature). */
+  surligne?: boolean;
+}
+
+export interface DistracteurTexte {
+  valeur: string;
+  erreur: string;
+}
+
+export interface ExerciceTexte {
+  nature: 'texte';
+  modeleId: string;
+  domaine: DomaineId;
+  classe: Classe;
+  graine: number;
+  /** Phrase ou mot présenté à l'enfant. */
+  enonce: string;
+  question: string;
+  reponse: string;
+  distracteurs: DistracteurTexte[];
+  /** Bonne réponse et distracteurs, mélangés de façon reproductible. */
+  choix: string[];
+  /** Phrase découpée, pour les jeux où l'on touche un mot ou un groupe. */
+  segments?: Segment[];
+  /** Catégories proposées (jeu des paniers), dans un ordre fixe. */
+  categories?: string[];
+  indice: string;
+  explication: string;
+}
+
+export type ExerciceQuelconque = Exercice | ExerciceTexte;
+
+/** Modèle d'exercice de français, tel que l'utilisent le parcours et les mini-jeux. */
+export interface ModeleTexte {
+  id: string;
+  titre: string;
+  domaine: DomaineId;
+  competence: string;
+  classes: Classe[];
+  generer: (classe: Classe, graine: number, options?: { histoire?: number }) => ExerciceTexte;
+}
+
+export type ModeleQuelconque = ModeleExercice | ModeleTexte;

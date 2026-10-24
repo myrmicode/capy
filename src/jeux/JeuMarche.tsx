@@ -12,7 +12,7 @@ import { Bouton, CarteEnonce, IconeFraise, IconeMoins } from '@/composants';
 import { nb } from '@/exercices';
 import { couleurs, espaces, formes, typo } from '@/theme';
 
-import type { PropsJeu } from './types';
+import type { PropsJeuNombre } from './types';
 
 const MAX_PAR_PANIER = 12;
 
@@ -23,7 +23,7 @@ interface Zone {
   hauteur: number;
 }
 
-export function JeuMarche({ exercice, actif, onRepondre }: PropsJeu) {
+export function JeuMarche({ exercice, actif, onRepondre }: PropsJeuNombre) {
   const groupes = exercice.donnees.groupes;
   const [paniers, setPaniers] = useState<number[]>(() => Array(groupes).fill(0));
   const refsPaniers = useRef<(HostInstance | null)[]>([]);

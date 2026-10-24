@@ -6,9 +6,9 @@ import { StyleSheet, View } from 'react-native';
 import { CarteEnonce, TuileReponse, type EtatTuile } from '@/composants';
 import { espaces } from '@/theme';
 
-import type { PropsJeu } from './types';
+import type { PropsJeuNombre } from './types';
 
-export function JeuQuestionPerdue({ exercice, actif, onRepondre }: PropsJeu) {
+export function JeuQuestionPerdue({ exercice, actif, onRepondre }: PropsJeuNombre) {
   const [choisie, setChoisie] = useState<string | null>(null);
   const questions = exercice.questionsAuChoix ?? [exercice.question];
 

@@ -2,14 +2,16 @@ import { fireEvent, render as renderBrut, screen } from '@testing-library/react-
 import type { ReactElement } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { modeleParId } from '@/exercices';
+import { modeleParId, modeleTexteParId } from '@/exercices';
 
 import { JeuBonFil } from '../JeuBonFil';
 import { JeuFunambule } from '../JeuFunambule';
 import { JeuLucioles } from '../JeuLucioles';
 import { JeuMarche } from '../JeuMarche';
 import { JeuQuestionPerdue } from '../JeuQuestionPerdue';
+import { JeuPaniers } from '../JeuPaniers';
 import { JeuReponses } from '../JeuReponses';
+import { JeuWagons } from '../JeuWagons';
 
 const render = (ui: ReactElement) => renderBrut(<GestureHandlerRootView>{ui}</GestureHandlerRootView>);
 
@@ -126,6 +128,42 @@ describe('Le funambule', () => {
       await fireEvent.press(screen.getByRole('button', { name: 'Avancer d’une graduation' }));
     }
     await fireEvent.press(screen.getByRole('button', { name: 'Valider' }));
+    expect(onRepondre).toHaveBeenLastCalledWith(true);
+  });
+});
+
+describe('Les wagons de la phrase', () => {
+  it('accepte le bon wagon et refuse les autres', async () => {
+    const ex = modeleTexteParId('sujet-et-verbe')!.generer('CE2', 5);
+    const onRepondre = jest.fn();
+    await render(<JeuWagons exercice={ex} actif onRepondre={onRepondre} />);
+    const autre = ex.segments!.find((s) => s.texte !== ex.reponse)!.texte;
+    await fireEvent.press(screen.getByRole('button', { name: autre }));
+    expect(onRepondre).toHaveBeenLastCalledWith(false);
+    await fireEvent.press(screen.getByRole('button', { name: ex.reponse }));
+    expect(onRepondre).toHaveBeenLastCalledWith(true);
+  });
+});
+
+describe('Les paniers', () => {
+  it('range le mot en couleur dans le bon panier', async () => {
+    const ex = modeleTexteParId('nature-du-mot')!.generer('CE2', 8);
+    const onRepondre = jest.fn();
+    await render(<JeuPaniers exercice={ex} actif onRepondre={onRepondre} />);
+    const autre = ex.categories!.find((c) => c !== ex.reponse)!;
+    await fireEvent.press(screen.getByRole('button', { name: new RegExp(`^Panier ${autre}`) }));
+    expect(onRepondre).toHaveBeenLastCalledWith(false);
+    await fireEvent.press(screen.getByRole('button', { name: new RegExp(`^Panier ${ex.reponse}`) }));
+    expect(onRepondre).toHaveBeenLastCalledWith(true);
+  });
+});
+
+describe('Attrape-lucioles avec des mots', () => {
+  it('accepte la luciole qui porte la bonne forme du verbe', async () => {
+    const ex = modeleTexteParId('conjugaison-futur')!.generer('CE2', 12);
+    const onRepondre = jest.fn();
+    await render(<JeuLucioles exercice={ex} actif onRepondre={onRepondre} />);
+    await fireEvent.press(screen.getByRole('button', { name: `Luciole ${ex.reponse}` }));
     expect(onRepondre).toHaveBeenLastCalledWith(true);
   });
 });

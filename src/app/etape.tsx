@@ -131,7 +131,7 @@ export default function EcranEtape() {
   const { exercice } = question;
   const indice = jeu.indice ?? exercice.indice;
   // Dans « La question perdue », on lit les trois questions, jamais la bonne seule.
-  const aLire = exercice.questionsAuChoix && question.jeu === 'questionPerdue'
+  const aLire = exercice.nature === 'nombre' && exercice.questionsAuChoix && question.jeu === 'questionPerdue'
     ? `${jeu.consigne} ${exercice.enonce} ${exercice.questionsAuChoix.join(' ')}`
     : `${jeu.consigne} ${exercice.enonce} ${exercice.question}`;
 

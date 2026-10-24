@@ -1,4 +1,15 @@
 export { creerAlea, graineDepuisTexte, type Alea } from './alea';
-export { MODELES, modeleParId, modelesPour } from './modeles';
+export { MODELES_FRANCAIS } from './francais';
+export { MODELES, modeleParId, modelesPour, modeleTexteParId } from './modeles';
 export { nb } from './moteur';
-export type { Distracteur, Exercice, ModeleExercice, Operation } from './types';
+export type {
+  Distracteur,
+  Exercice,
+  ExerciceQuelconque,
+  ExerciceTexte,
+  ModeleExercice,
+  ModeleQuelconque,
+  ModeleTexte,
+  Operation,
+  Segment,
+} from './types';

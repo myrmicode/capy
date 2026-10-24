@@ -1,20 +1,25 @@
 import type { ComponentType } from 'react';
 
+import { pourNombres, pourTextes } from './garde';
 import { JeuBonFil } from './JeuBonFil';
 import { JeuFunambule } from './JeuFunambule';
 import { JeuLucioles } from './JeuLucioles';
 import { JeuMarche } from './JeuMarche';
+import { JeuPaniers } from './JeuPaniers';
 import { JeuQuestionPerdue } from './JeuQuestionPerdue';
 import { JeuReponses } from './JeuReponses';
+import { JeuWagons } from './JeuWagons';
 import type { JeuId } from './registre';
 import type { PropsJeu } from './types';
 
 export const COMPOSANTS_JEUX: Record<JeuId, ComponentType<PropsJeu>> = {
-  marche: JeuMarche,
-  bonFil: JeuBonFil,
+  marche: pourNombres(JeuMarche),
+  bonFil: pourNombres(JeuBonFil),
   lucioles: JeuLucioles,
-  questionPerdue: JeuQuestionPerdue,
-  funambule: JeuFunambule,
+  questionPerdue: pourNombres(JeuQuestionPerdue),
+  funambule: pourNombres(JeuFunambule),
+  wagons: pourTextes(JeuWagons),
+  paniers: pourTextes(JeuPaniers),
   reponses: JeuReponses,
 };
 

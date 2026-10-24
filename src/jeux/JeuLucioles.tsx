@@ -1,4 +1,4 @@
-// Mini-jeu « Attrape-lucioles » (calcul mental) : des lucioles portent des nombres
+// Mini-jeu « Attrape-lucioles » : des lucioles portent des nombres (ou des mots courts)
 // et flottent lentement ; l'enfant touche celle qui porte la bonne réponse.
 // Pas de chrono : les lucioles ne s'envolent jamais, elles bougent juste un peu.
 import { useEffect, useState } from 'react';
@@ -21,13 +21,16 @@ import { couleurs, espaces, formes, polices } from '@/theme';
 import type { PropsJeu } from './types';
 
 const TAILLE = 104;
+
+const etiquette = (v: number | string) => (typeof v === 'number' ? nb(v) : v);
 /** Amplitude du vol, en pixels : assez pour vivre, assez peu pour viser facilement. */
 const AMPLITUDE = 10;
 
 export function JeuLucioles({ exercice, actif, onRepondre }: PropsJeu) {
-  const [touchee, setTouchee] = useState<number | null>(null);
+  const [touchee, setTouchee] = useState<number | string | null>(null);
+  const choix: readonly (number | string)[] = exercice.choix;
 
-  const toucher = (valeur: number) => {
+  const toucher = (valeur: number | string) => {
     if (!actif) return;
     setTouchee(valeur);
     onRepondre(valeur === exercice.reponse);
@@ -37,7 +40,7 @@ export function JeuLucioles({ exercice, actif, onRepondre }: PropsJeu) {
     <View style={styles.jeu}>
       <CarteEnonce enonce={exercice.enonce} question={exercice.question} />
       <View style={styles.ciel}>
-        {exercice.choix.map((valeur, i) => (
+        {choix.map((valeur, i) => (
           <Luciole
             key={valeur}
             valeur={valeur}
@@ -54,7 +57,7 @@ export function JeuLucioles({ exercice, actif, onRepondre }: PropsJeu) {
 }
 
 interface PropsLuciole {
-  valeur: number;
+  valeur: number | string;
   index: number;
   graine: number;
   etat: 'normal' | 'juste' | 'presque';
@@ -90,12 +93,22 @@ function Luciole({ valeur, index, graine, etat, actif, onPress }: PropsLuciole) 
           onPress={onPress}
           disabled={!actif}
           accessibilityRole="button"
-          accessibilityLabel={`Luciole ${nb(valeur)}`}
-          style={({ pressed }) => [styles.halo, pressed && styles.appuye]}
+          accessibilityLabel={`Luciole ${etiquette(valeur)}`}
+          style={({ pressed }) => [styles.halo, typeof valeur === 'string' && styles.haloMot, pressed && styles.appuye]}
         >
-          <View style={[styles.luciole, { backgroundColor: couleur, borderColor: bord }]}>
-            <Text style={[styles.nombre, { color: texte }]} adjustsFontSizeToFit numberOfLines={1}>
-              {nb(valeur)}
+          {/* Un mot n'est jamais tronqué : sa terminaison est justement ce qu'il faut voir. */}
+          <View
+            style={[
+              styles.luciole,
+              typeof valeur === 'string' && styles.lucioleMot,
+              { backgroundColor: couleur, borderColor: bord },
+            ]}
+          >
+            <Text
+              style={[styles.nombre, typeof valeur === 'string' && styles.mot, { color: texte }]}
+              {...(typeof valeur === 'number' ? { adjustsFontSizeToFit: true, numberOfLines: 1 } : {})}
+            >
+              {etiquette(valeur)}
             </Text>
           </View>
         </Pressable>
@@ -135,4 +148,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: espaces.s,
   },
   nombre: { fontFamily: polices.fredokaGras, fontSize: 30 },
+  mot: { fontSize: 18, textAlign: 'center' },
+  // Les mots prennent la forme d'une pilule, assez large pour « ramasserons ».
+  haloMot: { width: 144, borderRadius: formes.pilule },
+  lucioleMot: { width: 132, borderRadius: formes.pilule, paddingHorizontal: espaces.xs },
 });

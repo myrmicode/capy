@@ -1,7 +1,8 @@
 import type { Classe } from '@/config/classes';
 import type { DomaineId } from '@/config/domaines';
 
-import type { ModeleExercice } from '../types';
+import { MODELES_FRANCAIS } from '../francais';
+import type { ModeleExercice, ModeleQuelconque, ModeleTexte } from '../types';
 
 import { ajout } from './ce2/ajout';
 import { ajouterDizaines } from './ce2/ajouterDizaines';
@@ -40,6 +41,11 @@ export function modeleParId(id: string): ModeleExercice | undefined {
   return MODELES.find((m) => m.id === id);
 }
 
-export function modelesPour(domaine: DomaineId, classe: Classe): ModeleExercice[] {
-  return MODELES.filter((m) => m.domaine === domaine && m.classes.includes(classe));
+export function modeleTexteParId(id: string): ModeleTexte | undefined {
+  return MODELES_FRANCAIS.find((m) => m.id === id);
+}
+
+/** Modèles (mathématiques et français) qui travaillent un axe de la toile pour une classe. */
+export function modelesPour(domaine: DomaineId, classe: Classe): ModeleQuelconque[] {
+  return [...MODELES, ...MODELES_FRANCAIS].filter((m) => m.domaine === domaine && m.classes.includes(classe));
 }

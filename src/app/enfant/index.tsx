@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { BulleCapy, Ecran, EtapeParcours, IconeEtoile, IconeFlamme } from '@/composants';
-import { themesParPriorite } from '@/config/parcours';
+import { domaineDe, LIBELLES_MATIERES } from '@/config/domaines';
+import { themesParPriorite, type Theme } from '@/config/parcours';
 import { mascotte, type PoseCapy } from '@/mascotte';
 import {
   cheminDuTheme,
@@ -36,6 +37,9 @@ export default function Parcours() {
   // Un axe prioritaire par matière (français, mathématiques).
   const priorites = prioritesDe(profil.classe, profil.toile);
   const prioritaire = !!theme && priorites.has(theme.domaine);
+  // Les thèmes sont regroupés par matière ; la matière du thème le plus prioritaire vient en premier.
+  const matiereDuTheme = (t: Theme) => domaineDe(profil.classe, t.domaine)?.matiere ?? 'mathematiques';
+  const matieresDesThemes = [...new Set(themes.map(matiereDuTheme))];
   const aujourdhui = dateLocale(new Date());
   const serie = serieDeJours(p.jours, aujourdhui);
   const absence = joursDepuisDerniereActivite(p.jours, aujourdhui);
@@ -109,26 +113,33 @@ export default function Parcours() {
     <Ecran>
       {entete}
 
-      {themes.length > 1 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.themes}>
-          {themes.map((t) => {
-            const choisi = t.id === theme.id;
-            return (
-              <Pressable
-                key={t.id}
-                onPress={() => setThemeChoisiId(t.id)}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: choisi }}
-                accessibilityLabel={`${t.titre}${priorites.has(t.domaine) ? ', priorité' : ''}`}
-                style={[styles.puceTheme, choisi && styles.puceChoisie]}
-              >
-                {priorites.has(t.domaine) ? <View style={styles.pointPriorite} /> : null}
-                <Text style={[typo.texteGras, choisi && styles.texteBlanc]}>{t.titre}</Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      ) : null}
+      {themes.length > 1
+        ? matieresDesThemes.map((matiere) => (
+            <View key={matiere} style={styles.rangee}>
+              <Text style={[typo.petit, styles.matiere]}>{LIBELLES_MATIERES[matiere]}</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.themes}>
+                {themes
+                  .filter((t) => matiereDuTheme(t) === matiere)
+                  .map((t) => {
+                    const choisi = t.id === theme.id;
+                    return (
+                      <Pressable
+                        key={t.id}
+                        onPress={() => setThemeChoisiId(t.id)}
+                        accessibilityRole="tab"
+                        accessibilityState={{ selected: choisi }}
+                        accessibilityLabel={`${t.titre}${priorites.has(t.domaine) ? ', priorité' : ''}`}
+                        style={[styles.puceTheme, choisi && styles.puceChoisie]}
+                      >
+                        {priorites.has(t.domaine) ? <View style={styles.pointPriorite} /> : null}
+                        <Text style={[typo.texteGras, choisi && styles.texteBlanc]}>{t.titre}</Text>
+                      </Pressable>
+                    );
+                  })}
+              </ScrollView>
+            </View>
+          ))
+        : null}
 
       <View style={styles.bandeau}>
         <View style={styles.flex}>
@@ -207,6 +218,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: espaces.m,
     minHeight: formes.cibleTactile,
   },
+  rangee: { gap: espaces.xs },
+  matiere: { color: couleurs.encreDouce, fontFamily: typo.texteGras.fontFamily },
   themes: { gap: espaces.s, paddingVertical: espaces.xs },
   puceTheme: {
     flexDirection: 'row',

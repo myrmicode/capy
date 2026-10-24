@@ -145,7 +145,7 @@ it('donne une nouvelle graine à chaque partie, reproductible', () => {
 
 describe('ordre des thèmes', () => {
   it('suit la toile quand elle existe, sinon l’ordre du parcours', () => {
-    expect(themesParPriorite('CE2', []).map((t) => t.domaine)).toEqual(['resoudre-problemes', 'calcul-mental', 'ligne-graduee']);
+    expect(themesParPriorite('CE2', []).map((t) => t.domaine)).toEqual(THEMES.map((t) => t.domaine));
     expect(themesParPriorite('CE2', ['ligne-graduee', 'calcul-mental', 'resoudre-problemes'])[0].domaine).toBe('ligne-graduee');
   });
 });

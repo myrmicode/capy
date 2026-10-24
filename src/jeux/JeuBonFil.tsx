@@ -12,7 +12,7 @@ import { CarteEnonce, SurfaceEnRelief } from '@/composants';
 import { couleurs, espaces, formes, polices } from '@/theme';
 
 import { OPERATIONS_BON_FIL } from './registre';
-import type { PropsJeu } from './types';
+import type { PropsJeuNombre } from './types';
 
 type OperationFil = (typeof OPERATIONS_BON_FIL)[number];
 
@@ -25,7 +25,7 @@ const TOLERANCE = 56;
 
 const LigneAnimee = Animated.createAnimatedComponent(Line);
 
-export function JeuBonFil({ exercice, actif, onRepondre }: PropsJeu) {
+export function JeuBonFil({ exercice, actif, onRepondre }: PropsJeuNombre) {
   const [largeur, setLargeur] = useState(0);
   const [hauteurHistoire, setHauteurHistoire] = useState(0);
   const [relie, setRelie] = useState<OperationFil | null>(null);
