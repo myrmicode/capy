@@ -7,7 +7,6 @@ import {
   analyserToile,
   appliquerFiche,
   completerNiveaux,
-  domainesParPriorite,
   ficheSaisie,
   migrerToile,
   niveauApresEtape,
@@ -139,11 +138,6 @@ describe('bilan', () => {
     expect(prioritesDe('CE2', undefined).size).toBe(0);
   });
 
-  it('ordonne les axes du plus fragile au plus solide', () => {
-    const ordre = domainesParPriorite('CE2', toile.actuelle);
-    expect(ordre.indexOf('resoudre-problemes')).toBeLessThan(ordre.indexOf('ligne-graduee'));
-    expect(ordre.indexOf('ligne-graduee')).toBeLessThan(ordre.indexOf('calcul-mental'));
-  });
 });
 
 describe('migration des toiles enregistrées avant les deux matières', () => {

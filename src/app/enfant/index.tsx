@@ -2,9 +2,9 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { BulleCapy, Ecran, EtapeParcours, IconeEtoile, IconeFlamme } from '@/composants';
-import { domaineDe, LIBELLES_MATIERES } from '@/config/domaines';
-import { themesParPriorite, type Theme } from '@/config/parcours';
+import { BulleCapy, Bouton, Ecran, EtapeParcours, IconeEtoile, IconeFlamme } from '@/composants';
+import { domaineDe, LIBELLES_MATIERES, MATIERES } from '@/config/domaines';
+import type { Theme } from '@/config/parcours';
 import { mascotte, type PoseCapy } from '@/mascotte';
 import {
   cheminDuTheme,
@@ -14,8 +14,9 @@ import {
   totalEtoiles,
   type Noeud,
 } from '@/parcours/progression';
+import { themesProposes } from '@/parcours/selection';
 import { useProfilActif } from '@/store/profils';
-import { domainesParPriorite, prioritesDe } from '@/toile/niveaux';
+import { ficheSaisie, prioritesDe } from '@/toile/niveaux';
 import { couleurs, espaces, formes, typo } from '@/theme';
 
 /** Décalages horizontaux du chemin en zigzag, répétés. */
@@ -29,9 +30,10 @@ export default function Parcours() {
   if (!profil) return null;
 
   const p = profil.progression;
-  // Les thèmes vont du domaine prioritaire de la toile au plus solide. Par défaut,
-  // on ouvre le premier thème qui n'est pas terminé.
-  const themes = themesParPriorite(profil.classe, profil.toile ? domainesParPriorite(profil.classe, profil.toile.actuelle) : []);
+  // Seuls les thèmes des difficultés de la toile sont proposés, du plus fragile au
+  // moins fragile (voir parcours/selection.ts). Par défaut, on ouvre le premier
+  // thème qui n'est pas terminé.
+  const themes = themesProposes(profil.classe, profil.toile);
   const parDefaut = themes.find((t) => cheminDuTheme(t, p).some((n) => n.etat === 'enCours')) ?? themes[0];
   const theme = themes.find((t) => t.id === themeChoisiId) ?? parDefaut;
   // Un axe prioritaire par matière (français, mathématiques).
@@ -72,10 +74,26 @@ export default function Parcours() {
   );
 
   if (!theme) {
+    // Aucun exercice sans le résultat de la toile.
+    const fichesManquantes = MATIERES.filter((m) => !ficheSaisie(profil.toile, m));
+    let texte: string;
+    if (!profil.toile) {
+      texte = 'Pour commencer, demande à un parent de photographier les fiches de l’école. Je préparerai ton parcours avec !';
+    } else if (fichesManquantes.length > 0) {
+      texte = `Bravo, ce que je sais faire travailler est déjà solide ! Il manque encore la fiche de ${LIBELLES_MATIERES[fichesManquantes[0]].toLowerCase()}.`;
+    } else {
+      texte = 'Bravo, ce que je sais faire travailler est déjà solide ! De nouveaux exercices arrivent bientôt.';
+    }
     return (
-      <Ecran>
+      <Ecran
+        pied={
+          fichesManquantes.length > 0 ? (
+            <Bouton titre="Aller voir un parent" variante="secondaire" onPress={() => router.push('/enfant/parents')} />
+          ) : undefined
+        }
+      >
         {entete}
-        <BulleCapy pose="ralentir" texte={`Le parcours de ${profil.classe} arrive bientôt. Pour l’instant, Capy prépare le CE2.`} />
+        <BulleCapy pose={profil.toile ? 'bravo' : 'explorer'} tailleCapy={110} texte={texte} />
       </Ecran>
     );
   }

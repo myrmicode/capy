@@ -20,6 +20,7 @@ import { mascotte } from '@/mascotte';
 import { avancement, derouler, etatInitial } from '@/parcours/deroulement';
 import { genererEtape } from '@/parcours/etape';
 import { etoilesPour, graineDePartie } from '@/parcours/progression';
+import { themeEstPropose } from '@/parcours/selection';
 import { useProfilActif, useProfils } from '@/store/profils';
 import { couleurs, espaces, formes, typo } from '@/theme';
 
@@ -84,6 +85,8 @@ export default function EcranEtape() {
   useEffect(() => arreterLecture, []);
 
   if (!profil) return <Redirect href="/" />;
+  // Aucun exercice sans le résultat de la toile : seuls les thèmes proposés s'ouvrent.
+  if (trouvee && !themeEstPropose(profil.classe, profil.toile, trouvee.theme.id)) return <Redirect href="/enfant" />;
 
   if (questions.length === 0) {
     return (

@@ -4,7 +4,7 @@ import { StyleSheet, Switch, Text, View } from 'react-native';
 
 import { BarreProgression, Bouton, ControleParental, Ecran, Toile } from '@/composants';
 import { domainesDe, LIBELLES_MATIERES, MATIERES } from '@/config/domaines';
-import { themesDe } from '@/config/parcours';
+import { themesProposes } from '@/parcours/selection';
 import { dateEnFrancais, dureeEnFrancais } from '@/parents/format';
 import { dateLocale, serieDeJours, tempsDeLaSemaine } from '@/parcours/progression';
 import { seDeconnecter, supprimerCompte } from '@/serveur/compte';
@@ -98,7 +98,11 @@ function ContenuParents() {
       </Section>
 
       <Section titre="Progression par thème">
-        {themesDe(profil.classe).map((theme) => {
+        <Text style={typo.petit}>
+          Capy ne propose que les compétences notées + ou ++ sur les fiches de l’école, de la plus fragile à la moins
+          fragile.
+        </Text>
+        {themesProposes(profil.classe, profil.toile).map((theme) => {
           const etapes = theme.unites.flatMap((u) => u.etapes);
           const faites = etapes.filter((e) => e.id in p.etapes).length;
           return (
@@ -113,8 +117,12 @@ function ContenuParents() {
             </View>
           );
         })}
-        {themesDe(profil.classe).length === 0 ? (
-          <Text style={typo.texte}>Le parcours de {profil.classe} arrive bientôt.</Text>
+        {themesProposes(profil.classe, profil.toile).length === 0 ? (
+          <Text style={typo.texte}>
+            {profil.toile
+              ? 'Aucun exercice à proposer pour l’instant : les compétences que Capy sait travailler sont déjà à +++.'
+              : 'Aucun exercice n’est proposé tant que les fiches de l’école ne sont pas saisies.'}
+          </Text>
         ) : null}
       </Section>
 

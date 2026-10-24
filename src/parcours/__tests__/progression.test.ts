@@ -1,4 +1,4 @@
-import { THEMES, themesParPriorite } from '@/config/parcours';
+import { THEMES } from '@/config/parcours';
 import { JEUX } from '@/jeux/registre';
 
 import { genererEtape } from '../etape';
@@ -143,9 +143,3 @@ it('donne une nouvelle graine à chaque partie, reproductible', () => {
   expect(graineDePartie('lou', 'e1', 0)).not.toBe(graineDePartie('lou', 'e1', 1));
 });
 
-describe('ordre des thèmes', () => {
-  it('suit la toile quand elle existe, sinon l’ordre du parcours', () => {
-    expect(themesParPriorite('CE2', []).map((t) => t.domaine)).toEqual(THEMES.map((t) => t.domaine));
-    expect(themesParPriorite('CE2', ['ligne-graduee', 'calcul-mental', 'resoudre-problemes'])[0].domaine).toBe('ligne-graduee');
-  });
-});

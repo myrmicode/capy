@@ -8,6 +8,7 @@ import { trouverCoffre } from '@/config/parcours';
 import { feliciter } from '@/jeux/retours';
 import { mascotte } from '@/mascotte';
 import { cheminDuTheme, ETOILES_COFFRE } from '@/parcours/progression';
+import { themeEstPropose } from '@/parcours/selection';
 import { useProfilActif, useProfils } from '@/store/profils';
 import { couleurs, espaces, formes, typo } from '@/theme';
 
@@ -25,7 +26,7 @@ export default function Coffre() {
     transform: [{ scale: echelle.value }, { rotate: `${rotation.value}deg` }],
   }));
 
-  if (!profil || !trouve) return <Redirect href="/enfant" />;
+  if (!profil || !trouve || !themeEstPropose(profil.classe, profil.toile, trouve.theme.id)) return <Redirect href="/enfant" />;
   const noeud = cheminDuTheme(trouve.theme, profil.progression).find((n) => n.id === id);
   if (!noeud || noeud.etat === 'verrouillee') return <Redirect href="/enfant" />;
 

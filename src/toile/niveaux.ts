@@ -142,14 +142,6 @@ export function prioritesDe(classe: Classe, toile: ToileEnfant | undefined): Set
   return ids;
 }
 
-/** Axes du plus fragile au plus solide (toutes matières), pour ordonner les thèmes du parcours. */
-export function domainesParPriorite(classe: Classe, niveaux: Niveaux | undefined): DomaineId[] {
-  const domaines = domainesDe(classe);
-  if (!niveaux) return domaines.map((d) => d.id);
-  return [...domaines]
-    .sort((a, b) => (niveaux[a.id] ?? NIVEAU_PAR_DEFAUT) - (niveaux[b.id] ?? NIVEAU_PAR_DEFAUT))
-    .map((d) => d.id);
-}
 
 /**
  * Remet au format actuel une toile enregistrée avant la prise en compte des deux

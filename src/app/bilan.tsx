@@ -72,7 +72,7 @@ function BilanMatiere({ matiere, classe, prenom, toile }: PropsBilanMatiere) {
       {priorite ? (
         <Carte titre="Priorité" fond={couleurs.brun[100]} couleurTitre={couleurs.brun[800]} accent>
           {themePriorite
-            ? `${priorite.libelle}. C’est par là que commence le parcours de ${prenom}.`
+            ? `${priorite.libelle}. Capy la fait travailler en priorité dans le parcours de ${prenom}.`
             : `${priorite.libelle}. Les exercices de cette compétence arrivent bientôt dans Capy.`}
         </Carte>
       ) : null}
