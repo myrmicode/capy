@@ -13,9 +13,31 @@ describe('profils enfants', () => {
     expect(lou.id).not.toBe(tim.id);
   });
 
-  it('ne stocke que le prénom et la classe', () => {
+  it('ne stocke que le prénom, la classe et la progression', () => {
     const profil = useProfils.getState().ajouterProfil('Lou', 'CE2');
-    expect(Object.keys(profil).sort()).toEqual(['classe', 'id', 'prenom']);
+    expect(Object.keys(profil).sort()).toEqual(['classe', 'id', 'prenom', 'progression']);
+    expect(Object.keys(profil.progression).sort()).toEqual(['coffresOuverts', 'etapes', 'jours', 'tempsParJour']);
+  });
+
+  it('enregistre une étape et un coffre pour le bon enfant seulement', () => {
+    const { ajouterProfil, enregistrerEtape, ouvrirCoffre } = useProfils.getState();
+    const lou = ajouterProfil('Lou', 'CE2');
+    const tim = ajouterProfil('Tim', 'CE2');
+    const resultat = { reussiesPremierCoup: 5, nombreQuestions: 5, dureeSecondes: 90 };
+    enregistrerEtape(lou.id, 'ce2-rp-1', resultat, new Date(2026, 9, 24));
+    ouvrirCoffre(lou.id, 'ce2-rp-u1-coffre');
+    const [l, t] = useProfils.getState().profils;
+    expect(l.progression.etapes['ce2-rp-1']).toEqual({ etoiles: 3, fois: 1 });
+    expect(l.progression.jours).toEqual(['2026-10-24']);
+    expect(l.progression.coffresOuverts).toEqual(['ce2-rp-u1-coffre']);
+    expect(t.progression).toEqual(tim.progression);
+  });
+
+  it('ajoute une progression vide aux profils enregistrés avant la phase 4', async () => {
+    const migrer = useProfils.persist.getOptions().migrate!;
+    const ancien = { profils: [{ id: 'a', prenom: 'Lou', classe: 'CE2' }], profilActifId: 'a' };
+    const migre = (await migrer(ancien, 1)) as { profils: { progression: unknown }[] };
+    expect(migre.profils[0].progression).toEqual({ etapes: {}, coffresOuverts: [], jours: [], tempsParJour: {} });
   });
 
   it('choisit, modifie et supprime un profil', () => {

@@ -1,5 +1,5 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useReducer, useState } from 'react';
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import {
@@ -9,34 +9,43 @@ import {
   Ecran,
   IconeAmpoule,
   IconeCroix,
+  IconeEtoile,
   IconeHautParleur,
   PanneauRetour,
 } from '@/composants';
+import { trouverEtape } from '@/config/parcours';
 import { COMPOSANTS_JEUX, JEUX } from '@/jeux';
 import { arreterLecture, lireAVoixHaute, vibrerBravo } from '@/jeux/retours';
 import { mascotte } from '@/mascotte';
 import { avancement, derouler, etatInitial } from '@/parcours/deroulement';
 import { genererEtape } from '@/parcours/etape';
-import { useProfilActif } from '@/store/profils';
+import { etoilesPour, graineDePartie } from '@/parcours/progression';
+import { useProfilActif, useProfils } from '@/store/profils';
 import { couleurs, espaces, formes, typo } from '@/theme';
 
-/** Une étape de jeu : quelques questions qui mélangent les mini-jeux. */
+/** Au-delà, on considère que l'enfant a fait une pause : le temps n'est pas compté. */
+const DUREE_MAX_SECONDES = 30 * 60;
+
+/** Une étape du parcours : quelques questions qui mélangent les mini-jeux. */
 export default function EcranEtape() {
   const profil = useProfilActif();
-  const { graine: graineTexte } = useLocalSearchParams<{ graine?: string }>();
-  const graine = Number(graineTexte) || 1;
+  const enregistrerEtape = useProfils((e) => e.enregistrerEtape);
+  const { etape: etapeId = '' } = useLocalSearchParams<{ etape?: string }>();
+  const trouvee = trouverEtape(etapeId);
+
+  // Chaque partie (et chaque « Rejouer ») tire de nouveaux exercices, de façon reproductible.
+  const [foisAuDepart] = useState(() => profil?.progression.etapes[etapeId]?.fois ?? 0);
+  const [partie, setPartie] = useState(0);
+  const [debut, setDebut] = useState(() => Date.now());
+  const graine = profil ? graineDePartie(profil.id, etapeId, foisAuDepart + partie) : 0;
+  const classe = profil?.classe;
 
   const questions = useMemo(
     () =>
-      profil
-        ? genererEtape({
-            classe: profil.classe,
-            domaine: 'resoudre-problemes',
-            graine,
-            jeux: ['marche', 'bonFil', 'reponses'],
-          })
+      classe && trouvee
+        ? genererEtape({ classe, domaine: trouvee.theme.domaine, graine, ...trouvee.etape })
         : [],
-    [profil, graine],
+    [classe, trouvee, graine],
   );
   const [etat, envoyer] = useReducer(derouler, questions.length, etatInitial);
   // Numéro de la question dont l'indice est ouvert : il se referme tout seul à la question suivante.
@@ -48,6 +57,18 @@ export default function EcranEtape() {
   useEffect(() => {
     if (etat.phase === 'bravo') vibrerBravo();
   }, [etat.phase]);
+
+  // Le résultat est enregistré une seule fois par partie.
+  const partieEnregistree = useRef(-1);
+  useEffect(() => {
+    if (etat.phase !== 'terminee' || !profil || partieEnregistree.current === partie) return;
+    partieEnregistree.current = partie;
+    enregistrerEtape(profil.id, etapeId, {
+      reussiesPremierCoup: etat.reussiesPremierCoup,
+      nombreQuestions: etat.nombreQuestions,
+      dureeSecondes: Math.min(DUREE_MAX_SECONDES, (Date.now() - debut) / 1000),
+    });
+  }, [etat, profil, partie, etapeId, debut, enregistrerEtape]);
 
   // On coupe la voix en changeant de question ou en quittant l'étape.
   useEffect(() => {
@@ -66,20 +87,33 @@ export default function EcranEtape() {
   }
 
   if (etat.phase === 'terminee') {
+    const etoiles = etoilesPour(etat.reussiesPremierCoup, etat.nombreQuestions);
+    const rejouer = () => {
+      setPartie((n) => n + 1);
+      setDebut(Date.now());
+      envoyer({ type: 'recommencer' });
+    };
     return (
       <Ecran
         pied={
           <View style={styles.boutonsFin}>
             <Bouton titre="Retour au parcours" onPress={() => router.back()} />
-            <Bouton titre="Rejouer l’étape" variante="secondaire" onPress={() => envoyer({ type: 'recommencer' })} />
+            <Bouton titre="Rejouer l’étape" variante="secondaire" onPress={rejouer} />
           </View>
         }
       >
         <View style={styles.fin}>
           <Image source={mascotte.bravo} style={styles.capyFin} resizeMode="contain" accessible={false} />
           <Text style={[typo.titre1, styles.centre]}>Étape terminée !</Text>
+          <View style={styles.etoiles} accessible accessibilityLabel={`${etoiles} étoile${etoiles > 1 ? 's' : ''} gagnée${etoiles > 1 ? 's' : ''}`}>
+            {[1, 2, 3].map((n) => (
+              <IconeEtoile key={n} taille={56} couleur={n <= etoiles ? couleurs.jaune[400] : couleurs.gris[200]} />
+            ))}
+          </View>
           <Text style={[typo.manuscrit, styles.centre]}>Petit pas après petit pas…</Text>
-          <Text style={[typo.enonce, styles.centre]}>Bravo {profil.prenom}, tu as résolu tous les problèmes.</Text>
+          <Text style={[typo.enonce, styles.centre]}>
+            Bravo {profil.prenom}, tu as résolu tous les problèmes de « {trouvee!.etape.titre} ».
+          </Text>
         </View>
       </Ecran>
     );
@@ -157,4 +191,5 @@ const styles = StyleSheet.create({
   capyFin: { width: 200, height: 200 },
   centre: { textAlign: 'center' },
   boutonsFin: { gap: espaces.m },
+  etoiles: { flexDirection: 'row', gap: espaces.s },
 });

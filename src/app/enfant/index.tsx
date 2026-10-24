@@ -1,52 +1,190 @@
-import { Redirect, router } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { BulleCapy, Bouton, Ecran, EtapeParcours, type EtatEtape } from '@/composants';
+import { BulleCapy, Ecran, EtapeParcours, IconeEtoile, IconeFlamme } from '@/composants';
+import { themesDe } from '@/config/parcours';
+import { mascotte, type PoseCapy } from '@/mascotte';
+import {
+  cheminDuTheme,
+  dateLocale,
+  joursDepuisDerniereActivite,
+  serieDeJours,
+  totalEtoiles,
+  type Noeud,
+} from '@/parcours/progression';
 import { useProfilActif } from '@/store/profils';
-import { espaces, typo } from '@/theme';
+import { couleurs, espaces, formes, typo } from '@/theme';
 
-// Aperçu provisoire : le vrai parcours (étapes, étoiles, série de jours) arrive en phase 4.
-const APERCU: { etat: EtatEtape; coffre?: boolean }[] = [
-  { etat: 'reussie' },
-  { etat: 'reussie' },
-  { etat: 'enCours' },
-  { etat: 'verrouillee' },
-  { etat: 'verrouillee', coffre: true },
-];
-const DECALAGES = [0, 60, 0, -60, 0];
+/** Décalages horizontaux du chemin en zigzag, répétés. */
+const ZIGZAG = [0, 56, 84, 56, 0, -56, -84, -56];
+/** Absence (en jours) à partir de laquelle Capy dit qu'on lui a manqué. */
+const ABSENCE_LONGUE = 3;
 
-export default function ParcoursEnfant() {
+export default function Parcours() {
   const profil = useProfilActif();
-  if (!profil) return <Redirect href="/" />;
+  if (!profil) return null;
+
+  const theme = themesDe(profil.classe)[0];
+  const p = profil.progression;
+  const aujourdhui = dateLocale(new Date());
+  const serie = serieDeJours(p.jours, aujourdhui);
+  const absence = joursDepuisDerniereActivite(p.jours, aujourdhui);
+
+  const entete = (
+    <View style={styles.entete}>
+      <View style={styles.flex}>
+        <Text style={typo.titre2} numberOfLines={1}>
+          {profil.prenom}
+        </Text>
+        <Pressable onPress={() => router.replace('/')} accessibilityRole="button" hitSlop={10}>
+          <Text style={[typo.petit, styles.lien]}>Changer d’enfant</Text>
+        </Pressable>
+      </View>
+      <Compteur
+        icone={<IconeEtoile taille={22} couleur={couleurs.jaune.texte} />}
+        texte={String(totalEtoiles(p))}
+        libelle={`${totalEtoiles(p)} étoiles`}
+        fond={couleurs.jaune[400]}
+        couleur={couleurs.jaune.texte}
+      />
+      <Compteur
+        icone={<IconeFlamme taille={22} couleur={couleurs.brun[600]} />}
+        texte={`${serie} j`}
+        libelle={`${serie} jour${serie > 1 ? 's' : ''} d’affilée`}
+        fond={couleurs.brun[100]}
+        couleur={couleurs.brun[800]}
+      />
+    </View>
+  );
+
+  if (!theme) {
+    return (
+      <Ecran>
+        {entete}
+        <BulleCapy pose="ralentir" texte={`Le parcours de ${profil.classe} arrive bientôt. Pour l’instant, Capy prépare le CE2.`} />
+      </Ecran>
+    );
+  }
+
+  const chemin = cheminDuTheme(theme, p);
+  const enCours = chemin.find((n) => n.etat === 'enCours');
+  const uniteEnCours = theme.unites.find((u) => u.id === (enCours ?? chemin[chemin.length - 1]).uniteId)!;
+  const numeroUnite = theme.unites.indexOf(uniteEnCours) + 1;
+
+  let pose: PoseCapy = 'reussite';
+  let message: string;
+  if (absence !== null && absence >= ABSENCE_LONGUE) {
+    pose = 'triste';
+    message = 'Tu m’as manqué ! On reprend ensemble, tout doucement ?';
+  } else if (!enCours) {
+    pose = 'bravo';
+    message = 'Tu as fini tout le parcours ! Tu peux rejouer les étapes quand tu veux.';
+  } else if (enCours.type === 'coffre') {
+    pose = 'surpris';
+    message = 'Un coffre t’attend au bout du chemin. Va vite l’ouvrir !';
+  } else if (serie >= 2) {
+    pose = 'clinOeil';
+    message = `${serie} jours d’affilée, bravo ! Prochaine étape : « ${enCours.titre} »`;
+  } else {
+    message = `On y va ? Prochaine étape : « ${enCours.titre} »`;
+  }
+
+  const ouvrir = (n: Noeud) => {
+    if (n.etat === 'verrouillee') return;
+    if (n.type === 'coffre') router.push({ pathname: '/coffre', params: { id: n.id } });
+    else router.push({ pathname: '/etape', params: { etape: n.id } });
+  };
 
   return (
-    <Ecran
-      pied={
-        <View style={styles.boutons}>
-          <Bouton
-            titre="Jouer une étape"
-            onPress={() =>
-              router.push({ pathname: '/etape', params: { graine: String(Math.floor(Math.random() * 1e9)) } })
-            }
-          />
-          <Bouton titre="Changer d’enfant" variante="secondaire" onPress={() => router.replace('/')} />
+    <Ecran>
+      {entete}
+
+      <View style={styles.bandeau}>
+        <View style={styles.flex}>
+          <Text style={[typo.petit, styles.surtitre]}>
+            Unité {numeroUnite} · {uniteEnCours.titre}
+          </Text>
+          <Text style={typo.titre2}>{theme.titre}</Text>
         </View>
-      }
-    >
-      <Text style={typo.titre1}>Salut {profil.prenom} !</Text>
-      <BulleCapy pose="reussite" tailleCapy={110} texte="Ton parcours arrive bientôt. En attendant, joue une étape d’essai !" />
-      <View style={styles.chemin}>
-        {APERCU.map((e, i) => (
-          <View key={i} style={{ transform: [{ translateX: DECALAGES[i] }] }}>
-            <EtapeParcours numero={i + 1} etat={e.etat} coffre={e.coffre} onPress={() => {}} />
-          </View>
-        ))}
+        <Image source={mascotte.reussite} style={styles.capyBandeau} resizeMode="contain" accessible={false} />
       </View>
+
+      <BulleCapy pose={pose} tailleCapy={80} texte={message} />
+
+      {theme.unites.map((unite, u) => (
+        <View key={unite.id} style={styles.unite}>
+          <Text style={[typo.texteGras, styles.titreUnite]}>
+            Unité {u + 1} · {unite.titre}
+          </Text>
+          {chemin
+            .filter((n) => n.uniteId === unite.id)
+            .map((n, i) => (
+              <View key={n.id} style={[styles.noeud, { transform: [{ translateX: ZIGZAG[i % ZIGZAG.length] }] }]}>
+                <EtapeParcours
+                  etat={n.etat}
+                  numero={n.type === 'etape' ? n.numero : 0}
+                  coffre={n.type === 'coffre'}
+                  onPress={() => ouvrir(n)}
+                />
+                {n.type === 'etape' ? (
+                  <Text
+                    style={[typo.petit, styles.titreEtape, n.etat === 'enCours' && styles.titreEnCours]}
+                    numberOfLines={1}
+                  >
+                    {n.titre}
+                  </Text>
+                ) : null}
+              </View>
+            ))}
+        </View>
+      ))}
     </Ecran>
   );
 }
 
+interface PropsCompteur {
+  icone: React.ReactNode;
+  texte: string;
+  libelle: string;
+  fond: string;
+  couleur: string;
+}
+
+function Compteur({ icone, texte, libelle, fond, couleur }: PropsCompteur) {
+  return (
+    <View style={[styles.compteur, { backgroundColor: fond }]} accessible accessibilityLabel={libelle}>
+      {icone}
+      <Text style={[typo.texteGras, { color: couleur }]}>{texte}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  chemin: { alignItems: 'center', gap: espaces.m, paddingVertical: espaces.l },
-  boutons: { gap: espaces.m },
+  flex: { flex: 1 },
+  entete: { flexDirection: 'row', alignItems: 'center', gap: espaces.s },
+  lien: { color: couleurs.sarcelle[700], paddingVertical: 4 },
+  compteur: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: espaces.xs,
+    borderRadius: formes.pilule,
+    paddingHorizontal: espaces.m,
+    minHeight: formes.cibleTactile,
+  },
+  bandeau: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: couleurs.creme,
+    borderRadius: formes.carte.rayon,
+    paddingLeft: espaces.l,
+    paddingVertical: espaces.s,
+    overflow: 'hidden',
+  },
+  surtitre: { color: couleurs.brun[800] },
+  capyBandeau: { width: 120, height: 90, borderRadius: 16 },
+  unite: { alignItems: 'center', gap: espaces.s, paddingTop: espaces.l },
+  titreUnite: { color: couleurs.encreDouce, marginBottom: espaces.s },
+  noeud: { alignItems: 'center' },
+  titreEtape: { maxWidth: 160, textAlign: 'center' },
+  titreEnCours: { color: couleurs.sarcelle[900], fontFamily: typo.texteGras.fontFamily },
 });

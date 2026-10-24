@@ -143,3 +143,32 @@ export function IconeFraise({ taille = 24 }: { taille?: number }) {
     </Svg>
   );
 }
+
+export function IconeChemin({ taille = 24, couleur }: PropsIcone) {
+  return (
+    <Svg width={taille} height={taille} viewBox="0 0 24 24">
+      <Path d="M7 20c-2.5 0-3-3 0-4l10-3c3-1 2.5-4 0-4H9" stroke={couleur} strokeWidth={2.4} {...trait} />
+      <Circle cx={7} cy={20} r={2.2} fill={couleur} />
+      <Path d="M9 9V3l6 3-6 3" fill={couleur} stroke={couleur} strokeWidth={1.5} strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+export function IconeToile({ taille = 24, couleur }: PropsIcone) {
+  return (
+    <Svg width={taille} height={taille} viewBox="0 0 24 24">
+      <Path d="M12 3l8.5 6.2-3.3 10H6.8L3.5 9.2z" stroke={couleur} strokeWidth={2} {...trait} />
+      <Path d="M12 7.5l4.6 3.3-1.8 5.4H9.2l-1.8-5.4z" fill={couleur} />
+    </Svg>
+  );
+}
+
+export function IconeParents({ taille = 24, couleur }: PropsIcone) {
+  return (
+    <Svg width={taille} height={taille} viewBox="0 0 24 24">
+      <Circle cx={8.5} cy={7} r={3} fill={couleur} />
+      <Circle cx={16.5} cy={9} r={2.4} fill={couleur} />
+      <Path d="M3 19.5c0-3.5 2.5-6 5.5-6s5.5 2.5 5.5 6zM14.2 19.5c.1-2.3-.6-4.2-1.7-5.3.9-.6 2-.9 3.1-.9 2.6 0 4.4 2.3 4.4 6.2z" fill={couleur} />
+    </Svg>
+  );
+}

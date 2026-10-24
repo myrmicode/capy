@@ -81,6 +81,9 @@ export const pairesTexte: readonly { texte: string; fond: string; usage: string 
   { texte: couleurs.brun[800], fond: couleurs.brun[100], usage: 'titre panneau Presque' },
   { texte: couleurs.encre, fond: couleurs.brun[100], usage: 'texte panneau Presque' },
   { texte: couleurs.brun[800], fond: couleurs.caramel[100], usage: 'carte À consolider' },
+  { texte: couleurs.encre, fond: couleurs.creme, usage: 'titre du bandeau de thème' },
+  { texte: couleurs.brun[800], fond: couleurs.creme, usage: 'unité du bandeau de thème' },
+  { texte: couleurs.brun[800], fond: couleurs.brun[100], usage: 'compteur de série' },
   { texte: couleurs.sarcelle[700], fond: couleurs.blanc, usage: 'liens, bouton secondaire' },
   { texte: couleurs.sarcelle[700], fond: couleurs.fondPage, usage: 'liens sur fond de page' },
   // gris-500 sur gris-200 ne donne que 4,4:1 : le texte désactivé utilise encre-douce.

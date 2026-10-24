@@ -14,6 +14,8 @@ export interface ParametresEtape {
   graine: number;
   /** Mini-jeux à mélanger dans l'étape (2 ou 3). */
   jeux: readonly JeuId[];
+  /** Modèles travaillés dans l'étape (tous ceux du domaine si absent). */
+  modeles?: readonly string[];
   nombreQuestions?: number;
 }
 
@@ -24,9 +26,16 @@ const ESSAIS_PAR_QUESTION = 200;
  * Entièrement déterminée par la graine, donc rejouable à l'identique.
  * Renvoie une liste vide si aucun modèle n'existe encore pour cette classe.
  */
-export function genererEtape({ classe, domaine, graine, jeux, nombreQuestions = 5 }: ParametresEtape): QuestionEtape[] {
+export function genererEtape({
+  classe,
+  domaine,
+  graine,
+  jeux,
+  modeles: modelesVoulus,
+  nombreQuestions = 5,
+}: ParametresEtape): QuestionEtape[] {
   const alea = creerAlea(graine);
-  const modeles = modelesPour(domaine, classe);
+  const modeles = modelesPour(domaine, classe).filter((m) => !modelesVoulus || modelesVoulus.includes(m.id));
   const jeuxPossibles = jeux.filter((j) => {
     const jeu = JEUX[j];
     return modeles.some((m) => !jeu.modeles || jeu.modeles.includes(m.id));
