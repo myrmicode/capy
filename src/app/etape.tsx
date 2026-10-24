@@ -15,7 +15,7 @@ import {
 } from '@/composants';
 import { trouverEtape } from '@/config/parcours';
 import { COMPOSANTS_JEUX, JEUX } from '@/jeux';
-import { arreterLecture, lireAVoixHaute, vibrerBravo } from '@/jeux/retours';
+import { arreterLecture, lireAVoixHaute, feliciter } from '@/jeux/retours';
 import { mascotte } from '@/mascotte';
 import { avancement, derouler, etatInitial } from '@/parcours/deroulement';
 import { genererEtape } from '@/parcours/etape';
@@ -32,6 +32,7 @@ export default function EcranEtape() {
   const enregistrerEtape = useProfils((e) => e.enregistrerEtape);
   const { etape: etapeId = '' } = useLocalSearchParams<{ etape?: string }>();
   const trouvee = trouverEtape(etapeId);
+  const domaine = trouvee?.theme.domaine;
 
   // Chaque partie (et chaque « Rejouer ») tire de nouveaux exercices, de façon reproductible.
   const [foisAuDepart] = useState(() => profil?.progression.etapes[etapeId]?.fois ?? 0);
@@ -55,20 +56,21 @@ export default function EcranEtape() {
   const question = questions[etat.index];
 
   useEffect(() => {
-    if (etat.phase === 'bravo') vibrerBravo();
+    if (etat.phase === 'bravo') feliciter();
   }, [etat.phase]);
 
   // Le résultat est enregistré une seule fois par partie.
   const partieEnregistree = useRef(-1);
   useEffect(() => {
-    if (etat.phase !== 'terminee' || !profil || partieEnregistree.current === partie) return;
+    if (etat.phase !== 'terminee' || !profil || !domaine || partieEnregistree.current === partie) return;
     partieEnregistree.current = partie;
     enregistrerEtape(profil.id, etapeId, {
+      domaine,
       reussiesPremierCoup: etat.reussiesPremierCoup,
       nombreQuestions: etat.nombreQuestions,
       dureeSecondes: Math.min(DUREE_MAX_SECONDES, (Date.now() - debut) / 1000),
     });
-  }, [etat, profil, partie, etapeId, debut, enregistrerEtape]);
+  }, [etat, profil, partie, etapeId, debut, domaine, enregistrerEtape]);
 
   // On coupe la voix en changeant de question ou en quittant l'étape.
   useEffect(() => {

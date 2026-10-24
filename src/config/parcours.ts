@@ -121,3 +121,12 @@ export function trouverCoffre(coffreId: string): { theme: Theme; unite: Unite } 
   }
   return undefined;
 }
+
+/** Thèmes d'une classe, du domaine le plus fragile au plus solide (ordre de la toile). */
+export function themesParPriorite(classe: Classe, ordreDomaines: readonly DomaineId[]): Theme[] {
+  const rang = (t: Theme) => {
+    const i = ordreDomaines.indexOf(t.domaine);
+    return i < 0 ? ordreDomaines.length : i;
+  };
+  return themesDe(classe).sort((a, b) => rang(a) - rang(b));
+}

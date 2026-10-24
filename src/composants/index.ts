@@ -9,3 +9,6 @@ export { TuileReponse, type EtatTuile } from './TuileReponse';
 export * from './icones';
 export { BarreProgression } from './BarreProgression';
 export { CarteEnonce } from './CarteEnonce';
+export { Toile, type CoucheToile } from './Toile';
+export { ControleParental } from './ControleParental';
+export { EditeurNiveaux } from './EditeurNiveaux';

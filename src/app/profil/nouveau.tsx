@@ -26,7 +26,7 @@ export default function NouveauProfil() {
     if (!classe) return;
     const profil = ajouterProfil(resultat.prenom, classe);
     choisirProfil(profil.id);
-    router.replace('/enfant');
+    router.replace({ pathname: '/toile/saisie', params: { apres: 'creation' } });
   }
 
   return (

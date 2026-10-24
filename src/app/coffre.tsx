@@ -5,7 +5,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, w
 
 import { Bouton, Ecran, IconeCoffre, IconeEtoile } from '@/composants';
 import { trouverCoffre } from '@/config/parcours';
-import { vibrerBravo } from '@/jeux/retours';
+import { feliciter } from '@/jeux/retours';
 import { mascotte } from '@/mascotte';
 import { cheminDuTheme, ETOILES_COFFRE } from '@/parcours/progression';
 import { useProfilActif, useProfils } from '@/store/profils';
@@ -44,7 +44,7 @@ export default function Coffre() {
     echelle.set(withSequence(withTiming(1.25, { duration: 260 }), withSpring(1)));
     setOuvertIci(true);
     ouvrirCoffre(profil.id, id);
-    vibrerBravo();
+    feliciter();
   };
 
   return (

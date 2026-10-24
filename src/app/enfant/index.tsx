@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BulleCapy, Ecran, EtapeParcours, IconeEtoile, IconeFlamme } from '@/composants';
-import { themesDe } from '@/config/parcours';
+import { themesParPriorite } from '@/config/parcours';
 import { mascotte, type PoseCapy } from '@/mascotte';
 import {
   cheminDuTheme,
@@ -13,6 +13,7 @@ import {
   type Noeud,
 } from '@/parcours/progression';
 import { useProfilActif } from '@/store/profils';
+import { analyserToile, domainesParPriorite } from '@/toile/niveaux';
 import { couleurs, espaces, formes, typo } from '@/theme';
 
 /** Décalages horizontaux du chemin en zigzag, répétés. */
@@ -24,7 +25,10 @@ export default function Parcours() {
   const profil = useProfilActif();
   if (!profil) return null;
 
-  const theme = themesDe(profil.classe)[0];
+  // Le parcours commence par le domaine prioritaire de la toile.
+  const theme = themesParPriorite(profil.classe, domainesParPriorite(profil.classe, profil.toile?.actuelle))[0];
+  const prioritaire =
+    !!theme && !!profil.toile && analyserToile(profil.classe, profil.toile.actuelle).priorite?.id === theme.domaine;
   const p = profil.progression;
   const aujourdhui = dateLocale(new Date());
   const serie = serieDeJours(p.jours, aujourdhui);
@@ -105,6 +109,11 @@ export default function Parcours() {
             Unité {numeroUnite} · {uniteEnCours.titre}
           </Text>
           <Text style={typo.titre2}>{theme.titre}</Text>
+          {prioritaire ? (
+            <View style={styles.priorite}>
+              <Text style={[typo.petit, styles.texteBlanc]}>Priorité</Text>
+            </View>
+          ) : null}
         </View>
         <Image source={mascotte.reussite} style={styles.capyBandeau} resizeMode="contain" accessible={false} />
       </View>
@@ -181,6 +190,15 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   surtitre: { color: couleurs.brun[800] },
+  priorite: {
+    alignSelf: 'flex-start',
+    backgroundColor: couleurs.brun[600],
+    borderRadius: formes.pilule,
+    paddingHorizontal: espaces.m,
+    paddingVertical: 2,
+    marginTop: espaces.xs,
+  },
+  texteBlanc: { color: couleurs.blanc, fontFamily: typo.texteGras.fontFamily },
   capyBandeau: { width: 120, height: 90, borderRadius: 16 },
   unite: { alignItems: 'center', gap: espaces.s, paddingTop: espaces.l },
   titreUnite: { color: couleurs.encreDouce, marginBottom: espaces.s },

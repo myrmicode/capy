@@ -23,7 +23,7 @@ describe('profils enfants', () => {
     const { ajouterProfil, enregistrerEtape, ouvrirCoffre } = useProfils.getState();
     const lou = ajouterProfil('Lou', 'CE2');
     const tim = ajouterProfil('Tim', 'CE2');
-    const resultat = { reussiesPremierCoup: 5, nombreQuestions: 5, dureeSecondes: 90 };
+    const resultat = { domaine: 'resoudre-problemes' as const, reussiesPremierCoup: 5, nombreQuestions: 5, dureeSecondes: 90 };
     enregistrerEtape(lou.id, 'ce2-rp-1', resultat, new Date(2026, 9, 24));
     ouvrirCoffre(lou.id, 'ce2-rp-u1-coffre');
     const [l, t] = useProfils.getState().profils;
@@ -31,6 +31,19 @@ describe('profils enfants', () => {
     expect(l.progression.jours).toEqual(['2026-10-24']);
     expect(l.progression.coffresOuverts).toEqual(['ce2-rp-u1-coffre']);
     expect(t.progression).toEqual(tim.progression);
+  });
+
+  it('fait évoluer la toile du jour après une étape, sans toucher à celle de septembre', () => {
+    const { ajouterProfil, enregistrerToile, enregistrerEtape } = useProfils.getState();
+    const lou = ajouterProfil('Lou', 'CE2');
+    enregistrerToile(lou.id, { 'resoudre-problemes': 0.3, nombres: 0.8 }, new Date(2026, 8, 20));
+    const resultat = { domaine: 'resoudre-problemes' as const, reussiesPremierCoup: 5, nombreQuestions: 5, dureeSecondes: 60 };
+    enregistrerEtape(lou.id, 'ce2-rp-1', resultat);
+    const toile = useProfils.getState().profils[0].toile!;
+    expect(toile.saisieLe).toBe('2026-09-20');
+    expect(toile.septembre['resoudre-problemes']).toBe(0.3);
+    expect(toile.actuelle['resoudre-problemes']).toBe(0.44);
+    expect(toile.actuelle.nombres).toBe(0.8);
   });
 
   it('ajoute une progression vide aux profils enregistrés avant la phase 4', async () => {
