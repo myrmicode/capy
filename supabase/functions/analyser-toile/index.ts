@@ -10,11 +10,18 @@
 // Secrets (supabase secrets set ...) :
 //   ANTHROPIC_API_KEY   clé de l'API Claude (jamais dans l'appli)
 //   CLAUDE_MODELE       facultatif, modèle à utiliser (défaut : claude-sonnet-5-5)
+//   QUOTA_APPAREIL_JOUR facultatif, analyses par appareil et par jour (défaut : 10)
+//   QUOTA_GLOBAL_JOUR   facultatif, analyses par jour pour tout le projet (défaut : 300)
 import Anthropic from 'npm:@anthropic-ai/sdk@0.133.0';
 import { withSupabase } from 'npm:@supabase/server@1.9.2';
 import { z } from 'npm:zod@4.6.7';
 
 const MODELE_PAR_DEFAUT = 'claude-sonnet-5-5';
+const QUOTA_APPAREIL = Number(Deno.env.get('QUOTA_APPAREIL_JOUR') ?? 10);
+const QUOTA_GLOBAL = Number(Deno.env.get('QUOTA_GLOBAL_JOUR') ?? 300);
+/** Identifiant d'installation tiré au hasard par l'appli (aucune donnée personnelle). */
+const Appareil = z.string().regex(/^[a-z0-9-]{8,64}$/);
+
 /** Taille maximale de l'image reçue (en caractères base64, environ 1,5 Mo). */
 const TAILLE_MAX_BASE64 = 2_000_000;
 
@@ -52,8 +59,19 @@ function json(corps: unknown, statut = 200): Response {
 const client = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY') });
 
 export default {
-  fetch: withSupabase({ auth: 'publishable' }, async (req) => {
+  fetch: withSupabase({ auth: 'publishable' }, async (req, ctx) => {
     if (req.method !== 'POST') return json({ erreur: 'methode' }, 405);
+
+    // Limite d'appels, vérifiée avant tout appel à Claude.
+    const appareil = Appareil.safeParse(req.headers.get('x-capy-appareil'));
+    if (!appareil.success) return json({ erreur: 'requete_invalide' }, 400);
+    const { data: dansLaLimite, error: erreurQuota } = await ctx.supabaseAdmin.rpc('consommer_quota_analyse', {
+      p_appareil: appareil.data,
+      p_max_appareil: QUOTA_APPAREIL,
+      p_max_global: QUOTA_GLOBAL,
+    });
+    if (erreurQuota) return json({ erreur: 'service' }, 503);
+    if (dansLaLimite !== true) return json({ erreur: 'quota' }, 429);
 
     let requete: z.infer<typeof Requete>;
     try {

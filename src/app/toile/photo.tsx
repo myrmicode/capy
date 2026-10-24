@@ -9,6 +9,7 @@ import { BulleCapy, Bouton, CarteConfiance } from '@/composants';
 import { domainesDe } from '@/config/domaines';
 import { mascotte } from '@/mascotte';
 import { useProfilActif } from '@/store/profils';
+import { useReglages } from '@/store/reglages';
 import { analyserPhoto, messageEchec, type ResultatAnalyse } from '@/toile/analyse';
 import { cadreDansLaVue, cadreVersPhoto, type Taille } from '@/toile/cadrage';
 import { preparerToile } from '@/toile/photo';
@@ -44,7 +45,7 @@ export default function PhotoToile() {
   const analyser = async (preparer: () => Promise<string>) => {
     setAnalyseEnCours(true);
     try {
-      conclure(await analyserPhoto(await preparer(), domaines));
+      conclure(await analyserPhoto(await preparer(), domaines, useReglages.getState().appareil));
     } catch {
       saisirALaMain(messageEchec('illisible'));
     }

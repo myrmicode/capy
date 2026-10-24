@@ -20,7 +20,7 @@ const ReponseAnalyse = z.object({
 
 export type ResultatAnalyse =
   | { ok: true; niveaux: Niveaux; confiance: number }
-  | { ok: false; raison: 'indisponible' | 'reseau' | 'serveur' | 'illisible' | 'peu_sur' };
+  | { ok: false; raison: 'indisponible' | 'reseau' | 'serveur' | 'illisible' | 'peu_sur' | 'quota' };
 
 /** Interprète la réponse du serveur : JSON validé, tous les domaines présents, confiance suffisante. */
 export function interpreterReponse(donnees: unknown, domaines: readonly Domaine[]): ResultatAnalyse {
@@ -39,6 +39,7 @@ export function interpreterReponse(donnees: unknown, domaines: readonly Domaine[
 export async function analyserPhoto(
   imageBase64: string,
   domaines: readonly Domaine[],
+  appareil: string,
   config: ConfigServeur | null = configServeur(),
   envoyer: typeof fetch = fetch,
 ): Promise<ResultatAnalyse> {
@@ -49,7 +50,7 @@ export async function analyserPhoto(
   try {
     const reponse = await envoyer(`${config.url.replace(/\/$/, '')}/functions/v1/analyser-toile`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', apikey: config.clePublique },
+      headers: { 'Content-Type': 'application/json', apikey: config.clePublique, 'x-capy-appareil': appareil },
       body: JSON.stringify({
         image: imageBase64,
         typeImage: 'image/jpeg',
@@ -57,6 +58,7 @@ export async function analyserPhoto(
       }),
       signal: annulation.signal,
     });
+    if (reponse.status === 429) return { ok: false, raison: 'quota' };
     if (!reponse.ok) return { ok: false, raison: 'serveur' };
     return interpreterReponse(await reponse.json(), domaines);
   } catch {
@@ -73,6 +75,8 @@ export function messageEchec(raison: Exclude<ResultatAnalyse, { ok: true }>['rai
       return 'L’analyse de la photo n’est pas encore disponible. Vous pouvez recopier la toile à la main.';
     case 'reseau':
       return 'Pas de connexion pour analyser la photo. Vous pouvez recopier la toile à la main.';
+    case 'quota':
+      return 'Beaucoup de photos ont été analysées aujourd’hui. Réessayez demain, ou recopiez la toile à la main.';
     case 'peu_sur':
       return 'Capy n’est pas sûr d’avoir bien lu la toile. Recopiez-la à la main, ou reprenez une photo plus nette.';
     default:

@@ -8,6 +8,7 @@ const complet = (confiance: number) => ({
   domaines: domaines.map((d, i) => ({ id: d.id, niveau: 0.31 + i * 0.1 })),
   confiance,
 });
+const APPAREIL = 'abcd1234-efgh5678-ijkl9012';
 const config = { url: 'https://exemple.supabase.co/', clePublique: 'sb_publishable_test' };
 
 describe('interprétation de la réponse', () => {
@@ -44,24 +45,27 @@ describe('interprétation de la réponse', () => {
 describe('appel au serveur', () => {
   it('n’envoie que l’image recadrée et les domaines, avec la clé publique', async () => {
     const envoyer = jest.fn(async () => new Response(JSON.stringify(complet(0.8)), { status: 200 }));
-    const r = await analyserPhoto('QUJD', domaines, config, envoyer as unknown as typeof fetch);
+    const r = await analyserPhoto('QUJD', domaines, APPAREIL, config, envoyer as unknown as typeof fetch);
     expect(r.ok).toBe(true);
     const [url, options] = envoyer.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe('https://exemple.supabase.co/functions/v1/analyser-toile');
     expect((options.headers as Record<string, string>).apikey).toBe('sb_publishable_test');
+    expect((options.headers as Record<string, string>)['x-capy-appareil']).toBe(APPAREIL);
     const corps = JSON.parse(options.body as string);
     expect(Object.keys(corps).sort()).toEqual(['domaines', 'image', 'typeImage']);
     expect(corps.domaines[0]).toEqual({ id: 'nombres', libelle: 'Nombres' });
   });
 
   it('se rabat sur la saisie à la main sans configuration, sans réseau ou en cas d’erreur', async () => {
-    expect(await analyserPhoto('QUJD', domaines, null)).toEqual({ ok: false, raison: 'indisponible' });
+    expect(await analyserPhoto('QUJD', domaines, APPAREIL, null)).toEqual({ ok: false, raison: 'indisponible' });
     const enPanne = jest.fn(async () => {
       throw new Error('hors ligne');
     });
-    expect(await analyserPhoto('QUJD', domaines, config, enPanne as unknown as typeof fetch)).toEqual({ ok: false, raison: 'reseau' });
+    expect(await analyserPhoto('QUJD', domaines, APPAREIL, config, enPanne as unknown as typeof fetch)).toEqual({ ok: false, raison: 'reseau' });
+    const limite = jest.fn(async () => new Response('{}', { status: 429 }));
+    expect(await analyserPhoto('QUJD', domaines, APPAREIL, config, limite as unknown as typeof fetch)).toEqual({ ok: false, raison: 'quota' });
     const erreur = jest.fn(async () => new Response('{}', { status: 502 }));
-    expect(await analyserPhoto('QUJD', domaines, config, erreur as unknown as typeof fetch)).toEqual({ ok: false, raison: 'serveur' });
+    expect(await analyserPhoto('QUJD', domaines, APPAREIL, config, erreur as unknown as typeof fetch)).toEqual({ ok: false, raison: 'serveur' });
   });
 });
 

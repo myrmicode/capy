@@ -91,3 +91,21 @@ pour tester ; avant la publication, il faudra brancher un service d'envoi (SMTP)
 - Pour chaque enfant : prénom ou surnom, classe, toile (niveaux), progression, date de modification.
 - « Supprimer le profil » efface aussi le profil du serveur ; « Supprimer le compte » efface le compte et tous
   les profils du serveur (les profils restent sur l'appareil).
+
+---
+
+# Limite d'appels à l'analyse (phase 8)
+
+```
+npx supabase db push
+npx supabase functions deploy analyser-toile --use-api
+```
+
+Par défaut : 10 analyses par appareil et par jour, 300 par jour pour tout le projet. Pour changer :
+
+```
+npx supabase secrets set QUOTA_APPAREIL_JOUR=10 QUOTA_GLOBAL_JOUR=300
+```
+
+L'appli envoie un identifiant d'installation tiré au hasard (sans lien avec l'enfant, le parent ou le téléphone).
+Les compteurs de plus de 7 jours sont effacés automatiquement.
