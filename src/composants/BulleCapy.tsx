@@ -1,20 +1,26 @@
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 
+import { TexteAccessible } from '@/accessibilite/TexteAccessible';
 import { mascotte, type PoseCapy } from '@/mascotte';
-import { couleurs, espaces, formes, typo } from '@/theme';
+import { couleurs, espaces, formes } from '@/theme';
 
 interface PropsBulleCapy {
   pose: PoseCapy;
-  /** 2 à 3 lignes maximum. */
+  /** 2 à 3 lignes en temps normal ; le texte passe toujours à la ligne, jamais coupé. */
   texte: string;
   /** Côté où se tient Capy. */
   cote?: 'gauche' | 'droite';
   tailleCapy?: number;
+  /** Coloration syllabique (contenu des exercices, comme un indice). */
+  coloration?: boolean;
 }
 
 /** Capy qui parle dans une bulle blanche ; le coin tourné vers Capy est arrondi à 6 px. */
-export function BulleCapy({ pose, texte, cote = 'gauche', tailleCapy = 96 }: PropsBulleCapy) {
-  const coin = cote === 'gauche' ? { borderBottomLeftRadius: formes.bulle.coinVersCapy } : { borderBottomRightRadius: formes.bulle.coinVersCapy };
+export function BulleCapy({ pose, texte, cote = 'gauche', tailleCapy = 96, coloration = false }: PropsBulleCapy) {
+  const coin =
+    cote === 'gauche'
+      ? { borderBottomLeftRadius: formes.bulle.coinVersCapy }
+      : { borderBottomRightRadius: formes.bulle.coinVersCapy };
   return (
     <View style={[styles.ligne, cote === 'droite' && styles.inverse]}>
       <Image
@@ -25,9 +31,7 @@ export function BulleCapy({ pose, texte, cote = 'gauche', tailleCapy = 96 }: Pro
         accessible={false}
       />
       <View style={[styles.bulle, coin]}>
-        <Text style={typo.enonce} numberOfLines={3}>
-          {texte}
-        </Text>
+        <TexteAccessible texte={texte} variante="enonce" coloration={coloration} />
       </View>
     </View>
   );

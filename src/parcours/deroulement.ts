@@ -15,10 +15,7 @@ export interface EtatDeroulement {
 }
 
 export type ActionDeroulement =
-  | { type: 'repondre'; juste: boolean }
-  | { type: 'reessayer' }
-  | { type: 'continuer' }
-  | { type: 'recommencer' };
+  { type: 'repondre'; juste: boolean } | { type: 'reessayer' } | { type: 'continuer' } | { type: 'recommencer' };
 
 export function etatInitial(nombreQuestions: number): EtatDeroulement {
   return { nombreQuestions, index: 0, phase: 'question', essaisRates: 0, reussiesPremierCoup: 0 };
@@ -54,4 +51,17 @@ export function avancement(etat: EtatDeroulement): number {
   if (etat.phase === 'terminee') return 1;
   const questionFaite = etat.phase === 'bravo' ? 1 : 0;
   return (etat.index + questionFaite) / etat.nombreQuestions;
+}
+
+/** La progression en mots, toujours visible à côté de la barre : « Encore 3 questions ». */
+export function resteEnMots(etat: EtatDeroulement): string {
+  if (etat.phase === 'terminee') return 'Étape finie';
+  const restantes = etat.nombreQuestions - etat.index - (etat.phase === 'bravo' ? 1 : 0);
+  if (restantes <= 0) return 'Étape finie';
+  return restantes === 1 ? 'Encore 1 question' : `Encore ${restantes} questions`;
+}
+
+/** Faut-il proposer une pause ? (réglage « Pause proposée », en minutes ; 0 = jamais) */
+export function pauseDue(depuisMs: number, maintenantMs: number, minutes: number): boolean {
+  return minutes > 0 && maintenantMs - depuisMs >= minutes * 60_000;
 }

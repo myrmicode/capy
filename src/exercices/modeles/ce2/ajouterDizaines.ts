@@ -21,7 +21,10 @@ export const ajouterDizaines = definirModele<{ nombre: number; dizaines: number 
       // + : nombres à deux chiffres, résultat inférieur à 100.
       1: { donnees: { nombre: { min: 11, max: 59 }, dizaines: { min: 10, max: 40 } }, reponse: { min: 21, max: 99 } },
       // ++ : nombres à trois chiffres, petits sauts.
-      2: { donnees: { nombre: { min: 100, max: 500 }, dizaines: { min: 10, max: 50 } }, reponse: { min: 110, max: 550 } },
+      2: {
+        donnees: { nombre: { min: 100, max: 500 }, dizaines: { min: 10, max: 50 } },
+        reponse: { min: 110, max: 550 },
+      },
     },
   },
   // Les dizaines ajoutées sont un multiple de 10.
@@ -42,12 +45,24 @@ export const ajouterDizaines = definirModele<{ nombre: number; dizaines: number 
       question: 'Combien ça fait ?',
       indice: 'Seul le chiffre des dizaines change (et parfois celui des centaines). Les unités ne bougent pas.',
       explication: `${nb(n)} + ${nb(d)} = ${nb(r)} : on avance de dix en dix à partir de ${nb(n)}.`,
+      facile: {
+        enonce: `${nb(n)} + ${nb(d)}`,
+        question: 'Combien ça fait ?',
+        indice: 'Compte de dix en dix. Le chiffre des unités ne change pas.',
+        explication: `${nb(n)} + ${nb(d)} = ${nb(r)}.`,
+      },
     }),
     ({ nombre: n, dizaines: d }, r) => ({
       enonce: `Capy est sur la case ${nb(n)}. Il avance de ${nb(d)} cases.`,
       question: 'Sur quelle case arrive-t-il ?',
       indice: 'Avance de dix en dix : le chiffre des unités reste le même.',
       explication: `${nb(n)} + ${nb(d)} = ${nb(r)}. Capy arrive sur la case ${nb(r)}.`,
+      facile: {
+        enonce: `Capy est sur la case ${nb(n)}. Il avance de ${nb(d)} cases.`,
+        question: 'Sur quelle case arrive Capy ?',
+        indice: 'Compte de dix en dix. Le chiffre des unités ne change pas.',
+        explication: `${nb(n)} + ${nb(d)} = ${nb(r)}. Capy arrive sur la case ${nb(r)}.`,
+      },
     }),
   ],
 });

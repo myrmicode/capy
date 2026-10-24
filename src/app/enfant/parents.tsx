@@ -2,11 +2,13 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 
+import { lireReglages, sontParDefaut } from '@/accessibilite/reglages';
 import { BarreProgression, Bouton, ControleParental, Ecran, Toile } from '@/composants';
 import { domainesDe, LIBELLES_MATIERES, MATIERES } from '@/config/domaines';
 import { niveauPourDomaine } from '@/parcours/niveau';
 import { themesProposes } from '@/parcours/selection';
 import { dateEnFrancais, dureeEnFrancais } from '@/parents/format';
+import { deverrouillerParents, parentsDeverrouilles } from '@/parents/verrou';
 import { dateLocale, serieDeJours, tempsDeLaSemaine } from '@/parcours/progression';
 import { seDeconnecter, supprimerCompte } from '@/serveur/compte';
 import { synchroniser } from '@/serveur/synchro';
@@ -18,12 +20,28 @@ import { couleurs, espaces, formes, typo } from '@/theme';
 
 /** Espace parent, derrière le contrôle parental. Il se reverrouille dès qu'on le quitte. */
 export default function EspaceParents() {
-  const [deverrouille, setDeverrouille] = useState(false);
-  useFocusEffect(useCallback(() => () => setDeverrouille(false), []));
+  // Le déverrouillage est partagé avec les réglages de lecture et de jeu, le temps d'y aller et revenir.
+  const [deverrouille, setDeverrouille] = useState(parentsDeverrouilles);
+  useFocusEffect(
+    useCallback(() => {
+      // Retour des réglages de lecture et de jeu : encore ouvert si le délai court toujours.
+      if (parentsDeverrouilles()) setDeverrouille(true);
+      return () => setDeverrouille(false);
+    }, []),
+  );
 
   return (
     <Ecran>
-      {deverrouille ? <ContenuParents /> : <ControleParental onReussi={() => setDeverrouille(true)} />}
+      {deverrouille ? (
+        <ContenuParents />
+      ) : (
+        <ControleParental
+          onReussi={() => {
+            deverrouillerParents();
+            setDeverrouille(true);
+          }}
+        />
+      )}
     </Ecran>
   );
 }
@@ -69,7 +87,9 @@ function ContenuParents() {
                 { niveaux: profil.toile!.actuelle, style: 'actuelle' },
               ]}
             />
-            <Text style={[typo.petit, styles.centre]}>Fiche saisie le {dateEnFrancais(profil.toile!.saisieLe[m]!)}.</Text>
+            <Text style={[typo.petit, styles.centre]}>
+              Fiche saisie le {dateEnFrancais(profil.toile!.saisieLe[m]!)}.
+            </Text>
           </View>
         ))}
         {profil.toile ? (
@@ -92,7 +112,10 @@ function ContenuParents() {
 
       <Section titre="En bref">
         <View style={styles.stats}>
-          <Statistique valeur={String(etapesReussies)} libelle={`étape${etapesReussies > 1 ? 's' : ''} réussie${etapesReussies > 1 ? 's' : ''}`} />
+          <Statistique
+            valeur={String(etapesReussies)}
+            libelle={`étape${etapesReussies > 1 ? 's' : ''} réussie${etapesReussies > 1 ? 's' : ''}`}
+          />
           <Statistique valeur={String(serie)} libelle={`jour${serie > 1 ? 's' : ''} d’affilée`} />
           <Statistique valeur={dureeEnFrancais(tempsDeLaSemaine(p, aujourdhui))} libelle="cette semaine" />
         </View>
@@ -110,7 +133,8 @@ function ContenuParents() {
             <View key={theme.id} style={styles.theme}>
               <Text style={typo.texteGras}>{theme.titre}</Text>
               <Text style={typo.petit}>
-                Exercices au niveau {['+', '++', '+++'][niveauPourDomaine(profil.toile, theme.domaine) - 1]}, objectif +++
+                Exercices au niveau {['+', '++', '+++'][niveauPourDomaine(profil.toile, theme.domaine) - 1]}, objectif
+                +++
               </Text>
               <View style={styles.ligneTheme}>
                 <BarreProgression valeur={faites / etapes.length} />
@@ -130,13 +154,35 @@ function ContenuParents() {
         ) : null}
       </Section>
 
+      <Section titre="Réglages de lecture et de jeu">
+        <Text style={typo.texte}>
+          {sontParDefaut(lireReglages(profil.reglages))
+            ? 'Réglages habituels.'
+            : 'Des réglages sont adaptés pour ' + profil.prenom + '.'}{' '}
+          Police, taille du texte, syllabes en couleur, lecture à voix haute, toucher au lieu de glisser, mode calme…
+        </Text>
+        <Bouton
+          titre="Adapter la lecture et les jeux"
+          variante="secondaire"
+          onPress={() =>
+            router.push({
+              pathname: '/reglages-lecture',
+              params: { profil: profil.id },
+            })
+          }
+        />
+      </Section>
+
       <Section titre="Réglages">
         <View style={styles.reglage}>
           <Text style={[typo.texte, styles.flex]}>Son doux après une bonne réponse</Text>
           <Switch
             value={sons}
             onValueChange={activerSons}
-            trackColor={{ true: couleurs.sarcelle[700], false: couleurs.gris[300] }}
+            trackColor={{
+              true: couleurs.sarcelle[700],
+              false: couleurs.gris[300],
+            }}
             thumbColor={couleurs.blanc}
             accessibilityLabel="Son doux après une bonne réponse"
           />
@@ -181,8 +227,8 @@ function SectionCompte() {
     return (
       <Section titre={titre}>
         <Text style={typo.texte}>
-          Capy fonctionne entièrement sans compte : tout reste sur cet appareil. Un compte sert seulement à retrouver
-          la progression sur un autre appareil.
+          Capy fonctionne entièrement sans compte : tout reste sur cet appareil. Un compte sert seulement à retrouver la
+          progression sur un autre appareil.
         </Text>
         <Bouton titre="Créer un compte ou se connecter" variante="secondaire" onPress={() => router.push('/compte')} />
       </Section>
@@ -191,7 +237,8 @@ function SectionCompte() {
 
   let etat = 'Synchronisation en attente.';
   if (synchro === 'en_cours') etat = 'Synchronisation en cours…';
-  else if (synchro === 'erreur') etat = 'La dernière synchronisation n’a pas abouti. Elle sera retentée automatiquement.';
+  else if (synchro === 'erreur')
+    etat = 'La dernière synchronisation n’a pas abouti. Elle sera retentée automatiquement.';
   else if (derniereSynchro) {
     const heure = new Date(derniereSynchro);
     etat = `Synchronisé à ${String(heure.getHours()).padStart(2, '0')} h ${String(heure.getMinutes()).padStart(2, '0')}.`;
@@ -266,6 +313,11 @@ const styles = StyleSheet.create({
   },
   theme: { gap: espaces.xs },
   ligneTheme: { flexDirection: 'row', alignItems: 'center', gap: espaces.m },
-  reglage: { flexDirection: 'row', alignItems: 'center', gap: espaces.m, minHeight: formes.cibleTactile },
+  reglage: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: espaces.m,
+    minHeight: formes.cibleTactile,
+  },
   flex: { flex: 1 },
 });

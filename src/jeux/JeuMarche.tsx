@@ -1,7 +1,8 @@
 // Mini-jeu « Le marché » : l'enfant glisse des fraises dans les paniers pour
 // construire la réponse (a paniers de b fraises), puis valide.
 // On peut aussi toucher un panier pour y ajouter une fraise (plus simple, et
-// accessible), et retirer une fraise avec le bouton « − ».
+// accessible), et retirer une fraise avec le bouton « − ». Avec « toucher puis
+// toucher », la fraise ne se glisse plus : on la touche, puis on touche un panier.
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View, type HostInstance } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
@@ -10,7 +11,8 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { Bouton, CarteEnonce, IconeFraise, IconeMoins } from '@/composants';
 import { nb } from '@/exercices';
-import { couleurs, espaces, formes, typo } from '@/theme';
+import { useThemeEnfant } from '@/accessibilite/contexte';
+import { couleurs, espaces, formes } from '@/theme';
 
 import type { PropsJeuNombre } from './types';
 
@@ -29,6 +31,9 @@ export function JeuMarche({ exercice, actif, onRepondre }: PropsJeuNombre) {
   const refsPaniers = useRef<(HostInstance | null)[]>([]);
   const zones = useRef<(Zone | undefined)[]>([]);
   const total = paniers.reduce((a, b) => a + b, 0);
+  const { typo, cible, reglages } = useThemeEnfant();
+  const toucherPuisToucher = reglages.toucherPuisToucher;
+  const [fraisePrise, setFraisePrise] = useState(false);
 
   const modifier = (i: number, delta: number) =>
     setPaniers((p) => p.map((n, j) => (j === i ? Math.max(0, Math.min(MAX_PAR_PANIER, n + delta)) : n)));
@@ -78,15 +83,34 @@ export function JeuMarche({ exercice, actif, onRepondre }: PropsJeuNombre) {
       <CarteEnonce enonce={exercice.enonce} question={exercice.question} />
 
       <View style={styles.etal}>
-        <GestureDetector gesture={glisser}>
-          <Animated.View
-            style={[styles.fraiseGlissable, styleFraise]}
-            accessibilityLabel="Fraise à glisser dans un panier"
+        {toucherPuisToucher ? (
+          <Pressable
+            onPress={() => setFraisePrise((p) => !p)}
+            disabled={!actif}
+            accessibilityRole="button"
+            accessibilityLabel={fraisePrise ? 'Fraise prise. Touche un panier pour la poser.' : 'Prendre une fraise'}
+            accessibilityState={{ selected: fraisePrise }}
+            style={[styles.fraiseGlissable, fraisePrise && styles.fraisePrise]}
           >
             <IconeFraise taille={56} />
-          </Animated.View>
-        </GestureDetector>
-        <Text style={[typo.texteGras, styles.flex]}>Glisse une fraise dans un panier, ou touche un panier.</Text>
+          </Pressable>
+        ) : (
+          <GestureDetector gesture={glisser}>
+            <Animated.View
+              style={[styles.fraiseGlissable, styleFraise]}
+              accessibilityLabel="Fraise à glisser dans un panier"
+            >
+              <IconeFraise taille={56} />
+            </Animated.View>
+          </GestureDetector>
+        )}
+        <Text style={[typo.texteGras, styles.flex]}>
+          {toucherPuisToucher
+            ? fraisePrise
+              ? 'Maintenant, touche un panier.'
+              : 'Touche la fraise, puis touche un panier.'
+            : 'Glisse une fraise dans un panier, ou touche un panier.'}
+        </Text>
       </View>
 
       <View style={styles.paniers}>
@@ -97,7 +121,10 @@ export function JeuMarche({ exercice, actif, onRepondre }: PropsJeuNombre) {
               refsPaniers.current[i] = vue;
             }}
             onLayout={mesurer}
-            onPress={() => modifier(i, 1)}
+            onPress={() => {
+              modifier(i, 1);
+              setFraisePrise(false);
+            }}
             disabled={!actif}
             accessibilityRole="button"
             accessibilityLabel={`Panier ${i + 1}, ${n} fraise${n > 1 ? 's' : ''}. Touche pour ajouter une fraise.`}
@@ -116,7 +143,11 @@ export function JeuMarche({ exercice, actif, onRepondre }: PropsJeuNombre) {
                 accessibilityRole="button"
                 accessibilityLabel={`Retirer une fraise du panier ${i + 1}`}
                 hitSlop={6}
-                style={[styles.retirer, n === 0 && styles.retirerVide]}
+                style={[
+                  styles.retirer,
+                  { width: cible, height: cible, borderRadius: cible / 2 },
+                  n === 0 && styles.retirerVide,
+                ]}
               >
                 <IconeMoins taille={20} couleur={couleurs.brun[800]} />
               </Pressable>
@@ -128,7 +159,11 @@ export function JeuMarche({ exercice, actif, onRepondre }: PropsJeuNombre) {
       <Text style={[typo.enonce, styles.total]}>
         Dans les paniers : {nb(total)} fraise{total > 1 ? 's' : ''}
       </Text>
-      <Bouton titre="Valider" desactive={!actif || total === 0} onPress={() => onRepondre(total === exercice.reponse)} />
+      <Bouton
+        titre="Valider"
+        desactive={!actif || total === 0}
+        onPress={() => onRepondre(total === exercice.reponse)}
+      />
     </View>
   );
 }
@@ -154,7 +189,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 10,
   },
-  paniers: { flexDirection: 'row', flexWrap: 'wrap', gap: espaces.m, justifyContent: 'center' },
+  fraisePrise: { borderWidth: 4, borderColor: couleurs.sarcelle[700] },
+  paniers: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: espaces.m,
+    justifyContent: 'center',
+  },
   panier: {
     width: 132,
     minHeight: 140,
@@ -167,13 +208,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   panierAppuye: { borderBottomWidth: 3, marginTop: 3 },
-  fraises: { flexDirection: 'row', flexWrap: 'wrap', gap: 2, justifyContent: 'center', minHeight: 70 },
-  piedPanier: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  fraises: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 2,
+    justifyContent: 'center',
+    minHeight: 70,
+  },
+  piedPanier: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   compte: { color: couleurs.brun[800] },
   retirer: {
-    width: formes.cibleTactile,
-    height: formes.cibleTactile,
-    borderRadius: formes.cibleTactile / 2,
     backgroundColor: couleurs.blanc,
     alignItems: 'center',
     justifyContent: 'center',

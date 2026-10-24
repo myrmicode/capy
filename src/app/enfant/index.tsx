@@ -1,7 +1,8 @@
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { avecReglagesEnfant, useThemeEnfant } from '@/accessibilite/contexte';
 import { BulleCapy, Bouton, Ecran, EtapeParcours, IconeEtoile, IconeFlamme } from '@/composants';
 import { domaineDe, LIBELLES_MATIERES, MATIERES } from '@/config/domaines';
 import type { Theme } from '@/config/parcours';
@@ -15,17 +16,22 @@ import {
   type Noeud,
 } from '@/parcours/progression';
 import { themesProposes } from '@/parcours/selection';
+import { verrouillerParents } from '@/parents/verrou';
 import { useProfilActif } from '@/store/profils';
 import { ficheSaisie, prioritesDe } from '@/toile/niveaux';
-import { couleurs, espaces, formes, typo } from '@/theme';
+import { couleurs, espaces, formes } from '@/theme';
 
 /** Décalages horizontaux du chemin en zigzag, répétés. */
 const ZIGZAG = [0, 56, 84, 56, 0, -56, -84, -56];
 /** Absence (en jours) à partir de laquelle Capy dit qu'on lui a manqué. */
 const ABSENCE_LONGUE = 3;
 
-export default function Parcours() {
+function Parcours() {
   const profil = useProfilActif();
+  const { typo, cible } = useThemeEnfant();
+  const gras = { fontFamily: typo.texteGras.fontFamily };
+  // Revenu sur son parcours, l'enfant ne retrouve jamais l'espace parent ouvert.
+  useFocusEffect(useCallback(() => verrouillerParents(), []));
   const [themeChoisiId, setThemeChoisiId] = useState<string | null>(null);
   if (!profil) return null;
 
@@ -49,9 +55,7 @@ export default function Parcours() {
   const entete = (
     <View style={styles.entete}>
       <View style={styles.flex}>
-        <Text style={typo.titre2} numberOfLines={1}>
-          {profil.prenom}
-        </Text>
+        <Text style={typo.titre2}>{profil.prenom}</Text>
         <Pressable onPress={() => router.replace('/')} accessibilityRole="button" hitSlop={10}>
           <Text style={[typo.petit, styles.lien]}>Changer d’enfant</Text>
         </Pressable>
@@ -78,7 +82,8 @@ export default function Parcours() {
     const fichesManquantes = MATIERES.filter((m) => !ficheSaisie(profil.toile, m));
     let texte: string;
     if (!profil.toile) {
-      texte = 'Pour commencer, demande à un parent de photographier les fiches de l’école. Je préparerai ton parcours avec !';
+      texte =
+        'Pour commencer, demande à un parent de photographier les fiches de l’école. Je préparerai ton parcours avec !';
     } else if (fichesManquantes.length > 0) {
       texte = `Bravo, ce que je sais faire travailler est déjà solide ! Il manque encore la fiche de ${LIBELLES_MATIERES[fichesManquantes[0]].toLowerCase()}.`;
     } else {
@@ -134,7 +139,7 @@ export default function Parcours() {
       {themes.length > 1
         ? matieresDesThemes.map((matiere) => (
             <View key={matiere} style={styles.rangee}>
-              <Text style={[typo.petit, styles.matiere]}>{LIBELLES_MATIERES[matiere]}</Text>
+              <Text style={[typo.petit, styles.matiere, gras]}>{LIBELLES_MATIERES[matiere]}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.themes}>
                 {themes
                   .filter((t) => matiereDuTheme(t) === matiere)
@@ -147,7 +152,7 @@ export default function Parcours() {
                         accessibilityRole="tab"
                         accessibilityState={{ selected: choisi }}
                         accessibilityLabel={`${t.titre}${priorites.has(t.domaine) ? ', priorité' : ''}`}
-                        style={[styles.puceTheme, choisi && styles.puceChoisie]}
+                        style={[styles.puceTheme, { minHeight: cible }, choisi && styles.puceChoisie]}
                       >
                         {priorites.has(t.domaine) ? <View style={styles.pointPriorite} /> : null}
                         <Text style={[typo.texteGras, choisi && styles.texteBlanc]}>{t.titre}</Text>
@@ -167,7 +172,7 @@ export default function Parcours() {
           <Text style={typo.titre2}>{theme.titre}</Text>
           {prioritaire ? (
             <View style={styles.priorite}>
-              <Text style={[typo.petit, styles.texteBlanc]}>Priorité</Text>
+              <Text style={[typo.petit, styles.texteBlanc, gras]}>Priorité</Text>
             </View>
           ) : null}
         </View>
@@ -192,10 +197,7 @@ export default function Parcours() {
                   onPress={() => ouvrir(n)}
                 />
                 {n.type === 'etape' ? (
-                  <Text
-                    style={[typo.petit, styles.titreEtape, n.etat === 'enCours' && styles.titreEnCours]}
-                    numberOfLines={1}
-                  >
+                  <Text style={[typo.petit, styles.titreEtape, n.etat === 'enCours' && [styles.titreEnCours, gras]]}>
                     {n.titre}
                   </Text>
                 ) : null}
@@ -216,6 +218,7 @@ interface PropsCompteur {
 }
 
 function Compteur({ icone, texte, libelle, fond, couleur }: PropsCompteur) {
+  const { typo } = useThemeEnfant();
   return (
     <View style={[styles.compteur, { backgroundColor: fond }]} accessible accessibilityLabel={libelle}>
       {icone}
@@ -237,7 +240,7 @@ const styles = StyleSheet.create({
     minHeight: formes.cibleTactile,
   },
   rangee: { gap: espaces.xs },
-  matiere: { color: couleurs.encreDouce, fontFamily: typo.texteGras.fontFamily },
+  matiere: { color: couleurs.encreDouce },
   themes: { gap: espaces.s, paddingVertical: espaces.xs },
   puceTheme: {
     flexDirection: 'row',
@@ -250,8 +253,16 @@ const styles = StyleSheet.create({
     borderColor: couleurs.bordure,
     backgroundColor: couleurs.blanc,
   },
-  puceChoisie: { backgroundColor: couleurs.sarcelle[700], borderColor: couleurs.sarcelle[700] },
-  pointPriorite: { width: 10, height: 10, borderRadius: 5, backgroundColor: couleurs.brun[600] },
+  puceChoisie: {
+    backgroundColor: couleurs.sarcelle[700],
+    borderColor: couleurs.sarcelle[700],
+  },
+  pointPriorite: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: couleurs.brun[600],
+  },
   bandeau: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -270,11 +281,13 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     marginTop: espaces.xs,
   },
-  texteBlanc: { color: couleurs.blanc, fontFamily: typo.texteGras.fontFamily },
+  texteBlanc: { color: couleurs.blanc },
   capyBandeau: { width: 120, height: 90, borderRadius: 16 },
   unite: { alignItems: 'center', gap: espaces.s, paddingTop: espaces.l },
   titreUnite: { color: couleurs.encreDouce, marginBottom: espaces.s },
   noeud: { alignItems: 'center' },
   titreEtape: { maxWidth: 160, textAlign: 'center' },
-  titreEnCours: { color: couleurs.sarcelle[900], fontFamily: typo.texteGras.fontFamily },
+  titreEnCours: { color: couleurs.sarcelle[900] },
 });
+
+export default avecReglagesEnfant(Parcours);

@@ -41,6 +41,12 @@ export const ajout = definirModele<{ depart: number; ajout: number }>({
       autresQuestions: ['Combien de billes Lina avait-elle au départ ?', 'De quelle couleur sont les billes ?'],
       indice: 'Capy reçoit des billes : en a-t-il plus ou moins qu’avant ? Faut-il ajouter ou enlever ?',
       explication: `Capy avait ${nb(a)} billes et en reçoit ${nb(b)}. On ajoute : ${nb(a)} + ${nb(b)} = ${nb(r)}. Capy a maintenant ${nb(r)} billes.`,
+      facile: {
+        enonce: `Capy a ${nb(a)} billes. Lina lui donne ${nb(b)} billes.`,
+        question: 'Combien de billes a Capy maintenant ?',
+        indice: 'Capy reçoit des billes. Il en a plus. Il faut ajouter.',
+        explication: `${nb(a)} + ${nb(b)} = ${nb(r)}. Capy a ${nb(r)} billes.`,
+      },
     }),
     ({ depart: a, ajout: b }, r) => ({
       enonce: `La bibliothèque de l’école a ${nb(a)} livres. Ce matin, on lui livre ${nb(b)} livres neufs.`,
@@ -48,6 +54,12 @@ export const ajout = definirModele<{ depart: number; ajout: number }>({
       autresQuestions: ['Combien de livres sont prêtés aujourd’hui ?', 'Combien de pages a le plus gros livre ?'],
       indice: 'Les livres neufs s’ajoutent à ceux qui étaient déjà là. Quelle opération faut-il faire ?',
       explication: `On réunit les livres : ${nb(a)} + ${nb(b)} = ${nb(r)}. La bibliothèque a ${nb(r)} livres.`,
+      facile: {
+        enonce: `La bibliothèque a ${nb(a)} livres. On apporte ${nb(b)} livres neufs.`,
+        question: 'Combien de livres a la bibliothèque maintenant ?',
+        indice: 'Des livres arrivent. Il y en a plus. Il faut ajouter.',
+        explication: `${nb(a)} + ${nb(b)} = ${nb(r)}. La bibliothèque a ${nb(r)} livres.`,
+      },
     }),
     ({ depart: a, ajout: b }, r) => ({
       enonce: `Capy fait ${nb(a)} pas pour aller au parc, puis ${nb(b)} pas pour aller jusqu’à la rivière.`,
@@ -55,6 +67,12 @@ export const ajout = definirModele<{ depart: number; ajout: number }>({
       autresQuestions: ['Combien de temps Capy a-t-il marché ?', 'Combien de pas fait Capy pour rentrer chez lui ?'],
       indice: 'On cherche le nombre total de pas. Pense à bien aligner les unités, les dizaines et les centaines.',
       explication: `En tout : ${nb(a)} + ${nb(b)} = ${nb(r)}. Capy a fait ${nb(r)} pas.`,
+      facile: {
+        enonce: `Capy fait ${nb(a)} pas. Puis il fait ${nb(b)} pas.`,
+        question: 'Combien de pas fait Capy en tout ?',
+        indice: 'En tout veut dire : tous les pas ensemble. Il faut ajouter.',
+        explication: `${nb(a)} + ${nb(b)} = ${nb(r)}. Capy fait ${nb(r)} pas.`,
+      },
     }),
   ],
 });

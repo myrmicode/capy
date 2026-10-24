@@ -6,7 +6,16 @@
  */
 import type { Alea } from '../../../alea';
 import type { NiveauDifficulte } from '../../../types';
-import { explicationDictee, fautesTypiques, indiceDictee, MOTS_DICTEE, MOTS_OUTILS, type MotDictee } from '../../dictee';
+import {
+  explicationDictee,
+  explicationDicteeFacile,
+  fautesTypiques,
+  indiceDictee,
+  indiceDicteeFacile,
+  MOTS_DICTEE,
+  MOTS_OUTILS,
+  type MotDictee,
+} from '../../dictee';
 import { definirModeleTexte, majuscule, type ContenuTexte } from '../../moteur';
 
 /** Ce qui remplace le mot dans la phrase affichée. */
@@ -34,6 +43,11 @@ function dicter(alea: Alea, mot: MotDictee): ContenuTexte {
     distracteurs: alea.melanger(fautesTypiques(mot.mot)),
     indice: indiceDictee(mot),
     explication: explicationDictee(mot),
+    facile: {
+      question: 'Comment s’écrit le mot de Capy ?',
+      indice: indiceDicteeFacile(mot),
+      explication: explicationDicteeFacile(mot),
+    },
   };
 }
 

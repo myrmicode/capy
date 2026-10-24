@@ -119,3 +119,13 @@ La fonction d'analyse sait maintenant lire les deux fiches (niveaux + / ++ / +++
 ```
 npx supabase functions deploy analyser-toile --use-api
 ```
+
+---
+
+# Réglages de lecture et de jeu (accessibilité)
+
+```
+npx supabase db push
+```
+
+Ajoute la colonne `reglages` à `profils_enfants` : police, taille du texte, toucher au lieu de glisser… Aucune donnée de santé : seulement les réglages eux-mêmes, relus champ par champ par l'appli. Sans cette commande, l'appli fonctionne, mais la synchronisation échoue tant que la colonne n'existe pas.

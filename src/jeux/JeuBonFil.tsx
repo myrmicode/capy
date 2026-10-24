@@ -9,14 +9,19 @@ import Svg, { Circle, Line } from 'react-native-svg';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { CarteEnonce, SurfaceEnRelief } from '@/composants';
-import { couleurs, espaces, formes, polices } from '@/theme';
+import { useThemeEnfant } from '@/accessibilite/contexte';
+import { couleurs, espaces, formes } from '@/theme';
 
 import { OPERATIONS_BON_FIL } from './registre';
 import type { PropsJeuNombre } from './types';
 
 type OperationFil = (typeof OPERATIONS_BON_FIL)[number];
 
-const NOMS: Record<OperationFil, string> = { '+': 'plus', '−': 'moins', '×': 'fois' };
+const NOMS: Record<OperationFil, string> = {
+  '+': 'plus',
+  '−': 'moins',
+  '×': 'fois',
+};
 const ESPACE_FIL = 140;
 const TAILLE_OPERATION = 84;
 const RAYON_BOBINE = 16;
@@ -29,10 +34,15 @@ export function JeuBonFil({ exercice, actif, onRepondre }: PropsJeuNombre) {
   const [largeur, setLargeur] = useState(0);
   const [hauteurHistoire, setHauteurHistoire] = useState(0);
   const [relie, setRelie] = useState<OperationFil | null>(null);
+  const { typo, reglages } = useThemeEnfant();
 
   const bobine = { x: largeur / 2, y: hauteurHistoire + RAYON_BOBINE };
   const yOperations = hauteurHistoire + ESPACE_FIL + TAILLE_OPERATION / 2;
-  const centres = OPERATIONS_BON_FIL.map((op, i) => ({ op, x: (largeur * (2 * i + 1)) / 6, y: yOperations }));
+  const centres = OPERATIONS_BON_FIL.map((op, i) => ({
+    op,
+    x: (largeur * (2 * i + 1)) / 6,
+    y: yOperations,
+  }));
 
   const relier = (op: OperationFil) => {
     if (!actif) return;
@@ -56,8 +66,9 @@ export function JeuBonFil({ exercice, actif, onRepondre }: PropsJeuNombre) {
   const finY = useSharedValue(0);
   const trace = useSharedValue(false);
 
+  // Avec « toucher puis toucher », pas de tracé : on touche l'opération.
   const tracer = usePanGesture({
-    enabled: actif,
+    enabled: actif && !reglages.toucherPuisToucher,
     minDistance: 2,
     onActivate: (e) => {
       // Le fil ne part que si le doigt a commencé sur la bobine.
@@ -139,10 +150,13 @@ export function JeuBonFil({ exercice, actif, onRepondre }: PropsJeuNombre) {
                   rayon={TAILLE_OPERATION / 2}
                   style={[
                     styles.operation,
-                    { left: x - TAILLE_OPERATION / 2, top: yOperations - TAILLE_OPERATION / 2 },
+                    {
+                      left: x - TAILLE_OPERATION / 2,
+                      top: yOperations - TAILLE_OPERATION / 2,
+                    },
                   ]}
                 >
-                  <Text style={styles.signe}>{op}</Text>
+                  <Text style={[styles.signe, { fontFamily: typo.nombreReponse.fontFamily }]}>{op}</Text>
                 </SurfaceEnRelief>
               );
             })}
@@ -161,5 +175,5 @@ const styles = StyleSheet.create({
     width: TAILLE_OPERATION,
     height: TAILLE_OPERATION + formes.tuile.relief,
   },
-  signe: { fontFamily: polices.fredokaGras, fontSize: 48, lineHeight: 56, color: couleurs.encre },
+  signe: { fontSize: 48, lineHeight: 56, color: couleurs.encre },
 });

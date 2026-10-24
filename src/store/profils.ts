@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import { lireReglages, type ReglagesEnfant } from '@/accessibilite/reglages';
 import type { Classe } from '@/config/classes';
 import type { DomaineId, Matiere } from '@/config/domaines';
 import * as progression from '@/parcours/progression';
@@ -10,7 +11,8 @@ import { appliquerFiche, migrerToile, toileApresEtape, type Niveaux, type ToileE
 
 /**
  * Profil d'un enfant. Règle non négociable : on ne stocke que le prénom ou
- * surnom, la classe, les niveaux de la toile et la progression. Jamais de nom
+ * surnom, la classe, les niveaux de la toile, la progression et les réglages de
+ * lecture et de jeu (jamais leur raison). Jamais de nom
  * de famille, d'école, de date de naissance, de photo ni de voix.
  * La toile est absente tant que le parent n'a saisi aucune fiche de l'école.
  */
@@ -20,6 +22,11 @@ export interface ProfilEnfant {
   classe: Classe;
   progression: ProgressionEnfant;
   toile?: ToileEnfant;
+  /**
+   * Réglages de lecture et de jeu (police, taille, toucher puis toucher…). Jamais
+   * de diagnostic ni de raison : seulement les réglages eux-mêmes.
+   */
+  reglages?: ReglagesEnfant;
   /** Date (ISO) de la dernière modification, pour fusionner entre appareils. */
   modifieLe: string;
   /** Date (ISO) de la dernière synchronisation avec le compte ; propre à l'appareil, jamais envoyée. */
@@ -44,6 +51,7 @@ interface EtatProfils {
   /** Enregistre la fiche d'une matière : elle devient la référence de cette matière. */
   enregistrerToile: (id: string, matiere: Matiere, niveaux: Niveaux, maintenant?: Date) => void;
   ouvrirCoffre: (id: string, coffreId: string) => void;
+  modifierReglages: (id: string, reglages: ReglagesEnfant) => void;
   /** Résultat d'une synchronisation : nouvelle liste de profils, suppressions envoyées au serveur. */
   appliquerSynchro: (profils: ProfilEnfant[], suppressionsTraitees: string[]) => void;
   /** Après une déconnexion : les profils ne sont plus liés à un compte. */
@@ -58,7 +66,11 @@ export const useProfils = create<EtatProfils>()(
   persist(
     (set) => {
       /** Modifie un profil et note la date de modification. */
-      const modifier = (id: string, maj: (p: ProfilEnfant, maintenant: Date) => Partial<ProfilEnfant>, maintenant = new Date()) =>
+      const modifier = (
+        id: string,
+        maj: (p: ProfilEnfant, maintenant: Date) => Partial<ProfilEnfant>,
+        maintenant = new Date(),
+      ) =>
         set((etat) => ({
           profils: etat.profils.map((p) =>
             p.id === id ? { ...p, ...maj(p, maintenant), modifieLe: maintenant.toISOString() } : p,
@@ -117,6 +129,7 @@ export const useProfils = create<EtatProfils>()(
           ),
         ouvrirCoffre: (id, coffreId) =>
           modifier(id, (p) => ({ progression: progression.ouvrirCoffre(p.progression, coffreId) })),
+        modifierReglages: (id, reglages) => modifier(id, () => ({ reglages: lireReglages(reglages) })),
         appliquerSynchro: (profils, suppressionsTraitees) =>
           set((etat) => ({
             profils,
@@ -132,9 +145,13 @@ export const useProfils = create<EtatProfils>()(
     },
     {
       name: 'capy-profils',
-      version: 4,
+      version: 5,
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: ({ profils, profilActifId, suppressionsEnAttente }) => ({ profils, profilActifId, suppressionsEnAttente }),
+      partialize: ({ profils, profilActifId, suppressionsEnAttente }) => ({
+        profils,
+        profilActifId,
+        suppressionsEnAttente,
+      }),
       migrate: (ancien, version) => {
         const etat = ancien as { profils: Partial<ProfilEnfant>[]; profilActifId: string | null };
         let profils = etat.profils;
@@ -143,7 +160,10 @@ export const useProfils = create<EtatProfils>()(
         // Version 2 (phases 4 à 6) : pas encore de date de modification.
         if (version < 3) profils = profils.map((p) => ({ ...p, modifieLe: p.modifieLe ?? new Date().toISOString() }));
         // Version 3 (jusqu'à la phase 8) : une seule toile, aux axes provisoires.
-        if (version < 4) profils = profils.map((p) => ({ ...p, toile: p.classe ? migrerToile(p.toile, p.classe) : undefined }));
+        if (version < 4)
+          profils = profils.map((p) => ({ ...p, toile: p.classe ? migrerToile(p.toile, p.classe) : undefined }));
+        // Version 4 (jusqu.à la dictée et la lecture) : pas encore de réglages de lecture et de jeu.
+        if (version < 5) profils = profils.map((p) => ({ ...p, reglages: lireReglages(p.reglages) }));
         return { ...etat, profils: profils as ProfilEnfant[], suppressionsEnAttente: [] };
       },
     },

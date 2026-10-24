@@ -18,6 +18,8 @@ interface QuestionTexte {
   preuve: number;
   /** Consigne du jeu « La bonne phrase ». */
   consignePreuve: string;
+  /** Version FALC de la consigne, quand la consigne standard est trop longue. */
+  consignePreuveFacile?: string;
   indice: string;
   /** La réponse n'est pas écrite telle quelle : il faut la déduire. */
   deduite?: boolean;
@@ -34,10 +36,26 @@ const autres = (valeurs: readonly string[], reponse: string, erreur: string): Di
 // --- Histoire 1 : l'objet perdu ---
 
 const SORTIES = [
-  { lieu: 'au parc', activite: 'jouent au ballon', cachettes: ['sous un banc', 'derrière un arbre', 'près du toboggan'] },
-  { lieu: 'à la plage', activite: 'construisent un château de sable', cachettes: ['dans le sable', 'sous une serviette', 'près des rochers'] },
-  { lieu: 'à la bibliothèque', activite: 'lisent des histoires de pirates', cachettes: ['sous une table', 'derrière une étagère', 'près de la porte'] },
-  { lieu: 'au marché', activite: 'achètent des pommes', cachettes: ['sous un stand', 'près de la fontaine', 'dans un panier vide'] },
+  {
+    lieu: 'au parc',
+    activite: 'jouent au ballon',
+    cachettes: ['sous un banc', 'derrière un arbre', 'près du toboggan'],
+  },
+  {
+    lieu: 'à la plage',
+    activite: 'construisent un château de sable',
+    cachettes: ['dans le sable', 'sous une serviette', 'près des rochers'],
+  },
+  {
+    lieu: 'à la bibliothèque',
+    activite: 'lisent des histoires de pirates',
+    cachettes: ['sous une table', 'derrière une étagère', 'près de la porte'],
+  },
+  {
+    lieu: 'au marché',
+    activite: 'achètent des pommes',
+    cachettes: ['sous un stand', 'près de la fontaine', 'dans un panier vide'],
+  },
 ] as const;
 
 const OBJETS_PERDUS = [
@@ -72,8 +90,12 @@ function objetPerdu(alea: Alea, niveau: NiveauDifficulte): Histoire {
     `${majuscule(ils(p, q))} ${sortie.activite}.`,
     `Soudain, ${p.nom} ne trouve plus ${objet.son}.`,
     ...(niveau > 1 ? [`${majuscule(il(p))} cherche partout.`] : []),
-    niveau === 1 ? `${q.nom} retrouve ${objet.le} ${cachette}.` : `C’est ${q.nom} qui ${objet.pronom} retrouve ${cachette}.`,
-    deduire ? `${p.nom} saute de joie et fait un gros câlin à ${q.nom}.` : `${p.nom} est ${content} et dit merci à ${q.nom}.`,
+    niveau === 1
+      ? `${q.nom} retrouve ${objet.le} ${cachette}.`
+      : `C’est ${q.nom} qui ${objet.pronom} retrouve ${cachette}.`,
+    deduire
+      ? `${p.nom} saute de joie et fait un gros câlin à ${q.nom}.`
+      : `${p.nom} est ${content} et dit merci à ${q.nom}.`,
   ];
   const n = phrases.length;
   const toutesCachettes = SORTIES.flatMap((s) => s.cachettes);
@@ -84,7 +106,11 @@ function objetPerdu(alea: Alea, niveau: NiveauDifficulte): Histoire {
       niveau: 1,
       question: `Où vont ${p.nom} et ${q.nom} ?`,
       reponse: sortie.lieu,
-      distracteurs: autres(SORTIES.map((s) => s.lieu), sortie.lieu, 'autre lieu'),
+      distracteurs: autres(
+        SORTIES.map((s) => s.lieu),
+        sortie.lieu,
+        'autre lieu',
+      ),
       preuve: 0,
       consignePreuve: `Touche la phrase qui dit où vont ${p.nom} et ${q.nom}.`,
       indice: 'Relis le début de l’histoire.',
@@ -93,7 +119,11 @@ function objetPerdu(alea: Alea, niveau: NiveauDifficulte): Histoire {
       niveau: 1,
       question: `Qu’est-ce que ${p.nom} a perdu ?`,
       reponse: objet.son,
-      distracteurs: autres(OBJETS_PERDUS.map((o) => o.son), objet.son, 'objet absent du texte'),
+      distracteurs: autres(
+        OBJETS_PERDUS.map((o) => o.son),
+        objet.son,
+        'objet absent du texte',
+      ),
       preuve: 2,
       consignePreuve: `Touche la phrase qui dit ce que ${p.nom} a perdu.`,
       indice: 'Cherche le moment où quelque chose ne va plus.',
@@ -171,6 +201,7 @@ function objetPerdu(alea: Alea, niveau: NiveauDifficulte): Histoire {
         distracteurs: autres(['le matin', 'le soir', 'à midi', 'la nuit'], soleil.moment, 'moment non justifié'),
         preuve: 0,
         consignePreuve: 'Touche la phrase qui aide à savoir à quel moment de la journée se passe l’histoire.',
+        consignePreuveFacile: 'À quel moment se passe l’histoire ? Touche la phrase qui aide.',
         indice: 'Regarde ce que fait le soleil.',
         deduite: true,
       },
@@ -238,7 +269,11 @@ function anniversaire(alea: Alea, niveau: NiveauDifficulte): Histoire {
       niveau: 1,
       question: 'Pour qui est la surprise ?',
       reponse: `pour ${fete.nom}`,
-      distracteurs: autres(FETES.map((f) => `pour ${f.nom}`), `pour ${fete.nom}`, 'autre personne'),
+      distracteurs: autres(
+        FETES.map((f) => `pour ${f.nom}`),
+        `pour ${fete.nom}`,
+        'autre personne',
+      ),
       preuve: 0,
       consignePreuve: 'Touche la phrase qui dit pour qui est la surprise.',
       indice: 'Relis le début de l’histoire.',
@@ -247,7 +282,11 @@ function anniversaire(alea: Alea, niveau: NiveauDifficulte): Histoire {
       niveau: 1,
       question: `Quel gâteau font ${p.nom} et ${q.nom} ?`,
       reponse: `un gâteau ${parfum.gateau}`,
-      distracteurs: autres(PARFUMS.map((x) => `un gâteau ${x.gateau}`), `un gâteau ${parfum.gateau}`, 'autre gâteau'),
+      distracteurs: autres(
+        PARFUMS.map((x) => `un gâteau ${x.gateau}`),
+        `un gâteau ${parfum.gateau}`,
+        'autre gâteau',
+      ),
       preuve: 2,
       consignePreuve: `Touche la phrase qui dit quel gâteau font ${p.nom} et ${q.nom}.`,
       indice: 'Cherche la phrase où les enfants cuisinent.',
@@ -309,6 +348,7 @@ function anniversaire(alea: Alea, niveau: NiveauDifficulte): Histoire {
         ],
         preuve: 2,
         consignePreuve: `Touche la phrase qui aide à comprendre pourquoi ${p.nom} et ${q.nom} font des courses.`,
+        consignePreuveFacile: 'Pourquoi les enfants font-ils des courses ? Touche la phrase qui aide.',
         indice: 'Regarde ce que font les enfants juste après les courses.',
         deduite: true,
       },
@@ -347,6 +387,13 @@ export const questionsTexte = definirModeleTexte({
       explication: q.deduite
         ? `Le texte ne le dit pas avec ces mots, mais « ${preuve} » le montre. La réponse est « ${q.reponse} ».`
         : `Le texte dit : « ${preuve} » La réponse est « ${q.reponse} ».`,
+      ...(q.deduite
+        ? {
+            facile: {
+              explication: `Le texte ne le dit pas. Mais « ${preuve} » le montre. La réponse est « ${q.reponse} ».`,
+            },
+          }
+        : {}),
     };
   },
 });
@@ -364,8 +411,11 @@ export const preuveTexte = definirModeleTexte({
     return {
       enonce: histoire.phrases.join(' '),
       question: q.consignePreuve,
+      ...(q.consignePreuveFacile ? { facile: { question: q.consignePreuveFacile } } : {}),
       reponse,
-      distracteurs: histoire.phrases.filter((p) => p !== reponse).map((valeur) => ({ valeur, erreur: 'phrase qui ne répond pas' })),
+      distracteurs: histoire.phrases
+        .filter((p) => p !== reponse)
+        .map((valeur) => ({ valeur, erreur: 'phrase qui ne répond pas' })),
       phrases: histoire.phrases,
       lectureAutonome: true,
       indice: 'Relis les phrases une par une. Pour chacune, demande-toi si elle répond à la question.',

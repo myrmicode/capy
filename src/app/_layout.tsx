@@ -1,3 +1,4 @@
+import { Andika_400Regular, Andika_700Bold } from '@expo-google-fonts/andika';
 import { Caveat_600SemiBold } from '@expo-google-fonts/caveat';
 import { Fredoka_600SemiBold, Fredoka_700Bold } from '@expo-google-fonts/fredoka';
 import { Nunito_600SemiBold, Nunito_700Bold, Nunito_800ExtraBold } from '@expo-google-fonts/nunito';
@@ -23,6 +24,13 @@ export default function RacineLayout() {
     Nunito_700Bold,
     Nunito_800ExtraBold,
     Caveat_600SemiBold,
+    // Polices de lecture proposées dans les réglages (licences : LICENCES.md).
+    Andika_400Regular,
+    Andika_700Bold,
+    'Luciole-Regular': require('../../assets/fonts/Luciole-Regular.ttf'),
+    'Luciole-Bold': require('../../assets/fonts/Luciole-Bold.ttf'),
+    'OpenDyslexic-Regular': require('../../assets/fonts/OpenDyslexic-Regular.otf'),
+    'OpenDyslexic-Bold': require('../../assets/fonts/OpenDyslexic-Bold.otf'),
   });
   const donneesPretes = useHydratation();
   const pret = (policesChargees || erreurPolices !== null) && donneesPretes;

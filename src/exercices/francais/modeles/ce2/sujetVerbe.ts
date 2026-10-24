@@ -58,7 +58,12 @@ export const sujetEtVerbe = definirModeleTexte({
       reponse,
       distracteurs: autres.map((t) => ({
         valeur: t,
-        erreur: t === verbe ? 'verbe au lieu du sujet' : t === texteSujet ? 'sujet au lieu du verbe' : 'complément au lieu du sujet ou du verbe',
+        erreur:
+          t === verbe
+            ? 'verbe au lieu du sujet'
+            : t === texteSujet
+              ? 'sujet au lieu du verbe'
+              : 'complément au lieu du sujet ou du verbe',
       })),
       segments,
       indice:
@@ -66,6 +71,13 @@ export const sujetEtVerbe = definirModeleTexte({
           ? `Repère d’abord le verbe, puis pose la question « Qui est-ce qui ${conjuguer(infinitif, 'present', 2)} ${groupeComplement} ? ».`
           : 'Le verbe change si on dit « hier » ou « demain ». Repère le mot qui change.',
       explication: `« ${verbe} » est le verbe (${infinitif}). Qui est-ce qui ${conjuguer(infinitif, 'present', 2)} ${groupeComplement} ? ${pluriel ? 'Ce sont' : 'C’est'} « ${sujetDansLExplication} » : c’est le groupe sujet.`,
+      facile: {
+        indice:
+          cherche === 'sujet'
+            ? `Trouve le verbe. Puis demande : « Qui est-ce qui ${conjuguer(infinitif, 'present', 2)} ${groupeComplement} ? »`
+            : 'Le verbe change si on dit « hier » ou « demain ».',
+        explication: `Le verbe est « ${verbe} ». Le groupe sujet est « ${sujetDansLExplication} ».`,
+      },
     };
   },
 });

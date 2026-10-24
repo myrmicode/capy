@@ -7,6 +7,7 @@ import { FAMILLES } from '../../lexique';
 import { definirModeleTexte } from '../../moteur';
 
 const INDICE = 'Des mots de la même famille se ressemblent ET parlent de la même chose.';
+const INDICE_FACILE = 'Les mots d’une famille se ressemblent. Ils parlent de la même chose.';
 
 export const memeFamille = definirModeleTexte({
   id: 'meme-famille',
@@ -32,6 +33,10 @@ export const memeFamille = definirModeleTexte({
       explication:
         `« ${reponse} » est de la même famille que « ${famille.mot} » : ils ont une partie commune et parlent de la même chose.` +
         (avecPiege ? ` « ${famille.piege} » lui ressemble, mais son sens n’a rien à voir.` : ''),
+      facile: {
+        indice: INDICE_FACILE,
+        explication: `« ${reponse} » est de la famille de « ${famille.mot} ». Ils parlent de la même chose.`,
+      },
     };
   },
 });
@@ -50,9 +55,16 @@ export const intrus = definirModeleTexte({
       enonce: mots.join(', '),
       question: 'Quel mot n’est pas de la même famille que les autres ?',
       reponse: piege,
-      distracteurs: mots.filter((m) => m !== piege).map((m) => ({ valeur: m, erreur: 'mot de la famille pris pour l’intrus' })),
+      distracteurs: mots
+        .filter((m) => m !== piege)
+        .map((m) => ({ valeur: m, erreur: 'mot de la famille pris pour l’intrus' })),
       indice: INDICE,
       explication: `« ${piege} » ressemble à « ${famille.mot} », mais il ne parle pas de la même chose : c’est l’intrus.`,
+      facile: {
+        question: 'Quel mot n’est pas de la famille ?',
+        indice: INDICE_FACILE,
+        explication: `« ${piege} » n’est pas de la famille. Il parle d’autre chose.`,
+      },
     };
   },
 });

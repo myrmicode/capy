@@ -41,6 +41,12 @@ export const groupements = definirModele<{ groupes: number; parGroupe: number }>
       autresQuestions: ['Combien coûte un paquet de fraises ?', 'Combien de fraises Capy a-t-il mangées hier ?'],
       indice: `Chaque paquet contient ${nb(b)} fraises. Combien de fois dois-tu compter ${nb(b)} fraises ?`,
       explication: `${nb(a)} paquets de ${nb(b)} fraises, c’est ${nb(b)} pris ${nb(a)} fois : ${nb(a)} × ${nb(b)} = ${nb(r)}. Capy a ${nb(r)} fraises.`,
+      facile: {
+        enonce: `Capy achète ${nb(a)} paquets. Dans chaque paquet, il y a ${nb(b)} fraises.`,
+        question: 'Combien de fraises a Capy en tout ?',
+        indice: `Compte ${nb(b)} fraises pour chaque paquet.`,
+        explication: `${nb(a)} fois ${nb(b)} fraises : ${nb(a)} × ${nb(b)} = ${nb(r)}. Capy a ${nb(r)} fraises.`,
+      },
     }),
     ({ groupes: a, parGroupe: b }, r) => ({
       enonce: `Pour le goûter, Capy prépare ${nb(a)} assiettes. Sur chaque assiette, il pose ${nb(b)} biscuits.`,
@@ -48,13 +54,28 @@ export const groupements = definirModele<{ groupes: number; parGroupe: number }>
       autresQuestions: ['Combien d’amis viennent au goûter ?', 'Quel est le parfum des biscuits ?'],
       indice: `Il y a ${nb(b)} biscuits sur chaque assiette. Combien d’assiettes faut-il compter ?`,
       explication: `${nb(a)} assiettes de ${nb(b)} biscuits : ${nb(a)} × ${nb(b)} = ${nb(r)}. Capy a posé ${nb(r)} biscuits.`,
+      facile: {
+        enonce: `Capy prépare ${nb(a)} assiettes. Il met ${nb(b)} biscuits sur chaque assiette.`,
+        question: 'Combien de biscuits y a-t-il en tout ?',
+        indice: `Compte ${nb(b)} biscuits pour chaque assiette.`,
+        explication: `${nb(a)} × ${nb(b)} = ${nb(r)}. Il y a ${nb(r)} biscuits.`,
+      },
     }),
     ({ groupes: a, parGroupe: b }, r) => ({
       enonce: `Dans le potager, il y a ${nb(a)} rangées. Dans chaque rangée, il y a ${nb(b)} salades.`,
       question: 'Combien de salades y a-t-il dans le potager ?',
-      autresQuestions: ['Combien de tomates y a-t-il dans le potager ?', 'Combien de temps faut-il pour arroser le potager ?'],
+      autresQuestions: [
+        'Combien de tomates y a-t-il dans le potager ?',
+        'Combien de temps faut-il pour arroser le potager ?',
+      ],
       indice: `Chaque rangée a le même nombre de salades. Tu peux ajouter ${nb(b)} pour chaque rangée.`,
       explication: `${nb(a)} rangées de ${nb(b)} salades : ${nb(a)} × ${nb(b)} = ${nb(r)}. Il y a ${nb(r)} salades.`,
+      facile: {
+        enonce: `Le potager a ${nb(a)} rangées. Chaque rangée a ${nb(b)} salades.`,
+        question: 'Combien de salades y a-t-il en tout ?',
+        indice: `Compte ${nb(b)} salades pour chaque rangée.`,
+        explication: `${nb(a)} × ${nb(b)} = ${nb(r)}. Il y a ${nb(r)} salades.`,
+      },
     }),
   ],
 });

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { REGLAGES_PAR_DEFAUT } from '@/accessibilite/reglages';
 import { progressionVide } from '@/parcours/progression';
 import { useProfils } from '@/store/profils';
 
@@ -11,6 +12,7 @@ interface Ligne {
   classe: string;
   progression: ReturnType<typeof progressionVide>;
   toile: null;
+  reglages?: unknown;
   modifie_le: string;
 }
 
@@ -66,7 +68,9 @@ it('envoie les profils de l’appareil et récupère ceux d’un autre appareil'
 
   expect(table.get(lou.id)).toMatchObject({ prenom: 'Lou', classe: 'CE2', toile: null });
   // Seules les colonnes prévues partent au serveur.
-  expect(Object.keys(table.get(lou.id)!).sort()).toEqual(['classe', 'id', 'modifie_le', 'prenom', 'progression', 'toile']);
+  expect(Object.keys(table.get(lou.id)!).sort()).toEqual(['classe', 'id', 'modifie_le', 'prenom', 'progression', 'reglages', 'toile']);
+  // Les réglages ne contiennent que des réglages d'affichage et de jeu, jamais leur raison.
+  expect(Object.keys(table.get(lou.id)!.reglages as object).sort()).toEqual(Object.keys(REGLAGES_PAR_DEFAUT).sort());
   const profils = useProfils.getState().profils;
   expect(profils.map((p) => p.prenom).sort()).toEqual(['Lou', 'Tim']);
   expect(profils.every((p) => p.synchroniseLe)).toBe(true);

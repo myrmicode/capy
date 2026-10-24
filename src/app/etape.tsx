@@ -2,7 +2,12 @@ import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { adapterExercice, DOMAINES_SANS_TABLE, nombreDeQuestions } from '@/accessibilite/adaptation';
+import { avecReglagesEnfant, useThemeEnfant } from '@/accessibilite/contexte';
+import { ContexteExplications, type Explications } from '@/accessibilite/explications';
+import { TexteAccessible } from '@/accessibilite/TexteAccessible';
 import {
+  AideNombres,
   BarreProgression,
   BulleCapy,
   Bouton,
@@ -12,34 +17,56 @@ import {
   IconeEtoile,
   IconeHautParleur,
   PanneauRetour,
+  TableConsultable,
 } from '@/composants';
 import { trouverEtape } from '@/config/parcours';
+import { MOTS_EXPLIQUES } from '@/contenu/motsExpliques';
+import type { ExerciceQuelconque } from '@/exercices';
 import { COMPOSANTS_JEUX, JEUX, type JeuId } from '@/jeux';
-import { arreterLecture, lireAVoixHaute, feliciter } from '@/jeux/retours';
+import { consigneDe, type DefinitionJeu } from '@/jeux/registre';
+import { arreterLecture, feliciter, lireAVoixHaute } from '@/jeux/retours';
 import { mascotte } from '@/mascotte';
-import { avancement, derouler, etatInitial } from '@/parcours/deroulement';
+import { avancement, derouler, etatInitial, pauseDue, resteEnMots } from '@/parcours/deroulement';
 import { genererEtape } from '@/parcours/etape';
 import { niveauPourDomaine } from '@/parcours/niveau';
 import { etoilesPour, graineDePartie } from '@/parcours/progression';
 import { themeEstPropose } from '@/parcours/selection';
 import { useProfilActif, useProfils } from '@/store/profils';
-import { couleurs, espaces, formes, typo } from '@/theme';
+import { couleurs, espaces, formes } from '@/theme';
 
 /** Jeux où l'on glisse le doigt : l'écran ne défile pas pendant la question. */
 const JEUX_A_GLISSER: readonly JeuId[] = ['marche', 'bonFil', 'funambule'];
 /** Jeux qui gardent leur état quand l'enfant réessaie (il ajuste au lieu de tout refaire). */
 const JEUX_QUI_GARDENT_LEUR_ETAT: readonly JeuId[] = ['marche', 'funambule', 'dictee'];
+/** Jeux où les aides visuelles de calcul n'ont pas de sens (le fil gradué est déjà une aide). */
+const JEUX_SANS_AIDE_NOMBRES: readonly JeuId[] = ['funambule'];
 
 /** Au-delà, on considère que l'enfant a fait une pause : le temps n'est pas compté. */
 const DUREE_MAX_SECONDES = 30 * 60;
 
+/**
+ * Ce que Capy lit pour une question : la consigne, puis l'énoncé et la question.
+ * La question perdue lit les trois questions ; la dictée dit le mot ; en
+ * compréhension de lecture, l'enfant lit le texte seul.
+ */
+export function textesALire(jeuId: JeuId, consigne: string, ex: ExerciceQuelconque): string[] {
+  if (ex.nature === 'nombre' && ex.questionsAuChoix && jeuId === 'questionPerdue') {
+    return [consigne, ex.enonce, ...ex.questionsAuChoix];
+  }
+  if (ex.nature === 'texte' && ex.lecture) return [consigne, ex.lecture];
+  if (ex.nature === 'texte' && ex.lectureAutonome) return [consigne, ex.question];
+  return [consigne, ex.enonce, ex.question];
+}
+
 /** Une étape du parcours : quelques questions qui mélangent les mini-jeux. */
-export default function EcranEtape() {
+function EcranEtape() {
   const profil = useProfilActif();
   const enregistrerEtape = useProfils((e) => e.enregistrerEtape);
   const { etape: etapeId = '' } = useLocalSearchParams<{ etape?: string }>();
   const trouvee = useMemo(() => trouverEtape(etapeId), [etapeId]);
   const domaine = trouvee?.theme.domaine;
+  const theme = useThemeEnfant();
+  const { reglages, typo } = theme;
 
   // Chaque partie (et chaque « Rejouer ») tire de nouveaux exercices, de façon reproductible.
   const [foisAuDepart] = useState(() => profil?.progression.etapes[etapeId]?.fois ?? 0);
@@ -49,24 +76,51 @@ export default function EcranEtape() {
   const [niveauEtape, setNiveauEtape] = useState(() => (domaine ? niveauPourDomaine(profil?.toile, domaine) : 1));
   const graine = profil ? graineDePartie(profil.id, etapeId, foisAuDepart + partie) : 0;
   const classe = profil?.classe;
+  const nbQuestions = trouvee ? nombreDeQuestions(trouvee.etape.nombreQuestions, reglages) : 0;
 
   const questions = useMemo(
     () =>
       classe && trouvee
-        ? genererEtape({ classe, domaine: trouvee.theme.domaine, graine, ...trouvee.etape, niveau: niveauEtape })
+        ? genererEtape({
+            classe,
+            domaine: trouvee.theme.domaine,
+            graine,
+            ...trouvee.etape,
+            nombreQuestions: nbQuestions,
+            niveau: niveauEtape,
+          })
         : [],
-    [classe, trouvee, graine, niveauEtape],
+    [classe, trouvee, graine, niveauEtape, nbQuestions],
   );
   const [etat, envoyer] = useReducer(derouler, questions.length, etatInitial);
   // Numéro de la question dont l'indice est ouvert : il se referme tout seul à la question suivante.
   const [indiceOuvert, setIndiceOuvert] = useState<number | null>(null);
   const indiceVisible = indiceOuvert === etat.index;
+  // « Une seule chose à la fois » : la consigne d'abord, seule à l'écran.
+  const [consigneVue, setConsigneVue] = useState<number | null>(null);
+  const [tableOuverte, setTableOuverte] = useState(false);
+  const [explication, setExplication] = useState<{
+    mot: string;
+    texte: string;
+    question: number;
+  } | null>(null);
+  // Pause proposée par Capy (réglage en minutes).
+  const [depuisPause, setDepuisPause] = useState(() => Date.now());
+  const [pauseProposee, setPauseProposee] = useState(false);
 
   const question = questions[etat.index];
+  const jeu: DefinitionJeu | undefined = question ? JEUX[question.jeu] : undefined;
+  const exercice = useMemo(
+    () => (question ? adapterExercice(question.exercice, reglages, question.jeu) : undefined),
+    [question, reglages],
+  );
+  const consigne = jeu ? consigneDe(jeu, reglages) : '';
+  const enConsigne = reglages.uneChoseALaFois && consigneVue !== etat.index && etat.phase === 'question';
+  const lire = (textes: string[]) => lireAVoixHaute(textes, { lente: reglages.lectureLente });
 
   useEffect(() => {
-    if (etat.phase === 'bravo') feliciter();
-  }, [etat.phase]);
+    if (etat.phase === 'bravo') feliciter({ silencieux: theme.animationsReduites });
+  }, [etat.phase, theme.animationsReduites]);
 
   // Le résultat est enregistré une seule fois par partie.
   const partieEnregistree = useRef(-1);
@@ -81,22 +135,50 @@ export default function EcranEtape() {
     });
   }, [etat, profil, partie, etapeId, debut, domaine, enregistrerEtape]);
 
-  // On coupe la voix en changeant de question ou en quittant l'étape.
+  // On coupe la voix en changeant de question ou en quittant l'étape. Avec la
+  // lecture automatique, Capy lit ensuite la nouvelle question.
+  const lectureAuto = reglages.lectureAuto;
+  const lente = reglages.lectureLente;
+  const aLireAuto =
+    jeu && exercice && !enConsigne && etat.phase === 'question' ? textesALire(jeu.id, consigne, exercice) : null;
+  const cleLecture = aLireAuto ? `${etat.index}|${aLireAuto.join('|')}` : null;
   useEffect(() => {
     arreterLecture();
-  }, [etat.index]);
+    if (!lectureAuto || !cleLecture || etat.essaisRates > 0) return;
+    const minuteur = setTimeout(() => lireAVoixHaute(cleLecture.split('|').slice(1), { lente }), 400);
+    return () => clearTimeout(minuteur);
+  }, [cleLecture, lectureAuto, lente, etat.essaisRates]);
   useEffect(() => arreterLecture, []);
+
+  const explications = useMemo<Explications | null>(
+    () =>
+      exercice?.nature === 'nombre'
+        ? {
+            mots: MOTS_EXPLIQUES,
+            onExpliquer: (mot, texte) => {
+              setExplication({ mot, texte, question: etat.index });
+              lireAVoixHaute(texte, { lente });
+            },
+          }
+        : null,
+    [exercice?.nature, etat.index, lente],
+  );
 
   if (!profil) return <Redirect href="/" />;
   // Aucun exercice sans le résultat de la toile : seuls les thèmes proposés s'ouvrent.
   if (trouvee && !themeEstPropose(profil.classe, profil.toile, trouvee.theme.id)) return <Redirect href="/enfant" />;
 
-  if (questions.length === 0) {
-    return (
-      <Ecran pied={<Bouton titre="Retour" variante="secondaire" onPress={() => router.back()} />}>
-        <BulleCapy pose="ralentir" texte={`Les exercices de ${profil.classe} arrivent bientôt. Pour l’instant, Capy prépare le CE2.`} />
-      </Ecran>
-    );
+  if (questions.length === 0 || !jeu || !exercice || !question) {
+    if (etat.phase !== 'terminee') {
+      return (
+        <Ecran pied={<Bouton titre="Retour" variante="secondaire" onPress={() => router.back()} />}>
+          <BulleCapy
+            pose="ralentir"
+            texte={`Les exercices de ${profil.classe} arrivent bientôt. Pour l’instant, Capy prépare le CE2.`}
+          />
+        </Ecran>
+      );
+    }
   }
 
   if (etat.phase === 'terminee') {
@@ -119,112 +201,192 @@ export default function EcranEtape() {
         <View style={styles.fin}>
           <Image source={mascotte.bravo} style={styles.capyFin} resizeMode="contain" accessible={false} />
           <Text style={[typo.titre1, styles.centre]}>Étape terminée !</Text>
-          <View style={styles.etoiles} accessible accessibilityLabel={`${etoiles} étoile${etoiles > 1 ? 's' : ''} gagnée${etoiles > 1 ? 's' : ''}`}>
+          <View
+            style={styles.etoiles}
+            accessible
+            accessibilityLabel={`${etoiles} étoile${etoiles > 1 ? 's' : ''} gagnée${etoiles > 1 ? 's' : ''}`}
+          >
             {[1, 2, 3].map((n) => (
               <IconeEtoile key={n} taille={56} couleur={n <= etoiles ? couleurs.jaune[400] : couleurs.gris[200]} />
             ))}
           </View>
-          <Text style={[typo.manuscrit, styles.centre]}>Petit pas après petit pas…</Text>
+          {theme.manuscritVisible ? (
+            <Text style={[typo.manuscrit, styles.centre]}>Petit pas après petit pas…</Text>
+          ) : null}
           <Text style={[typo.enonce, styles.centre]}>
-            Bravo {profil.prenom}, tu as résolu tous les problèmes de « {trouvee!.etape.titre} ».
+            Bravo {profil.prenom}, tu as fini « {trouvee!.etape.titre} ».
           </Text>
         </View>
       </Ecran>
     );
   }
 
-  const jeu = JEUX[question.jeu];
-  const Jeu = COMPOSANTS_JEUX[question.jeu];
-  const { exercice } = question;
-  const indice = jeu.indice ?? exercice.indice;
-  // Dans « La question perdue », on lit les trois questions, jamais la bonne seule.
-  // Dans une dictée, Capy dit le mot et sa phrase au lieu de lire la phrase à trou.
-  let aLire = `${jeu.consigne} ${exercice.enonce} ${exercice.question}`;
-  if (exercice.nature === 'nombre' && exercice.questionsAuChoix && question.jeu === 'questionPerdue') {
-    aLire = `${jeu.consigne} ${exercice.enonce} ${exercice.questionsAuChoix.join(' ')}`;
-  } else if (exercice.nature === 'texte' && exercice.lecture) {
-    aLire = `${jeu.consigne} ${exercice.lecture}`;
-  } else if (exercice.nature === 'texte' && exercice.lectureAutonome) {
-    // Compréhension en lecture : l'enfant lit le texte lui-même, Capy ne lit que la consigne.
-    aLire = `${jeu.consigne} ${exercice.question}`;
+  // Le garde ci-dessus assure que la question existe ici.
+  const q = question!;
+  const ex = exercice!;
+  const definition = jeu!;
+  const Jeu = COMPOSANTS_JEUX[q.jeu];
+  const indice = (reglages.falc ? definition.indiceFacile : undefined) ?? definition.indice ?? ex.indice;
+
+  if (pauseProposee) {
+    return (
+      <Ecran
+        pied={
+          <View style={styles.boutonsFin}>
+            <Bouton
+              titre="Continuer"
+              onPress={() => {
+                setDepuisPause(Date.now());
+                setPauseProposee(false);
+              }}
+            />
+            <Bouton titre="Faire une pause" variante="secondaire" onPress={() => router.back()} />
+          </View>
+        }
+      >
+        <BulleCapy pose="ralentir" texte="Tu travailles bien ! Et si on faisait une petite pause ?" />
+      </Ecran>
+    );
   }
+
+  const continuer = () => {
+    envoyer({ type: 'continuer' });
+    if (pauseDue(depuisPause, Date.now(), reglages.pause) && etat.index + 1 < etat.nombreQuestions)
+      setPauseProposee(true);
+  };
 
   let pied = null;
   if (etat.phase === 'bravo') {
-    pied = <PanneauRetour type="bravo" explication={exercice.explication} onContinuer={() => envoyer({ type: 'continuer' })} />;
+    pied = <PanneauRetour type="bravo" explication={ex.explication} onContinuer={continuer} />;
   } else if (etat.phase === 'presque') {
     pied = <PanneauRetour type="presque" indice={indice} onContinuer={() => envoyer({ type: 'reessayer' })} />;
   }
 
-  return (
-    <Ecran pied={pied} defilementActif={!JEUX_A_GLISSER.includes(question.jeu) || etat.phase !== 'question'}>
-      <View style={styles.entete}>
-        <Pressable
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Quitter l’étape"
-          hitSlop={8}
-          style={styles.quitter}
-        >
-          <IconeCroix taille={28} couleur={couleurs.encreDouce} />
-        </Pressable>
-        <BarreProgression valeur={avancement(etat)} />
+  const entete = (
+    <View style={styles.entete}>
+      <Pressable
+        onPress={() => router.back()}
+        accessibilityRole="button"
+        accessibilityLabel="Quitter l’étape"
+        hitSlop={8}
+        style={[styles.quitter, { width: theme.cible, height: theme.cible }]}
+      >
+        <IconeCroix taille={28} couleur={couleurs.encreDouce} />
+      </Pressable>
+      <View style={styles.flex}>
+        <View style={styles.ligneBarre}>
+          <BarreProgression valeur={avancement(etat)} />
+        </View>
+        <Text style={[typo.petit, styles.reste]}>{resteEnMots(etat)}</Text>
       </View>
+    </View>
+  );
 
-      <View style={styles.outils}>
-        <Text style={[typo.titre3, styles.flex]}>{jeu.titre}</Text>
-        {exercice.niveau > niveauEtape ? (
-          <View style={styles.defi} accessible accessibilityLabel="Question défi">
-            <Text style={[typo.petit, styles.texteDefi]}>Question défi</Text>
-          </View>
-        ) : null}
+  if (enConsigne) {
+    return (
+      <Ecran pied={<Bouton titre="C’est parti" onPress={() => setConsigneVue(etat.index)} />}>
+        {entete}
+        <BulleCapy pose="capy" texte={consigne} coloration />
         <Bouton
           titre="Écouter"
           variante="secondaire"
-          pleineLargeur={false}
           icone={(c) => <IconeHautParleur taille={22} couleur={c} />}
-          onPress={() => lireAVoixHaute(aLire)}
+          onPress={() => lire([consigne])}
         />
-        <Bouton
-          titre="Indice"
-          variante="secondaire"
-          pleineLargeur={false}
-          icone={(c) => <IconeAmpoule taille={22} couleur={c} />}
-          onPress={() => setIndiceOuvert(indiceVisible ? null : etat.index)}
+      </Ecran>
+    );
+  }
+
+  const montrerTable =
+    reglages.tableConsultable && ex.nature === 'nombre' && !!domaine && !DOMAINES_SANS_TABLE.includes(domaine);
+  const nombresAide =
+    reglages.aidesVisuelles && ex.nature === 'nombre' && !JEUX_SANS_AIDE_NOMBRES.includes(q.jeu)
+      ? Object.values(ex.donnees)
+      : [];
+  // « Une seule chose à la fois » : rien d'autre que le retour pendant Bravo / Presque.
+  const calme = reglages.uneChoseALaFois;
+
+  return (
+    <ContexteExplications.Provider value={explications}>
+      <Ecran
+        pied={pied}
+        defilementActif={!JEUX_A_GLISSER.includes(q.jeu) || etat.phase !== 'question' || reglages.toucherPuisToucher}
+      >
+        {entete}
+
+        {/* Le titre a sa propre ligne : en très grand texte, il ne se coupe jamais au milieu d'un mot. */}
+        <Text style={typo.titre3}>{definition.titre}</Text>
+        <View style={styles.outils}>
+          {ex.niveau > niveauEtape ? (
+            <View style={styles.defi} accessible accessibilityLabel="Question défi">
+              <Text style={[typo.petit, styles.texteDefi]}>Question défi</Text>
+            </View>
+          ) : null}
+          <Bouton
+            titre="Écouter"
+            variante="secondaire"
+            pleineLargeur={false}
+            icone={(c) => <IconeHautParleur taille={22} couleur={c} />}
+            onPress={() => lire(textesALire(q.jeu, consigne, ex))}
+          />
+          <Bouton
+            titre="Indice"
+            variante="secondaire"
+            pleineLargeur={false}
+            icone={(c) => <IconeAmpoule taille={22} couleur={c} />}
+            onPress={() => setIndiceOuvert(indiceVisible ? null : etat.index)}
+          />
+          {montrerTable ? (
+            <Bouton
+              titre="Table"
+              variante="secondaire"
+              pleineLargeur={false}
+              onPress={() => setTableOuverte((o) => !o)}
+            />
+          ) : null}
+        </View>
+
+        {!calme || etat.phase === 'question' ? <TexteAccessible texte={consigne} variante="texte" coloration /> : null}
+        {indiceVisible ? <BulleCapy pose="reflechi" tailleCapy={72} texte={indice} coloration /> : null}
+        {explication && explication.question === etat.index ? (
+          <BulleCapy pose="capy" tailleCapy={72} texte={`« ${explication.mot} » : ${explication.texte}`} />
+        ) : null}
+        {montrerTable && tableOuverte ? <TableConsultable /> : null}
+        {nombresAide.length > 0 ? <AideNombres nombres={nombresAide} /> : null}
+
+        {/* La clé remet le mini-jeu à zéro pour chaque question, et pour chaque nouvel essai du bon fil. */}
+        <Jeu
+          key={`${etat.index}-${JEUX_QUI_GARDENT_LEUR_ETAT.includes(q.jeu) ? 0 : etat.essaisRates}`}
+          exercice={ex}
+          actif={etat.phase === 'question'}
+          onRepondre={(juste) => envoyer({ type: 'repondre', juste })}
         />
-      </View>
-
-      <Text style={typo.texte}>{jeu.consigne}</Text>
-      {indiceVisible ? <BulleCapy pose="reflechi" tailleCapy={72} texte={indice} /> : null}
-
-      {/* La clé remet le mini-jeu à zéro pour chaque question, et pour chaque nouvel essai du bon fil. */}
-      <Jeu
-        key={`${etat.index}-${JEUX_QUI_GARDENT_LEUR_ETAT.includes(question.jeu) ? 0 : etat.essaisRates}`}
-        exercice={exercice}
-        actif={etat.phase === 'question'}
-        onRepondre={(juste) => envoyer({ type: 'repondre', juste })}
-      />
-    </Ecran>
+      </Ecran>
+    </ContexteExplications.Provider>
   );
 }
 
+export default avecReglagesEnfant(EcranEtape);
+
 const styles = StyleSheet.create({
   entete: { flexDirection: 'row', alignItems: 'center', gap: espaces.m },
-  quitter: {
-    width: formes.cibleTactile,
-    height: formes.cibleTactile,
+  quitter: { alignItems: 'center', justifyContent: 'center' },
+  reste: { marginTop: espaces.xs },
+  outils: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: espaces.s,
+    flexWrap: 'wrap',
   },
-  outils: { flexDirection: 'row', alignItems: 'center', gap: espaces.s, flexWrap: 'wrap' },
   defi: {
     backgroundColor: couleurs.jaune[400],
     borderRadius: formes.pilule,
     paddingHorizontal: espaces.m,
     paddingVertical: espaces.xs,
   },
-  texteDefi: { color: couleurs.jaune.texte, fontFamily: typo.texteGras.fontFamily },
-  flex: { flex: 1, minWidth: 140 },
+  texteDefi: { color: couleurs.jaune.texte },
+  ligneBarre: { flexDirection: 'row' },
+  flex: { flex: 1 },
   fin: { alignItems: 'center', gap: espaces.m, paddingTop: espaces.xxl },
   capyFin: { width: 200, height: 200 },
   centre: { textAlign: 'center' },

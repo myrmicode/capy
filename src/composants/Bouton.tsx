@@ -1,19 +1,29 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { couleurs, espaces, formes, typo } from '@/theme';
+import { useThemeEnfant } from '@/accessibilite/contexte';
+import { couleurs, espaces, formes } from '@/theme';
 
 import { SurfaceEnRelief } from './SurfaceEnRelief';
 
 export type VarianteBouton = 'principal' | 'reessayer' | 'jaune' | 'secondaire';
 
-const VARIANTES: Record<
-  VarianteBouton,
-  { face: string; relief: string; texte: string; bordure?: string }
-> = {
-  principal: { face: couleurs.sarcelle[700], relief: couleurs.sarcelle[900], texte: couleurs.blanc },
-  reessayer: { face: couleurs.brun[600], relief: couleurs.brun[800], texte: couleurs.blanc },
-  jaune: { face: couleurs.jaune[400], relief: couleurs.jaune[600], texte: couleurs.jaune.texte },
+const VARIANTES: Record<VarianteBouton, { face: string; relief: string; texte: string; bordure?: string }> = {
+  principal: {
+    face: couleurs.sarcelle[700],
+    relief: couleurs.sarcelle[900],
+    texte: couleurs.blanc,
+  },
+  reessayer: {
+    face: couleurs.brun[600],
+    relief: couleurs.brun[800],
+    texte: couleurs.blanc,
+  },
+  jaune: {
+    face: couleurs.jaune[400],
+    relief: couleurs.jaune[600],
+    texte: couleurs.jaune.texte,
+  },
   secondaire: {
     face: couleurs.blanc,
     relief: couleurs.gris[300],
@@ -22,7 +32,11 @@ const VARIANTES: Record<
   },
 };
 
-const DESACTIVE = { face: couleurs.gris[200], relief: couleurs.gris[300], texte: couleurs.encreDouce };
+const DESACTIVE = {
+  face: couleurs.gris[200],
+  relief: couleurs.gris[300],
+  texte: couleurs.encreDouce,
+};
 
 interface PropsBouton {
   titre: string;
@@ -37,7 +51,7 @@ interface PropsBouton {
   style?: StyleProp<ViewStyle>;
 }
 
-/** Bouton en pilule, 56 px de haut, relief 4 px. */
+/** Bouton en pilule, 56 px de haut (64 avec « Grandes cibles »), relief 4 px. Le titre passe à la ligne, jamais coupé. */
 export function Bouton({
   titre,
   onPress,
@@ -49,6 +63,7 @@ export function Bouton({
   style,
 }: PropsBouton) {
   const c = desactive ? DESACTIVE : VARIANTES[variante];
+  const { typo, cible } = useThemeEnfant();
   return (
     <SurfaceEnRelief
       onPress={onPress}
@@ -62,7 +77,9 @@ export function Bouton({
       relief={formes.bouton.relief}
       rayon={formes.pilule}
       style={[
-        { height: formes.bouton.hauteur + formes.bouton.relief },
+        {
+          minHeight: Math.max(formes.bouton.hauteur, cible) + formes.bouton.relief,
+        },
         pleineLargeur ? styles.pleineLargeur : styles.compact,
         style,
       ]}
@@ -70,9 +87,7 @@ export function Bouton({
     >
       <View style={styles.contenu}>
         {icone?.(c.texte)}
-        <Text style={[typo.bouton, { color: c.texte }]} numberOfLines={1}>
-          {titre}
-        </Text>
+        <Text style={[typo.bouton, styles.titre, { color: c.texte }]}>{titre}</Text>
       </View>
     </SurfaceEnRelief>
   );
@@ -82,5 +97,12 @@ const styles = StyleSheet.create({
   pleineLargeur: { alignSelf: 'stretch' },
   compact: { alignSelf: 'flex-start' },
   face: { paddingHorizontal: espaces.xl },
-  contenu: { flexDirection: 'row', alignItems: 'center', gap: espaces.s },
+  contenu: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: espaces.s,
+    paddingVertical: espaces.xs,
+    flexShrink: 1,
+  },
+  titre: { textAlign: 'center', flexShrink: 1 },
 });

@@ -39,12 +39,24 @@ export const tables = definirModele<{ a: number; b: number }>({
       question: 'Combien ça fait ?',
       indice: `Récite la table de ${nb(a)} dans ta tête, ou compte ${nb(b)} paquets de ${nb(a)}.`,
       explication: `${nb(a)} × ${nb(b)} = ${nb(r)}. C’est la table de ${nb(a)}.`,
+      facile: {
+        enonce: `${nb(a)} × ${nb(b)}`,
+        question: 'Combien ça fait ?',
+        indice: `Dis la table de ${nb(a)} dans ta tête.`,
+        explication: `${nb(a)} × ${nb(b)} = ${nb(r)}.`,
+      },
     }),
     ({ a, b }, r) => ({
       enonce: `${nb(a)} fois ${nb(b)}`,
       question: 'Combien ça fait ?',
       indice: `${nb(a)} fois ${nb(b)}, c’est la même chose que ${nb(b)} fois ${nb(a)}. Choisis la table que tu connais le mieux.`,
       explication: `${nb(a)} fois ${nb(b)}, c’est ${nb(a)} × ${nb(b)} = ${nb(r)}.`,
+      facile: {
+        enonce: `${nb(a)} fois ${nb(b)}`,
+        question: 'Combien ça fait ?',
+        indice: `Tu peux aussi faire ${nb(b)} fois ${nb(a)}. Choisis la table la plus facile.`,
+        explication: `${nb(a)} fois ${nb(b)} = ${nb(r)}.`,
+      },
     }),
   ],
 });

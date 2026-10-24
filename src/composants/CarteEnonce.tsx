@@ -1,18 +1,32 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { couleurs, espaces, formes, typo } from '@/theme';
+import { useThemeEnfant } from '@/accessibilite/contexte';
+import { useExplications } from '@/accessibilite/explications';
+import { TexteAccessible } from '@/accessibilite/TexteAccessible';
+import { couleurs, formes } from '@/theme';
 
 interface PropsCarteEnonce {
   enonce: string;
   question?: string;
 }
 
-/** L'histoire du problème et sa question, en 18 px minimum. */
+/**
+ * L'histoire du problème et sa question, en 18 px minimum (plus avec les réglages
+ * de lecture). En maths, les mots difficiles s'expliquent au toucher.
+ */
 export function CarteEnonce({ enonce, question }: PropsCarteEnonce) {
+  const { ecart } = useThemeEnfant();
+  const explications = useExplications();
+  const commun = {
+    variante: 'enonce' as const,
+    coloration: true,
+    motsExpliques: explications?.mots,
+    onExpliquer: explications?.onExpliquer,
+  };
   return (
-    <View style={styles.carte}>
-      <Text style={typo.enonce}>{enonce}</Text>
-      {question ? <Text style={[typo.enonce, styles.question]}>{question}</Text> : null}
+    <View style={[styles.carte, { padding: ecart('l'), gap: ecart('s') }]}>
+      <TexteAccessible texte={enonce} {...commun} />
+      {question ? <TexteAccessible texte={question} couleur={couleurs.sarcelle[900]} {...commun} /> : null}
     </View>
   );
 }
@@ -23,8 +37,5 @@ const styles = StyleSheet.create({
     borderColor: couleurs.bordure,
     borderWidth: 2,
     borderRadius: formes.carte.rayon,
-    padding: espaces.l,
-    gap: espaces.s,
   },
-  question: { color: couleurs.sarcelle[900], fontSize: 19 },
 });

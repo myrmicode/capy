@@ -2,7 +2,8 @@ import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { couleurs, espaces } from '@/theme';
+import { useThemeEnfant } from '@/accessibilite/contexte';
+import { espaces } from '@/theme';
 
 interface PropsEcran {
   children: ReactNode;
@@ -13,11 +14,12 @@ interface PropsEcran {
   defilementActif?: boolean;
 }
 
-/** Cadre commun des écrans : fond de page, marges, largeur limitée sur tablette. */
+/** Cadre commun des écrans : fond de page (teinté selon les réglages de l'enfant), marges, largeur limitée sur tablette. */
 export function Ecran({ children, pied, defilant = true, defilementActif = true }: PropsEcran) {
-  const contenu = <View style={styles.colonne}>{children}</View>;
+  const { fond, ecart } = useThemeEnfant();
+  const contenu = <View style={[styles.colonne, { gap: ecart('l') }]}>{children}</View>;
   return (
-    <SafeAreaView style={styles.fond} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView style={[styles.fond, { backgroundColor: fond }]} edges={['top', 'bottom', 'left', 'right']}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {defilant ? (
           <ScrollView
@@ -37,9 +39,22 @@ export function Ecran({ children, pied, defilant = true, defilementActif = true 
 }
 
 const styles = StyleSheet.create({
-  fond: { flex: 1, backgroundColor: couleurs.fondPage },
+  fond: { flex: 1 },
   flex: { flex: 1 },
-  defilement: { paddingHorizontal: espaces.ecran, paddingVertical: espaces.xl, flexGrow: 1 },
-  colonne: { width: '100%', maxWidth: espaces.largeurMax, alignSelf: 'center', gap: espaces.l },
-  pied: { paddingHorizontal: espaces.ecran, paddingBottom: espaces.l, paddingTop: espaces.s },
+  defilement: {
+    paddingHorizontal: espaces.ecran,
+    paddingVertical: espaces.xl,
+    flexGrow: 1,
+  },
+  colonne: {
+    width: '100%',
+    maxWidth: espaces.largeurMax,
+    alignSelf: 'center',
+    gap: espaces.l,
+  },
+  pied: {
+    paddingHorizontal: espaces.ecran,
+    paddingBottom: espaces.l,
+    paddingTop: espaces.s,
+  },
 });

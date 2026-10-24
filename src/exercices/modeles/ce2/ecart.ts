@@ -41,6 +41,12 @@ export const ecart = definirModele<{ grand: number; petit: number }>({
       autresQuestions: ['Combien de pommes reste-t-il sur l’arbre ?', 'Combien pèse une pomme ?'],
       indice: 'Imagine les deux tas de pommes côte à côte. Combien de pommes dépassent dans le tas de Capy ?',
       explication: `L’écart se trouve par une soustraction : ${nb(a)} − ${nb(b)} = ${nb(r)}. Capy a cueilli ${nb(r)} pommes de plus que Noé.`,
+      facile: {
+        enonce: `Capy a ${nb(a)} pommes. Noé a ${nb(b)} pommes.`,
+        question: 'Combien de pommes Capy a-t-il en plus ?',
+        indice: 'Mets les deux tas côte à côte. Compte ce qui dépasse.',
+        explication: `${nb(a)} − ${nb(b)} = ${nb(r)}. Capy a ${nb(r)} pommes de plus.`,
+      },
     }),
     ({ grand: a, petit: b }, r) => ({
       enonce: `Le grand chêne mesure ${nb(a)} cm. Le petit sapin mesure ${nb(b)} cm.`,
@@ -48,6 +54,12 @@ export const ecart = definirModele<{ grand: number; petit: number }>({
       autresQuestions: ['Quel âge a le grand chêne ?', 'Combien de feuilles a le petit sapin ?'],
       indice: 'On ne cherche pas la hauteur des deux arbres empilés, mais la différence entre les deux.',
       explication: `${nb(a)} − ${nb(b)} = ${nb(r)}. Le chêne est plus haut de ${nb(r)} cm.`,
+      facile: {
+        enonce: `Le chêne mesure ${nb(a)} cm. Le sapin mesure ${nb(b)} cm.`,
+        question: 'Le chêne est plus haut de combien de centimètres ?',
+        indice: 'Cherche la différence. Il faut soustraire.',
+        explication: `${nb(a)} − ${nb(b)} = ${nb(r)}. Le chêne a ${nb(r)} cm de plus.`,
+      },
     }),
     ({ grand: a, petit: b }, r) => ({
       enonce: `Lina a ${nb(a)} autocollants. Capy en a ${nb(b)}.`,
@@ -55,6 +67,12 @@ export const ecart = definirModele<{ grand: number; petit: number }>({
       autresQuestions: ['Combien d’autocollants Lina a-t-elle achetés ce matin ?', 'Combien coûte un autocollant ?'],
       indice: 'Combien d’autocollants manque-t-il à Capy pour en avoir autant que Lina ?',
       explication: `Il manque ${nb(a)} − ${nb(b)} = ${nb(r)} autocollants à Capy. Tu peux vérifier : ${nb(b)} + ${nb(r)} = ${nb(a)}.`,
+      facile: {
+        enonce: `Lina a ${nb(a)} autocollants. Capy a ${nb(b)} autocollants.`,
+        question: 'Combien d’autocollants Capy a-t-il en moins ?',
+        indice: 'Combien en manque-t-il à Capy pour en avoir autant ?',
+        explication: `${nb(a)} − ${nb(b)} = ${nb(r)}. Capy a ${nb(r)} autocollants de moins.`,
+      },
     }),
   ],
 });

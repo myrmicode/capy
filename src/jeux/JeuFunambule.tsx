@@ -12,7 +12,8 @@ import { Bouton, CarteEnonce, IconeRetour } from '@/composants';
 import { nb } from '@/exercices';
 import { INTERVALLES_LIGNE } from '@/exercices/modeles/ce2/ligneGraduee';
 import { mascotte } from '@/mascotte';
-import { couleurs, espaces, formes, typo } from '@/theme';
+import { useThemeEnfant } from '@/accessibilite/contexte';
+import { couleurs, espaces, formes } from '@/theme';
 
 import type { PropsJeuNombre } from './types';
 
@@ -26,6 +27,7 @@ export function JeuFunambule({ exercice, actif, onRepondre }: PropsJeuNombre) {
   const fin = debut + INTERVALLES_LIGNE * pas;
   const [largeur, setLargeur] = useState(0);
   const [rang, setRang] = useState(0);
+  const { typo, reglages, cible } = useThemeEnfant();
 
   const ecart = largeur > 0 ? (largeur - 2 * MARGE) / INTERVALLES_LIGNE : 0;
   const xDe = (r: number) => MARGE + r * ecart;
@@ -41,7 +43,8 @@ export function JeuFunambule({ exercice, actif, onRepondre }: PropsJeuNombre) {
   const deplacer = (r: number) => setRang(Math.max(0, Math.min(INTERVALLES_LIGNE, r)));
 
   const glisser = usePanGesture({
-    enabled: actif && largeur > 0,
+    // Avec « toucher puis toucher », Capy ne se glisse pas : il avance avec les deux gros boutons.
+    enabled: actif && largeur > 0 && !reglages.toucherPuisToucher,
     minDistance: 2,
     onActivate: () => {
       depart.set(x.get());
@@ -57,7 +60,9 @@ export function JeuFunambule({ exercice, actif, onRepondre }: PropsJeuNombre) {
       scheduleOnRN(deplacer, r);
     },
   });
-  const styleCapy = useAnimatedStyle(() => ({ transform: [{ translateX: x.get() - TAILLE_CAPY / 2 }] }));
+  const styleCapy = useAnimatedStyle(() => ({
+    transform: [{ translateX: x.get() - TAILLE_CAPY / 2 }],
+  }));
 
   return (
     <View style={styles.jeu}>
@@ -67,7 +72,15 @@ export function JeuFunambule({ exercice, actif, onRepondre }: PropsJeuNombre) {
         {largeur > 0 ? (
           <>
             <Svg width={largeur} height={HAUTEUR} style={StyleSheet.absoluteFill} pointerEvents="none">
-              <Line x1={MARGE} y1={Y_FIL} x2={largeur - MARGE} y2={Y_FIL} stroke={couleurs.brun[800]} strokeWidth={4} strokeLinecap="round" />
+              <Line
+                x1={MARGE}
+                y1={Y_FIL}
+                x2={largeur - MARGE}
+                y2={Y_FIL}
+                stroke={couleurs.brun[800]}
+                strokeWidth={4}
+                strokeLinecap="round"
+              />
               {Array.from({ length: INTERVALLES_LIGNE + 1 }, (_, i) => {
                 const grande = i === 0 || i === INTERVALLES_LIGNE || i === INTERVALLES_LIGNE / 2;
                 return (
@@ -97,22 +110,47 @@ export function JeuFunambule({ exercice, actif, onRepondre }: PropsJeuNombre) {
       </View>
 
       <View style={styles.commandes}>
-        <BoutonPas sens="gauche" desactive={!actif || rang === 0} onPress={() => deplacer(rang - 1)} />
-        <BoutonPas sens="droite" desactive={!actif || rang === INTERVALLES_LIGNE} onPress={() => deplacer(rang + 1)} />
+        <BoutonPas
+          sens="gauche"
+          grand={reglages.toucherPuisToucher || cible > 44}
+          desactive={!actif || rang === 0}
+          onPress={() => deplacer(rang - 1)}
+        />
+        <BoutonPas
+          sens="droite"
+          grand={reglages.toucherPuisToucher || cible > 44}
+          desactive={!actif || rang === INTERVALLES_LIGNE}
+          onPress={() => deplacer(rang + 1)}
+        />
       </View>
       <Bouton titre="Valider" desactive={!actif} onPress={() => onRepondre(debut + rang * pas === exercice.reponse)} />
     </View>
   );
 }
 
-function BoutonPas({ sens, desactive, onPress }: { sens: 'gauche' | 'droite'; desactive: boolean; onPress: () => void }) {
+function BoutonPas({
+  sens,
+  grand,
+  desactive,
+  onPress,
+}: {
+  sens: 'gauche' | 'droite';
+  grand: boolean;
+  desactive: boolean;
+  onPress: () => void;
+}) {
   return (
     <Pressable
       onPress={onPress}
       disabled={desactive}
       accessibilityRole="button"
       accessibilityLabel={sens === 'gauche' ? 'Reculer d’une graduation' : 'Avancer d’une graduation'}
-      style={({ pressed }) => [styles.pas, pressed && styles.pasAppuye, desactive && styles.pasDesactive]}
+      style={({ pressed }) => [
+        styles.pas,
+        grand && styles.pasGrand,
+        pressed && styles.pasAppuye,
+        desactive && styles.pasDesactive,
+      ]}
     >
       <View style={sens === 'droite' ? styles.retourne : undefined}>
         <IconeRetour taille={28} couleur={couleurs.sarcelle[700]} />
@@ -128,10 +166,24 @@ const styles = StyleSheet.create({
     backgroundColor: couleurs.creme,
     borderRadius: formes.carte.rayon,
   },
-  etiquette: { position: 'absolute', top: Y_FIL + 16, width: 2 * MARGE + 40, paddingHorizontal: espaces.xs },
-  capy: { position: 'absolute', top: Y_FIL - TAILLE_CAPY - 2, width: TAILLE_CAPY, height: TAILLE_CAPY },
+  etiquette: {
+    position: 'absolute',
+    top: Y_FIL + 16,
+    width: 2 * MARGE + 40,
+    paddingHorizontal: espaces.xs,
+  },
+  capy: {
+    position: 'absolute',
+    top: Y_FIL - TAILLE_CAPY - 2,
+    width: TAILLE_CAPY,
+    height: TAILLE_CAPY,
+  },
   image: { width: TAILLE_CAPY, height: TAILLE_CAPY },
-  commandes: { flexDirection: 'row', justifyContent: 'center', gap: espaces.xl },
+  commandes: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: espaces.xl,
+  },
   pas: {
     width: 64,
     height: 56,
@@ -144,6 +196,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  pasGrand: { width: 96, height: 76 },
   pasAppuye: { borderBottomWidth: 2, marginTop: 3 },
   pasDesactive: { opacity: 0.4 },
   retourne: { transform: [{ scaleX: -1 }] },

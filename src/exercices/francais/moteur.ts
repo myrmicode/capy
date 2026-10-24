@@ -5,7 +5,15 @@ import type { Classe } from '@/config/classes';
 import type { DomaineId } from '@/config/domaines';
 
 import { creerAlea, type Alea } from '../alea';
-import { NIVEAU_CIBLE, type DistracteurTexte, type ExerciceTexte, type ModeleTexte, type NiveauDifficulte, type Segment } from '../types';
+import {
+  NIVEAU_CIBLE,
+  type DistracteurTexte,
+  type ExerciceTexte,
+  type ModeleTexte,
+  type NiveauDifficulte,
+  type Segment,
+  type VersionFacile,
+} from '../types';
 
 export const NOMBRE_DISTRACTEURS_TEXTE = 3;
 const ESSAIS_MAX = 1000;
@@ -26,6 +34,12 @@ export interface ContenuTexte {
   lectureAutonome?: boolean;
   indice: string;
   explication: string;
+  /**
+   * Version FALC (phrases courtes, une idée par phrase, mots simples) de la question,
+   * de l'indice et de l'explication. Un champ absent reprend la version standard,
+   * déjà assez simple (le test FALC le vérifie). L'énoncé, objet de l'exercice, ne change pas.
+   */
+  facile?: Partial<Pick<VersionFacile, 'question' | 'indice' | 'explication'>>;
 }
 
 export interface DefinitionModeleTexte {
@@ -91,6 +105,12 @@ export function definirModeleTexte(def: DefinitionModeleTexte): ModeleTexte {
           ...(contenu.lectureAutonome ? { lectureAutonome: true } : {}),
           indice: contenu.indice,
           explication: contenu.explication,
+          facile: {
+            enonce: contenu.enonce,
+            question: contenu.facile?.question ?? contenu.question,
+            indice: contenu.facile?.indice ?? contenu.indice,
+            explication: contenu.facile?.explication ?? contenu.explication,
+          },
         };
       }
       throw new Error(`Le modèle « ${def.id} » n'arrive pas à tirer un exercice valide en ${classe}.`);

@@ -25,7 +25,7 @@ export function fusionnerProgression(a: ProgressionEnfant, b: ProgressionEnfant)
   };
 }
 
-/** Le prénom, la classe et la toile viennent de la modification la plus récente ; la progression est réunie. */
+/** Le prénom, la classe, la toile et les réglages viennent de la modification la plus récente ; la progression est réunie. */
 export function fusionnerProfil(local: ProfilEnfant, distant: ProfilDistant): ProfilEnfant {
   const recent = distant.modifieLe > local.modifieLe ? distant : local;
   return {
@@ -33,6 +33,7 @@ export function fusionnerProfil(local: ProfilEnfant, distant: ProfilDistant): Pr
     prenom: recent.prenom,
     classe: recent.classe,
     toile: recent.toile,
+    reglages: recent.reglages,
     progression: fusionnerProgression(local.progression, distant.progression),
     modifieLe: recent.modifieLe,
     synchroniseLe: local.synchroniseLe,

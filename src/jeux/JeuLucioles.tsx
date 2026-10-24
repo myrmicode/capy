@@ -6,7 +6,6 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withDelay,
   withRepeat,
@@ -16,7 +15,9 @@ import Animated, {
 
 import { CarteEnonce } from '@/composants';
 import { creerAlea, nb } from '@/exercices';
-import { couleurs, espaces, formes, polices } from '@/theme';
+import { useThemeEnfant } from '@/accessibilite/contexte';
+import { ECHELLES_TEXTE } from '@/accessibilite/theme';
+import { couleurs, espaces, formes } from '@/theme';
 
 import type { PropsJeu } from './types';
 
@@ -66,7 +67,10 @@ interface PropsLuciole {
 }
 
 function Luciole({ valeur, index, graine, etat, actif, onPress }: PropsLuciole) {
-  const reduit = useReducedMotion();
+  const { typo, reglages, animationsReduites } = useThemeEnfant();
+  // Immobiles en mode calme, avec « Réduire les animations », et quand viser doit rester facile.
+  const reduit = animationsReduites || reglages.toucherPuisToucher || reglages.grandesCibles;
+  const echelle = ECHELLES_TEXTE[reglages.taille];
   const dx = useSharedValue(0);
   const dy = useSharedValue(0);
 
@@ -80,10 +84,13 @@ function Luciole({ valeur, index, graine, etat, actif, onPress }: PropsLuciole) 
     dy.value = withDelay(index * 300, withRepeat(withSequence(vers(-AMPLITUDE), vers(AMPLITUDE)), -1, true));
   }, [dx, dy, graine, index, reduit]);
 
-  const style = useAnimatedStyle(() => ({ transform: [{ translateX: dx.value }, { translateY: dy.value }] }));
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateX: dx.value }, { translateY: dy.value }],
+  }));
   const couleur =
     etat === 'juste' ? couleurs.menthe[500] : etat === 'presque' ? couleurs.brun[100] : couleurs.jaune[400];
-  const bord = etat === 'juste' ? couleurs.sarcelle[700] : etat === 'presque' ? couleurs.brun[600] : couleurs.jaune[600];
+  const bord =
+    etat === 'juste' ? couleurs.sarcelle[700] : etat === 'presque' ? couleurs.brun[600] : couleurs.jaune[600];
   const texte = etat === 'presque' ? couleurs.brun[800] : etat === 'juste' ? couleurs.encre : couleurs.jaune.texte;
 
   return (
@@ -94,18 +101,27 @@ function Luciole({ valeur, index, graine, etat, actif, onPress }: PropsLuciole) 
           disabled={!actif}
           accessibilityRole="button"
           accessibilityLabel={`Luciole ${etiquette(valeur)}`}
-          style={({ pressed }) => [styles.halo, typeof valeur === 'string' && styles.haloMot, pressed && styles.appuye]}
+          style={({ pressed }) => [
+            styles.halo,
+            typeof valeur === 'string' && [styles.haloMot, { width: Math.round(144 * echelle) }],
+            pressed && styles.appuye,
+          ]}
         >
           {/* Un mot n'est jamais tronqué : sa terminaison est justement ce qu'il faut voir. */}
           <View
             style={[
               styles.luciole,
-              typeof valeur === 'string' && styles.lucioleMot,
+              typeof valeur === 'string' && [styles.lucioleMot, { width: Math.round(132 * echelle) }],
               { backgroundColor: couleur, borderColor: bord },
             ]}
           >
             <Text
-              style={[styles.nombre, typeof valeur === 'string' && styles.mot, { color: texte }]}
+              style={[
+                typeof valeur === 'string'
+                  ? [typo.enonce, styles.mot]
+                  : [styles.nombre, { fontFamily: typo.nombreReponse.fontFamily }],
+                { color: texte },
+              ]}
               {...(typeof valeur === 'number' ? { adjustsFontSizeToFit: true, numberOfLines: 1 } : {})}
             >
               {etiquette(valeur)}
@@ -147,9 +163,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: espaces.s,
   },
-  nombre: { fontFamily: polices.fredokaGras, fontSize: 30 },
-  mot: { fontSize: 18, textAlign: 'center' },
+  nombre: { fontSize: 30 },
+  mot: { textAlign: 'center' },
   // Les mots prennent la forme d'une pilule, assez large pour « ramasserons ».
-  haloMot: { width: 144, borderRadius: formes.pilule },
-  lucioleMot: { width: 132, borderRadius: formes.pilule, paddingHorizontal: espaces.xs },
+  haloMot: { borderRadius: formes.pilule },
+  lucioleMot: { borderRadius: formes.pilule, paddingHorizontal: espaces.xs },
 });

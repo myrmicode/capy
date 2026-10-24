@@ -35,6 +35,18 @@ export interface ReglesClasse<D extends Donnees> {
   reponse: Intervalle;
 }
 
+/**
+ * Version FALC (Facile à lire et à comprendre) : phrases courtes, une idée par
+ * phrase, mots simples. Affichée avec le réglage « Consignes en FALC ».
+ * En français, l'énoncé est la phrase étudiée : il reste le même.
+ */
+export interface VersionFacile {
+  enonce: string;
+  question: string;
+  indice: string;
+  explication: string;
+}
+
 /** Exercice dont la réponse est un nombre (mathématiques). */
 export interface Exercice {
   nature: 'nombre';
@@ -57,6 +69,7 @@ export interface Exercice {
   indice: string;
   /** Explication de la méthode, affichée dans le panneau Bravo / Presque. */
   explication: string;
+  facile: VersionFacile;
   /**
    * Pour « La question perdue » : la bonne question et des questions auxquelles
    * l'histoire ne permet pas de répondre, mélangées de façon reproductible.
@@ -101,6 +114,7 @@ export type Histoire<D extends Donnees> = (
   explication: string;
   /** Questions qui semblent aller avec l'histoire mais auxquelles ses nombres ne permettent pas de répondre. */
   autresQuestions?: readonly string[];
+  facile: VersionFacile;
 };
 
 export interface OptionsGeneration {
@@ -169,6 +183,7 @@ export interface ExerciceTexte {
   lectureAutonome?: boolean;
   indice: string;
   explication: string;
+  facile: VersionFacile;
 }
 
 export type ExerciceQuelconque = Exercice | ExerciceTexte;

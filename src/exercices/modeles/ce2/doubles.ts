@@ -38,12 +38,24 @@ export const doubles = definirModele<{ nombre: number }>({
       question: 'Combien ça fait ?',
       indice: 'Double d’abord les dizaines, puis les unités, et ajoute les deux.',
       explication: `Le double de ${nb(n)}, c’est ${nb(n)} + ${nb(n)} = ${nb(r)}.`,
+      facile: {
+        enonce: `Le double de ${nb(n)}`,
+        question: 'Combien ça fait ?',
+        indice: `Le double, c’est deux fois le même nombre. Fais ${nb(n)} + ${nb(n)}.`,
+        explication: `${nb(n)} + ${nb(n)} = ${nb(r)}.`,
+      },
     }),
     ({ nombre: n }, r) => ({
       enonce: `${nb(n)} + ${nb(n)}`,
       question: 'Combien ça fait ?',
       indice: 'Ajouter un nombre à lui-même, c’est chercher son double.',
       explication: `${nb(n)} + ${nb(n)} = ${nb(r)} : c’est le double de ${nb(n)}.`,
+      facile: {
+        enonce: `${nb(n)} + ${nb(n)}`,
+        question: 'Combien ça fait ?',
+        indice: 'C’est deux fois le même nombre. Ajoute d’abord les dizaines.',
+        explication: `${nb(n)} + ${nb(n)} = ${nb(r)}.`,
+      },
     }),
   ],
 });

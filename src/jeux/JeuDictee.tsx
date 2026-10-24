@@ -5,7 +5,9 @@ import { Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, View } from
 
 import { Bouton, CarteEnonce } from '@/composants';
 import { conseilSaisie, saisieJuste } from '@/exercices/francais/dictee';
-import { couleurs, espaces, formes, typo } from '@/theme';
+import { useThemeEnfant } from '@/accessibilite/contexte';
+import { TexteAccessible } from '@/accessibilite/TexteAccessible';
+import { couleurs, espaces, formes } from '@/theme';
 
 import { BoutonReecouter, useDicteeAuDemarrage } from './dicter';
 import type { PropsJeuTexte } from './types';
@@ -20,13 +22,20 @@ export function JeuDictee({ exercice, actif, onRepondre }: PropsJeuTexte) {
   // Le curseur n'est pas imposé au champ : sur Android, cela le fait sauter pendant la frappe.
   const curseur = useRef<{ start: number; end: number } | null>(null);
   const [conseil, setConseil] = useState<string | null>(null);
+  const { typo, cible, ecart } = useThemeEnfant();
   useDicteeAuDemarrage(exercice.lecture);
 
   const ajouter = (lettre: string) => {
     if (!actif || saisie.length >= LONGUEUR_MAX) return;
-    const { start, end } = curseur.current ?? { start: saisie.length, end: saisie.length };
+    const { start, end } = curseur.current ?? {
+      start: saisie.length,
+      end: saisie.length,
+    };
     setSaisie(saisie.slice(0, start) + lettre + saisie.slice(end));
-    curseur.current = { start: start + lettre.length, end: start + lettre.length };
+    curseur.current = {
+      start: start + lettre.length,
+      end: start + lettre.length,
+    };
     setConseil(null);
   };
 
@@ -68,24 +77,28 @@ export function JeuDictee({ exercice, actif, onRepondre }: PropsJeuTexte) {
         returnKeyType="done"
         onSubmitEditing={valider}
         accessibilityLabel="Le mot que tu as écrit"
-        style={styles.saisie}
+        style={[typo.titre2, styles.saisie]}
       />
 
-      <View style={styles.lettres} accessibilityLabel="Lettres avec accent">
+      <View style={[styles.lettres, { gap: ecart('s') }]} accessibilityLabel="Lettres avec accent">
         {LETTRES_SPECIALES.map((lettre) => (
           <Pressable
             key={lettre}
             onPress={() => ajouter(lettre)}
             accessibilityRole="button"
             accessibilityLabel={lettre === '’' ? 'Apostrophe' : `Ajouter ${lettre}`}
-            style={({ pressed }) => [styles.lettre, pressed && styles.lettreAppuyee]}
+            style={({ pressed }) => [
+              styles.lettre,
+              { minWidth: cible, height: cible },
+              pressed && styles.lettreAppuyee,
+            ]}
           >
-            <Text style={styles.texteLettre}>{lettre}</Text>
+            <Text style={[typo.titre3, styles.texteLettre]}>{lettre}</Text>
           </Pressable>
         ))}
       </View>
 
-      {conseil ? <Text style={[typo.texteGras, styles.conseil]}>{conseil}</Text> : null}
+      {conseil ? <TexteAccessible texte={conseil} variante="texteGras" style={styles.conseil} /> : null}
 
       <Bouton titre="Valider" onPress={valider} desactive={!actif || !saisie.trim()} />
     </View>
@@ -95,7 +108,6 @@ export function JeuDictee({ exercice, actif, onRepondre }: PropsJeuTexte) {
 const styles = StyleSheet.create({
   jeu: { gap: espaces.l },
   saisie: {
-    ...typo.titre2,
     minHeight: 64,
     textAlign: 'center',
     backgroundColor: couleurs.blanc,
@@ -104,16 +116,14 @@ const styles = StyleSheet.create({
     borderRadius: formes.tuile.rayon,
     paddingHorizontal: espaces.l,
   },
-  lettres: { flexDirection: 'row', flexWrap: 'wrap', gap: espaces.s, justifyContent: 'center' },
+  lettres: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
   lettre: {
-    minWidth: formes.cibleTactile,
-    height: formes.cibleTactile,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: couleurs.menthe[100],
     borderRadius: formes.tuile.rayon,
   },
   lettreAppuyee: { backgroundColor: couleurs.menthe[200] },
-  texteLettre: { ...typo.titre3, color: couleurs.sarcelle[900] },
+  texteLettre: { color: couleurs.sarcelle[900] },
   conseil: { textAlign: 'center' },
 });

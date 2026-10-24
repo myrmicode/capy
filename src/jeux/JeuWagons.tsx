@@ -2,23 +2,29 @@
 // chaque wagon porte un mot ou un groupe de mots. L'enfant touche le bon wagon
 // (le verbe, le groupe sujet, l'adjectif…).
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { useThemeEnfant } from '@/accessibilite/contexte';
+import { TexteAccessible } from '@/accessibilite/TexteAccessible';
 import { SurfaceEnRelief } from '@/composants';
-import { couleurs, espaces, formes, typo } from '@/theme';
+import { couleurs, espaces, formes } from '@/theme';
 
 import type { PropsJeuTexte } from './types';
 
 export function JeuWagons({ exercice, actif, onRepondre }: PropsJeuTexte) {
   const [touche, setTouche] = useState<number | null>(null);
   const segments = exercice.segments ?? exercice.choix.map((texte) => ({ texte }));
+  const { cible, ecart } = useThemeEnfant();
 
   return (
     <View style={styles.jeu}>
       <View style={styles.consigne}>
-        <Text style={[typo.enonce, styles.question]}>{exercice.question}</Text>
+        <TexteAccessible texte={exercice.question} variante="enonce" couleur={couleurs.sarcelle[900]} coloration />
       </View>
-      <View style={styles.train} accessibilityLabel={`Phrase : ${exercice.enonce}`}>
+      <View
+        style={[styles.train, { gap: ecart('s'), rowGap: ecart('l') }]}
+        accessibilityLabel={`Phrase : ${exercice.enonce}`}
+      >
         {segments.map((s, i) => {
           const choisi = touche === i;
           const juste = choisi && s.texte === exercice.reponse;
@@ -40,10 +46,20 @@ export function JeuWagons({ exercice, actif, onRepondre }: PropsJeuTexte) {
                 couleurBordure={choisi ? relief : couleurs.caramel[500]}
                 relief={formes.tuile.relief}
                 rayon={formes.tuile.rayon}
-                style={styles.caisse}
+                style={[
+                  {
+                    minHeight: Math.max(60, cible) + formes.tuile.relief,
+                    minWidth: cible + 16,
+                  },
+                ]}
                 styleFace={styles.faceCaisse}
               >
-                <Text style={[typo.enonce, choisi && !juste && { color: couleurs.brun[800] }]}>{s.texte}</Text>
+                <TexteAccessible
+                  texte={s.texte}
+                  variante="enonce"
+                  couleur={choisi && !juste ? couleurs.brun[800] : undefined}
+                  coloration={!choisi}
+                />
               </SurfaceEnRelief>
               <View style={styles.roues} accessible={false}>
                 <View style={styles.roue} />
@@ -66,19 +82,24 @@ const styles = StyleSheet.create({
     borderRadius: formes.carte.rayon,
     padding: espaces.l,
   },
-  question: { color: couleurs.sarcelle[900] },
   train: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: espaces.s,
-    rowGap: espaces.l,
     backgroundColor: couleurs.creme,
     borderRadius: formes.carte.rayon,
     padding: espaces.l,
   },
   wagon: { alignItems: 'stretch' },
-  caisse: { minHeight: 60 + formes.tuile.relief, minWidth: formes.cibleTactile + 16 },
   faceCaisse: { paddingHorizontal: espaces.m, paddingVertical: espaces.s },
-  roues: { flexDirection: 'row', justifyContent: 'space-around', marginTop: -4 },
-  roue: { width: 14, height: 14, borderRadius: 7, backgroundColor: couleurs.brun[800] },
+  roues: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: -4,
+  },
+  roue: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: couleurs.brun[800],
+  },
 });

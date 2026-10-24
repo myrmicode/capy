@@ -91,6 +91,12 @@ function placer(id: string, titre: string, paliers: Paliers) {
         question: `Fais marcher Capy jusqu’à ${nb(c)}.`,
         indice: `Pars du début du fil et compte de ${nb(pas)} en ${nb(pas)} à chaque graduation.`,
         explication: `En partant de ${nb(debut)} et en avançant de ${nb(pas)} en ${nb(pas)}, on arrive à ${nb(r)} après ${(r - debut) / pas} graduations.`,
+        facile: {
+          enonce: `Le fil commence à ${nb(debut)}. À chaque trait, on avance de ${nb(pas)}.`,
+          question: `Fais marcher Capy jusqu’à ${nb(c)}.`,
+          indice: `Pars du début. Compte de ${nb(pas)} en ${nb(pas)}.`,
+          explication: `On compte de ${nb(pas)} en ${nb(pas)}. On arrive à ${nb(r)}.`,
+        },
       }),
     ],
   });
@@ -124,6 +130,12 @@ function lire(id: string, titre: string, paliers: Paliers) {
         question: 'Sur quel nombre Capy est-il arrêté ?',
         indice: `Compte de ${nb(pas)} en ${nb(pas)} à partir de ${nb(debut)}, une fois par graduation.`,
         explication: `${nb(debut)} + ${rang} × ${nb(pas)} = ${nb(r)}. Capy est arrêté sur ${nb(r)}.`,
+        facile: {
+          enonce: `Le fil commence à ${nb(debut)}. À chaque trait, on avance de ${nb(pas)}. Capy est sur le trait numéro ${rang}.`,
+          question: 'Sur quel nombre est Capy ?',
+          indice: `Pars de ${nb(debut)}. Compte de ${nb(pas)} en ${nb(pas)}, un trait à la fois.`,
+          explication: `On compte ${rang} fois ${nb(pas)} après ${nb(debut)}. Capy est sur ${nb(r)}.`,
+        },
       }),
     ],
   });

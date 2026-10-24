@@ -26,7 +26,11 @@ export interface MotDictee {
 
 const syl: Difficulte = { type: 'syllabes' };
 const son = (s: string, graphie: string): Difficulte => ({ type: 'son', son: s, graphie });
-const muette = (lettre: string, parent?: string): Difficulte => ({ type: 'muette', lettre, ...(parent ? { parent } : {}) });
+const muette = (lettre: string, parent?: string): Difficulte => ({
+  type: 'muette',
+  lettre,
+  ...(parent ? { parent } : {}),
+});
 const double = (lettre: string): Difficulte => ({ type: 'double', lettre });
 const accent = (lettre: string): Difficulte => ({ type: 'accent', lettre });
 const mbp: Difficulte = { type: 'mbp' };
@@ -162,7 +166,9 @@ export const MOTS_OUTILS: readonly MotDictee[] = [
 // --- Indice et explication ---
 
 const nombreDeLettres = (graphie: string) =>
-  graphie.length === 1 ? 'une seule lettre' : `${['', '', 'deux', 'trois', 'quatre', 'cinq', 'six'][graphie.length]} lettres`;
+  graphie.length === 1
+    ? 'une seule lettre'
+    : `${['', '', 'deux', 'trois', 'quatre', 'cinq', 'six'][graphie.length]} lettres`;
 
 /** Indice tiré de la difficulté principale du mot ; il ne donne jamais le mot. */
 export function indiceDictee(mot: MotDictee): string {
@@ -214,6 +220,50 @@ function remarque(d: Difficulte): string {
     case 'invariable':
       return 'C’est un mot invariable : il s’écrit toujours de la même façon.';
   }
+}
+
+/** Indice en FALC : des phrases courtes, une idée par phrase. */
+export function indiceDicteeFacile(mot: MotDictee): string {
+  const d = mot.difficultes[0];
+  switch (d.type) {
+    case 'syllabes':
+      return 'Dis le mot tout bas. Écris chaque son.';
+    case 'son':
+      return `Écoute le son « ${d.son} ». Ici, il s’écrit avec ${nombreDeLettres(d.graphie)}.`;
+    case 'muette':
+      return d.parent
+        ? `Une lettre ne s’entend pas à la fin. Pense à « ${d.parent} ».`
+        : 'Une lettre ne s’entend pas à la fin.';
+    case 'h':
+      return 'La première lettre ne s’entend pas.';
+    case 'double':
+      return 'Une consonne s’écrit deux fois.';
+    case 'mbp':
+      return 'Devant b ou p, on écrit m.';
+    case 'accent':
+      return 'Il faut un accent.';
+    case 'cedille':
+      return 'Le c a besoin d’une petite queue.';
+    case 'invariable':
+      return 'Ce petit mot ne change pas. Pense à ses lettres.';
+  }
+}
+
+function remarqueFacile(d: Difficulte): string {
+  switch (d.type) {
+    case 'muette':
+      return d.parent
+        ? `On n’entend pas le « ${d.lettre} » de la fin. On l’entend dans « ${d.parent} ».`
+        : `On n’entend pas le « ${d.lettre} » de la fin.`;
+    case 'invariable':
+      return 'Ce mot s’écrit toujours pareil.';
+    default:
+      return remarque(d);
+  }
+}
+
+export function explicationDicteeFacile(mot: MotDictee): string {
+  return `On écrit « ${mot.mot} » : ${epeler(mot.mot)}. ${mot.difficultes.map(remarqueFacile).join(' ')}`;
 }
 
 /** « b-a-t-e-a-u » : le mot épelé lettre par lettre. */
@@ -320,7 +370,11 @@ export function fautesTypiques(mot: string): { valeur: string; erreur: string }[
 
 /** Apostrophes, espaces et majuscules ne comptent pas ; les accents, si. */
 export function normaliserSaisie(texte: string): string {
-  return texte.trim().toLowerCase().replace(/['‘`´]/g, '’').replace(/\s+/g, ' ');
+  return texte
+    .trim()
+    .toLowerCase()
+    .replace(/['‘`´]/g, '’')
+    .replace(/\s+/g, ' ');
 }
 
 export function saisieJuste(saisie: string, mot: string): boolean {

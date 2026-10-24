@@ -26,17 +26,14 @@ export default function NouveauProfil() {
     if (!classe) return;
     const profil = ajouterProfil(resultat.prenom, classe);
     choisirProfil(profil.id);
-    router.replace({ pathname: '/toile', params: { apres: 'creation' } });
+    // Proposition facultative d'adapter la lecture ou les jeux, puis les fiches de l'école.
+    router.replace({ pathname: '/reglages-lecture', params: { profil: profil.id, apres: 'creation' } });
   }
 
   return (
     <Ecran
       pied={
-        <Bouton
-          titre="Créer le profil"
-          onPress={creer}
-          desactive={prenom.trim().length === 0 || classe === null}
-        />
+        <Bouton titre="Créer le profil" onPress={creer} desactive={prenom.trim().length === 0 || classe === null} />
       }
     >
       <Pressable

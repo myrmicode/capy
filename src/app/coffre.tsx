@@ -1,8 +1,15 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
+import { avecReglagesEnfant, useThemeEnfant } from '@/accessibilite/contexte';
 import { Bouton, Ecran, IconeCoffre, IconeEtoile } from '@/composants';
 import { trouverCoffre } from '@/config/parcours';
 import { feliciter } from '@/jeux/retours';
@@ -10,10 +17,11 @@ import { mascotte } from '@/mascotte';
 import { cheminDuTheme, ETOILES_COFFRE } from '@/parcours/progression';
 import { themeEstPropose } from '@/parcours/selection';
 import { useProfilActif, useProfils } from '@/store/profils';
-import { couleurs, espaces, formes, typo } from '@/theme';
+import { couleurs, espaces, formes } from '@/theme';
 
 /** Coffre de fin d'unité : il s'ouvre quand toutes les étapes de l'unité sont réussies. */
-export default function Coffre() {
+function Coffre() {
+  const { typo, animationsReduites } = useThemeEnfant();
   const profil = useProfilActif();
   const ouvrirCoffre = useProfils((e) => e.ouvrirCoffre);
   const { id = '' } = useLocalSearchParams<{ id?: string }>();
@@ -26,7 +34,8 @@ export default function Coffre() {
     transform: [{ scale: echelle.value }, { rotate: `${rotation.value}deg` }],
   }));
 
-  if (!profil || !trouve || !themeEstPropose(profil.classe, profil.toile, trouve.theme.id)) return <Redirect href="/enfant" />;
+  if (!profil || !trouve || !themeEstPropose(profil.classe, profil.toile, trouve.theme.id))
+    return <Redirect href="/enfant" />;
   const noeud = cheminDuTheme(trouve.theme, profil.progression).find((n) => n.id === id);
   if (!noeud || noeud.etat === 'verrouillee') return <Redirect href="/enfant" />;
 
@@ -34,18 +43,21 @@ export default function Coffre() {
   const ouvert = noeud.etat === 'reussie';
 
   const ouvrir = () => {
-    rotation.set(
-      withSequence(
-        withTiming(-8, { duration: 90 }),
-        withTiming(8, { duration: 90 }),
-        withTiming(-6, { duration: 90 }),
-        withTiming(0, { duration: 90 }),
-      ),
-    );
-    echelle.set(withSequence(withTiming(1.25, { duration: 260 }), withSpring(1)));
+    // En mode calme, le coffre s'ouvre sans secousse ni son.
+    if (!animationsReduites) {
+      rotation.set(
+        withSequence(
+          withTiming(-8, { duration: 90 }),
+          withTiming(8, { duration: 90 }),
+          withTiming(-6, { duration: 90 }),
+          withTiming(0, { duration: 90 }),
+        ),
+      );
+      echelle.set(withSequence(withTiming(1.25, { duration: 260 }), withSpring(1)));
+    }
     setOuvertIci(true);
     ouvrirCoffre(profil.id, id);
-    feliciter();
+    feliciter({ silencieux: animationsReduites });
   };
 
   return (
@@ -105,6 +117,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  coffreOuvert: { backgroundColor: couleurs.jaune[400], borderColor: couleurs.jaune[600] },
+  coffreOuvert: {
+    backgroundColor: couleurs.jaune[400],
+    borderColor: couleurs.jaune[600],
+  },
   gain: { flexDirection: 'row', gap: espaces.s },
 });
+
+export default avecReglagesEnfant(Coffre);

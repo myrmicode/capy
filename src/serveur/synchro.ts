@@ -3,6 +3,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
+import { lireReglages } from '@/accessibilite/reglages';
 import { CLASSES } from '@/config/classes';
 import { useCompte } from '@/store/compte';
 import { useProfils } from '@/store/profils';
@@ -26,6 +27,8 @@ const Ligne = z.object({
   }),
   // Vérifiée et remise au format actuel par migrerToile (anciennes toiles comprises).
   toile: z.unknown().nullable(),
+  // Relus champ par champ par lireReglages : aucune autre donnée ne peut s'y glisser.
+  reglages: z.unknown().nullable().optional(),
   modifie_le: z.string(),
 });
 
@@ -36,6 +39,7 @@ function versProfil(ligne: z.infer<typeof Ligne>): ProfilDistant {
     classe: ligne.classe,
     progression: ligne.progression,
     toile: migrerToile(ligne.toile, ligne.classe),
+    reglages: lireReglages(ligne.reglages),
     modifieLe: new Date(ligne.modifie_le).toISOString(),
   };
 }
@@ -47,6 +51,7 @@ function versLigne(p: ProfilDistant) {
     classe: p.classe,
     progression: p.progression,
     toile: p.toile ?? null,
+    reglages: lireReglages(p.reglages),
     modifie_le: p.modifieLe,
   };
 }
@@ -76,7 +81,9 @@ async function executer(client: SupabaseClient | null): Promise<ResultatSynchro>
 
   useCompte.getState().majSynchro('en_cours');
   try {
-    const { data, error } = await client.from(TABLE).select('id, prenom, classe, progression, toile, modifie_le');
+    const { data, error } = await client
+      .from(TABLE)
+      .select('id, prenom, classe, progression, toile, reglages, modifie_le');
     if (error || !data) throw new Error('lecture');
     // Une ligne illisible est ignorée plutôt que de casser la synchronisation.
     const distants = data.flatMap((ligne) => {

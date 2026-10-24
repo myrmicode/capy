@@ -48,12 +48,24 @@ export const complementCent = definirModele<{ depart: number }>({
       question: 'Quel nombre manque ?',
       indice: 'Avance d’abord jusqu’à la dizaine suivante, puis compte les dizaines jusqu’à cent.',
       explication: `${nb(n)} + ${nb(r)} = 100. On peut vérifier : 100 − ${nb(n)} = ${nb(r)}.`,
+      facile: {
+        enonce: `${nb(n)} + ? = 100`,
+        question: 'Quel nombre manque ?',
+        indice: 'Va jusqu’à la dizaine suivante. Puis compte de dix en dix jusqu’à 100.',
+        explication: `${nb(n)} + ${nb(r)} = 100.`,
+      },
     }),
     ({ depart: n }, r) => ({
       enonce: `Capy a déjà ${nb(n)} billes. Il en veut 100.`,
       question: 'Combien lui en manque-t-il ?',
       indice: 'Compte de son nombre de billes jusqu’à cent : d’abord jusqu’à la dizaine suivante, puis de dix en dix.',
       explication: `Il lui manque ${nb(r)} billes, car ${nb(n)} + ${nb(r)} = 100.`,
+      facile: {
+        enonce: `Capy a ${nb(n)} billes. Il veut 100 billes.`,
+        question: 'Combien de billes lui manque-t-il ?',
+        indice: 'Compte de son nombre jusqu’à 100.',
+        explication: `${nb(n)} + ${nb(r)} = 100. Il manque ${nb(r)} billes.`,
+      },
     }),
   ],
 });

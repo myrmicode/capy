@@ -78,7 +78,7 @@ export function definirModele<D extends Donnees>(def: DefinitionModele<D>): Mode
         const tiree = alea.choix(def.histoires);
         const histoire = options.histoire === undefined ? tiree : def.histoires[options.histoire];
         if (!histoire) throw new Error(`Le modèle « ${def.id} » n'a pas d'histoire n° ${options.histoire}.`);
-        const { enonce, question, indice, explication, autresQuestions } = histoire(d, reponse);
+        const { enonce, question, indice, explication, autresQuestions, facile } = histoire(d, reponse);
         const distracteurs = choisirDistracteurs(reponse, def.erreursTypiques(d), alea);
         return {
           nature: 'nombre',
@@ -96,6 +96,7 @@ export function definirModele<D extends Donnees>(def: DefinitionModele<D>): Mode
           choix: alea.melanger([reponse, ...distracteurs.map((x) => x.valeur)]),
           indice,
           explication,
+          facile,
           ...(autresQuestions ? { questionsAuChoix: alea.melanger([question, ...autresQuestions]) } : {}),
         };
       }

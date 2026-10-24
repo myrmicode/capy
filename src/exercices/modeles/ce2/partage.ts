@@ -47,6 +47,12 @@ export const partage = definirModele<{ total: number; parts: number }>({
       autresQuestions: ['Combien de noisettes Capy a-t-il mangées hier ?', 'Combien pèse une noisette ?'],
       indice: `Distribue les noisettes une par une à chacun des ${nb(p)} amis. La table de ${nb(p)} peut t’aider.`,
       explication: `On partage ${nb(n)} noisettes en ${nb(p)} parts égales. Comme ${nb(p)} × ${nb(r)} = ${nb(n)}, chaque ami reçoit ${nb(r)} noisettes. On écrit ${nb(n)} : ${nb(p)} = ${nb(r)}.`,
+      facile: {
+        enonce: `Capy a ${nb(n)} noisettes. Il les donne à ${nb(p)} amis. Chaque ami a le même nombre.`,
+        question: 'Combien de noisettes a chaque ami ?',
+        indice: 'Donne une noisette à chaque ami. Puis recommence.',
+        explication: `${nb(p)} × ${nb(r)} = ${nb(n)}. Chaque ami a ${nb(r)} noisettes.`,
+      },
     }),
     ({ total: n, parts: p }, r) => ({
       enonce: `La maîtresse range ${nb(n)} crayons dans ${nb(p)} pots. Chaque pot contient le même nombre de crayons.`,
@@ -54,6 +60,12 @@ export const partage = definirModele<{ total: number; parts: number }>({
       autresQuestions: ['Combien de crayons sont rouges ?', 'Combien d’élèves y a-t-il dans la classe ?'],
       indice: `Cherche le nombre qui, multiplié par ${nb(p)}, donne ${nb(n)}.`,
       explication: `${nb(p)} × ${nb(r)} = ${nb(n)}, donc il y a ${nb(r)} crayons dans chaque pot. On écrit ${nb(n)} : ${nb(p)} = ${nb(r)}.`,
+      facile: {
+        enonce: `Il y a ${nb(n)} crayons. On les range dans ${nb(p)} pots. Chaque pot a le même nombre.`,
+        question: 'Combien de crayons y a-t-il dans un pot ?',
+        indice: `Cherche le nombre qui, fois ${nb(p)}, donne ${nb(n)}.`,
+        explication: `${nb(p)} × ${nb(r)} = ${nb(n)}. Il y a ${nb(r)} crayons par pot.`,
+      },
     }),
     ({ total: n, parts: p }, r) => ({
       enonce: `Pour un jeu, ${nb(n)} enfants forment ${nb(p)} équipes de même taille.`,
@@ -61,6 +73,12 @@ export const partage = definirModele<{ total: number; parts: number }>({
       autresQuestions: ['Quelle équipe va gagner le jeu ?', 'Combien de temps dure le jeu ?'],
       indice: `Imagine ${nb(p)} équipes. Ajoute un enfant dans chaque équipe, chacun son tour, jusqu’à ce qu’il n’en reste plus.`,
       explication: `${nb(n)} enfants en ${nb(p)} équipes égales : ${nb(p)} × ${nb(r)} = ${nb(n)}. Il y a ${nb(r)} enfants par équipe. On écrit ${nb(n)} : ${nb(p)} = ${nb(r)}.`,
+      facile: {
+        enonce: `Il y a ${nb(n)} enfants. Ils font ${nb(p)} équipes. Les équipes ont la même taille.`,
+        question: 'Combien d’enfants y a-t-il dans une équipe ?',
+        indice: 'Mets un enfant dans chaque équipe. Puis recommence.',
+        explication: `${nb(p)} × ${nb(r)} = ${nb(n)}. Il y a ${nb(r)} enfants par équipe.`,
+      },
     }),
   ],
 });

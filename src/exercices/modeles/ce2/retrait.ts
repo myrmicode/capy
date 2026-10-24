@@ -24,7 +24,10 @@ export const retrait = definirModele<{ depart: number; retrait: number }>({
       // + : nombres inférieurs à 100.
       1: { donnees: { depart: { min: 20, max: 99 }, retrait: { min: 5, max: 50 } }, reponse: { min: 5, max: 94 } },
       // ++ : nombres jusqu'à 500.
-      2: { donnees: { depart: { min: 100, max: 500 }, retrait: { min: 10, max: 300 } }, reponse: { min: 10, max: 490 } },
+      2: {
+        donnees: { depart: { min: 100, max: 500 }, retrait: { min: 10, max: 300 } },
+        reponse: { min: 10, max: 490 },
+      },
     },
   },
   estValide: ({ depart, retrait: b }) => b < depart,
@@ -42,6 +45,12 @@ export const retrait = definirModele<{ depart: number; retrait: number }>({
       autresQuestions: ['Combien de cartons Capy a-t-il remplis ?', 'Combien de pages a chaque livre ?'],
       indice: `Au début, il y a ${nb(a)} livres. Si on en enlève, en reste-t-il plus ou moins ?`,
       explication: `On enlève les livres rangés : ${nb(a)} − ${nb(b)} = ${nb(r)}. Il reste ${nb(r)} livres sur les étagères.`,
+      facile: {
+        enonce: `Il y a ${nb(a)} livres sur les étagères. Capy enlève ${nb(b)} livres.`,
+        question: 'Combien de livres restent sur les étagères ?',
+        indice: 'Capy enlève des livres. Il en reste moins. Il faut soustraire.',
+        explication: `${nb(a)} − ${nb(b)} = ${nb(r)}. Il reste ${nb(r)} livres.`,
+      },
     }),
     ({ depart: a, retrait: b }, r) => ({
       enonce: `Capy a ${nb(a)} graines de tournesol. Il en plante ${nb(b)}.`,
@@ -49,6 +58,12 @@ export const retrait = definirModele<{ depart: number; retrait: number }>({
       autresQuestions: ['Combien de graines Capy plantera-t-il demain ?', 'Combien coûte le sachet de graines ?'],
       indice: 'Les graines plantées ne sont plus dans le sachet. Quelle opération permet de trouver ce qui reste ?',
       explication: `Il reste ${nb(a)} − ${nb(b)} = ${nb(r)} graines. Tu peux vérifier : ${nb(r)} + ${nb(b)} = ${nb(a)}.`,
+      facile: {
+        enonce: `Capy a ${nb(a)} graines. Il plante ${nb(b)} graines.`,
+        question: 'Combien de graines lui reste-t-il ?',
+        indice: 'Les graines plantées partent. Il en reste moins. Il faut soustraire.',
+        explication: `${nb(a)} − ${nb(b)} = ${nb(r)}. Il reste ${nb(r)} graines.`,
+      },
     }),
     ({ depart: a, retrait: b }, r) => ({
       enonce: `Un train transporte ${nb(a)} voyageurs. À la gare, ${nb(b)} voyageurs descendent.`,
@@ -56,6 +71,12 @@ export const retrait = definirModele<{ depart: number; retrait: number }>({
       autresQuestions: ['Combien de voyageurs montent à la gare ?', 'À quelle heure le train arrive-t-il ?'],
       indice: 'Des voyageurs descendent : le train en transporte moins. Pense à la soustraction.',
       explication: `${nb(a)} − ${nb(b)} = ${nb(r)}. Il reste ${nb(r)} voyageurs dans le train.`,
+      facile: {
+        enonce: `Il y a ${nb(a)} voyageurs dans le train. À la gare, ${nb(b)} voyageurs descendent.`,
+        question: 'Combien de voyageurs restent dans le train ?',
+        indice: 'Des voyageurs descendent. Il en reste moins. Il faut soustraire.',
+        explication: `${nb(a)} − ${nb(b)} = ${nb(r)}. Il reste ${nb(r)} voyageurs.`,
+      },
     }),
   ],
 });

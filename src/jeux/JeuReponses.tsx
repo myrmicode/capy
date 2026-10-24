@@ -30,6 +30,8 @@ export function JeuReponses({ exercice, actif, onRepondre }: PropsJeu) {
             <TuileReponse
               libelle={valeur}
               etat={etat(valeur)}
+              // Pas de syllabes en couleur dans les propositions de la dictée : le gris des lettres muettes donnerait l'orthographe.
+              coloration={!lecture}
               onPress={() => {
                 if (!actif) return;
                 setChoisie(valeur);

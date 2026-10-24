@@ -12,3 +12,5 @@ export { CarteEnonce } from './CarteEnonce';
 export { Toile, type CoucheToile } from './Toile';
 export { ControleParental } from './ControleParental';
 export { EditeurNiveaux } from './EditeurNiveaux';
+export { AideNombres } from './AideNombres';
+export { TableConsultable } from './TableConsultable';
