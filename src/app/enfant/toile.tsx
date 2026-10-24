@@ -29,7 +29,6 @@ function MaToile() {
               <Toile
                 domaines={domainesDe(profil.classe, m)}
                 couches={[{ niveaux: profil.toile!.actuelle, style: 'actuelle' }]}
-                taille={340}
               />
             </View>
           ))}

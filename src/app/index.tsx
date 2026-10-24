@@ -2,10 +2,11 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useThemeEnfant } from '@/accessibilite/contexte';
 import { BulleCapy, Bouton, Ecran, IconePlus } from '@/composants';
 import { mascotte, RATIO_PAYSAGE } from '@/mascotte';
 import { useProfils, type ProfilEnfant } from '@/store/profils';
-import { couleurs, espaces, formes, typo } from '@/theme';
+import { couleurs, espaces, formes } from '@/theme';
 
 /** Proportions du cadre du bandeau (plus haut que l'image, qui est donc recadrée). */
 const RATIO_CADRE = RATIO_PAYSAGE / 2.2;
@@ -14,6 +15,7 @@ const CENTRE_CAPY = 0.48;
 
 /** Accueil : choix de l'enfant qui joue. */
 export default function Accueil() {
+  const { typo } = useThemeEnfant();
   const profils = useProfils((e) => e.profils);
   const choisirProfil = useProfils((e) => e.choisirProfil);
 
@@ -63,6 +65,7 @@ export default function Accueil() {
 }
 
 function CarteProfil({ profil, onPress }: { profil: ProfilEnfant; onPress: () => void }) {
+  const { typo } = useThemeEnfant();
   return (
     <Pressable
       onPress={onPress}

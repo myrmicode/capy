@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { couleurs, espaces, formes, typo } from '@/theme';
+import { useThemeEnfant } from '@/accessibilite/contexte';
+import { couleurs, espaces, formes } from '@/theme';
 
 import { IconeBouclier } from './icones';
 
@@ -14,6 +15,7 @@ export function CarteConfiance({
   titre = 'Rien d’autre n’est demandé',
   texte = 'Pas de nom de famille, pas d’école, pas de date de naissance. Le profil reste sur cet appareil.',
 }: PropsCarteConfiance) {
+  const { typo } = useThemeEnfant();
   return (
     <View style={styles.carte} accessible accessibilityLabel={`${titre}. ${texte}`}>
       <IconeBouclier taille={32} couleur={couleurs.sarcelle[500]} />

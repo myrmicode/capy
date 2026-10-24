@@ -35,7 +35,7 @@ import { lireAVoixHaute } from '@/jeux/retours';
 import { mascotte } from '@/mascotte';
 import { deverrouillerParents, parentsDeverrouilles } from '@/parents/verrou';
 import { useProfils } from '@/store/profils';
-import { couleurs, espaces, formes, typo } from '@/theme';
+import { couleurs, espaces, formes } from '@/theme';
 
 /** Phrase d'exemple de l'aperçu : tous ses mots ont un découpage syllabique vérifié. */
 export const PHRASE_APERCU = 'Capy range ses billes dans une jolie boîte bleue.';
@@ -47,6 +47,7 @@ const LARGEUR_DEUX_COLONNES = 900;
 const LARGEUR_RACCOURCIS_PAR_DEUX = 560;
 
 export default function ReglagesLecture() {
+  const { typo } = useThemeEnfant();
   const { profil: profilId = '', apres } = useLocalSearchParams<{ profil?: string; apres?: string }>();
   const profil = useProfils((e) => e.profils.find((p) => p.id === profilId));
   const modifierReglages = useProfils((e) => e.modifierReglages);
@@ -193,6 +194,7 @@ export default function ReglagesLecture() {
 
 /** Après la création d'un profil : proposition facultative, sans obligation. */
 function Proposition({ prenom, onAdapter, onPlusTard }: { prenom: string; onAdapter: () => void; onPlusTard: () => void }) {
+  const { typo } = useThemeEnfant();
   return (
     <Ecran
       pied={
@@ -236,6 +238,7 @@ function Raccourcis({
   onChange: (r: ReglagesEnfant) => void;
   parDeux: boolean;
 }) {
+  const { typo } = useThemeEnfant();
   return (
     <Carte>
       <Text style={typo.titre3}>Raccourcis</Text>
@@ -291,6 +294,7 @@ function SectionOptions({
   reglages: ReglagesEnfant;
   onChange: (r: ReglagesEnfant) => void;
 }) {
+  const { typo } = useThemeEnfant();
   const actives = options.filter((o) => o.type !== 'variante' && optionActive(o, reglages)).length;
   const visibles = options.filter((o) => o.type !== 'variante' || optionActive(o, reglages));
   return (
@@ -330,6 +334,7 @@ function LigneOption({
   onChange: (r: ReglagesEnfant) => void;
   premiere: boolean;
 }) {
+  const { typo } = useThemeEnfant();
   const active = optionActive(option, reglages);
   return (
     <View style={[styles.option, !premiere && styles.separateur]}>
@@ -368,6 +373,7 @@ function LigneVariante({
   reglages: ReglagesEnfant;
   onChange: (r: ReglagesEnfant) => void;
 }) {
+  const { typo } = useThemeEnfant();
   return (
     <View style={styles.variante}>
       <Text style={typo.texteGras}>{option.titre}</Text>
@@ -393,6 +399,7 @@ function Pastilles<V>({
   valeur: V;
   onChoisir: (v: V) => void;
 }) {
+  const { typo } = useThemeEnfant();
   return (
     <View style={styles.pastilles} accessibilityRole="radiogroup" accessibilityLabel={`Choix pour : ${libelle}`}>
       {valeurs.map((v) => {
@@ -425,6 +432,7 @@ function Apercu({ reglages, prenom }: { reglages: ReglagesEnfant; prenom: string
 }
 
 function ContenuApercu({ reglages, prenom }: { reglages: ReglagesEnfant; prenom: string }) {
+  const { typo } = useThemeEnfant();
   const { fond } = useThemeEnfant();
   const exercice = useMemo(() => adapterExercice(EXERCICE_APERCU, reglages, 'reponses'), [reglages]);
   const [essai, setEssai] = useState(0);

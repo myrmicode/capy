@@ -7,6 +7,8 @@ import { espaces } from '@/theme';
 
 /** Au-delà de cette largeur (tablette), les marges des écrans s'élargissent. */
 const LARGEUR_TABLETTE = 700;
+/** Largeur du contenu sur tablette : un peu plus large, le texte y est aussi un peu plus grand. */
+const LARGEUR_COLONNE_TABLETTE = 720;
 
 interface PropsEcran {
   children: ReactNode;
@@ -15,16 +17,18 @@ interface PropsEcran {
   defilant?: boolean;
   /** Faux pour bloquer le défilement pendant un glisser-déposer. */
   defilementActif?: boolean;
-  /** Largeur maximale du contenu (640 par défaut, plus pour un écran en deux colonnes). */
+  /** Largeur maximale du contenu (640 sur téléphone, 720 sur tablette, plus pour un écran en deux colonnes). */
   largeurMax?: number;
 }
 
 /** Cadre commun des écrans : fond de page (teinté selon les réglages de l'enfant), marges, largeur limitée sur tablette. */
-export function Ecran({ children, pied, defilant = true, defilementActif = true, largeurMax = espaces.largeurMax }: PropsEcran) {
+export function Ecran({ children, pied, defilant = true, defilementActif = true, largeurMax }: PropsEcran) {
   const { fond, ecart } = useThemeEnfant();
   const { width } = useWindowDimensions();
-  const marge = width >= LARGEUR_TABLETTE ? espaces.xxl : espaces.ecran;
-  const colonne = [styles.colonne, { maxWidth: largeurMax, gap: ecart('l') }];
+  const tablette = width >= LARGEUR_TABLETTE;
+  const marge = tablette ? espaces.xxl : espaces.ecran;
+  const maxWidth = largeurMax ?? (tablette ? LARGEUR_COLONNE_TABLETTE : espaces.largeurMax);
+  const colonne = [styles.colonne, { maxWidth, gap: ecart('l') }];
   const contenu = <View style={[colonne, !defilant && styles.flex]}>{children}</View>;
   return (
     <SafeAreaView style={[styles.fond, { backgroundColor: fond }]} edges={['top', 'bottom', 'left', 'right']}>

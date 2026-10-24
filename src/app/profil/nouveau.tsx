@@ -2,15 +2,17 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { useThemeEnfant } from '@/accessibilite/contexte';
 import { Bouton, CarteConfiance, Ecran, IconeRetour } from '@/composants';
 import { CLASSES, type Classe } from '@/config/classes';
 import { mascotte } from '@/mascotte';
 import { LONGUEUR_MAX_PRENOM, validerPrenom } from '@/profils/validation';
 import { useProfils } from '@/store/profils';
-import { couleurs, espaces, formes, polices, typo } from '@/theme';
+import { couleurs, espaces, formes, polices } from '@/theme';
 
 /** Création d'un profil enfant : prénom ou surnom + classe, rien d'autre. */
 export default function NouveauProfil() {
+  const { typo } = useThemeEnfant();
   const ajouterProfil = useProfils((e) => e.ajouterProfil);
   const choisirProfil = useProfils((e) => e.choisirProfil);
   const [prenom, setPrenom] = useState('');
@@ -71,7 +73,7 @@ export default function NouveauProfil() {
           returnKeyType="done"
           accessibilityLabelledBy="libellePrenom"
           accessibilityLabel="Prénom ou surnom"
-          style={[styles.saisie, erreur ? styles.saisieErreur : null]}
+          style={[typo.enonce, styles.saisie, erreur ? styles.saisieErreur : null]}
         />
         {erreur ? <Text style={[typo.petit, styles.erreur]}>{erreur}</Text> : null}
       </View>
@@ -113,7 +115,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   champ: { gap: espaces.s },
   saisie: {
-    ...typo.enonce,
     minHeight: 56,
     backgroundColor: couleurs.blanc,
     borderColor: couleurs.bordure,

@@ -2,11 +2,12 @@ import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { useThemeEnfant } from '@/accessibilite/contexte';
 import { BulleCapy, Bouton, CarteConfiance, EditeurNiveaux, Ecran, Toile } from '@/composants';
 import { domainesDe, LIBELLES_MATIERES, MATIERES, type Matiere } from '@/config/domaines';
 import { useProfilActif, useProfils } from '@/store/profils';
 import { completerNiveaux, ficheSaisie, type Niveaux } from '@/toile/niveaux';
-import { espaces, typo } from '@/theme';
+import { espaces } from '@/theme';
 
 function lire(json: string | undefined): Niveaux | null {
   if (!json) return null;
@@ -28,6 +29,7 @@ function matiereDe(valeur: string | undefined): Matiere {
  * - saisie à la main, toujours disponible, notamment si l'analyse échoue.
  */
 export default function SaisieToile() {
+  const { typo } = useThemeEnfant();
   const profil = useProfilActif();
   const enregistrerToile = useProfils((e) => e.enregistrerToile);
   const params = useLocalSearchParams<{ matiere?: string; apres?: string; source?: string; lu?: string; message?: string }>();

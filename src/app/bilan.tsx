@@ -1,15 +1,17 @@
 import { Redirect, router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { useThemeEnfant } from '@/accessibilite/contexte';
 import { BulleCapy, Bouton, Ecran, Toile } from '@/composants';
 import { domainesDe, LIBELLES_MATIERES, MATIERES, type Domaine, type Matiere } from '@/config/domaines';
 import { themesDe } from '@/config/parcours';
 import { useProfilActif } from '@/store/profils';
 import { analyserToile, ficheSaisie, type ToileEnfant } from '@/toile/niveaux';
-import { couleurs, espaces, formes, typo } from '@/theme';
+import { couleurs, espaces, formes } from '@/theme';
 
 /** Bilan court pour les parents, à partir des toiles des fiches de l'école. */
 export default function Bilan() {
+  const { typo } = useThemeEnfant();
   const profil = useProfilActif();
   if (!profil) return <Redirect href="/" />;
   const toile = profil.toile;
@@ -46,6 +48,7 @@ interface PropsBilanMatiere {
 }
 
 function BilanMatiere({ matiere, classe, prenom, toile }: PropsBilanMatiere) {
+  const { typo } = useThemeEnfant();
   const domaines = domainesDe(classe, matiere);
   const { forts, aConsolider, priorite } = analyserToile(classe, matiere, toile.actuelle);
   const themePriorite = priorite && themesDe(classe).find((t) => t.domaine === priorite.id);
@@ -96,6 +99,7 @@ interface PropsCarte {
 }
 
 function Carte({ titre, fond, couleurTitre, accent = false, children }: PropsCarte) {
+  const { typo } = useThemeEnfant();
   return (
     <View style={[styles.carte, { backgroundColor: fond }, accent && styles.accent]}>
       <Text style={[typo.titre3, { color: couleurTitre }]}>{titre}</Text>

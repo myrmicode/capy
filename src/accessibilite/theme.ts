@@ -103,7 +103,7 @@ export interface ThemeEnfant {
 const POLICES_TITRE = new Set<string>([polices.fredoka, polices.fredokaGras]);
 
 /** Adapte un style de texte : police, taille, interligne et espacement des lettres. */
-function adapter(style: TextStyle, r: ReglagesEnfant): TextStyle {
+function adapter(style: TextStyle, r: ReglagesEnfant, agrandissement: number): TextStyle {
   const p = POLICES_CHARGEES[r.police];
   const famille = style.fontFamily ?? polices.nunito;
   const grasse = famille === polices.nunitoGras || famille === polices.nunitoExtraGras;
@@ -117,7 +117,7 @@ function adapter(style: TextStyle, r: ReglagesEnfant): TextStyle {
         : grasse
           ? p.grasse
           : p.normale;
-  const fontSize = Math.round((style.fontSize ?? 16) * ECHELLES_TEXTE[r.taille]);
+  const fontSize = Math.round((style.fontSize ?? 16) * ECHELLES_TEXTE[r.taille] * agrandissement);
   const ratio = (style.lineHeight ?? fontSize * 1.4) / (style.fontSize ?? 16);
   // WCAG 1.4.12 : interligne d'au moins 1,5 ; on va jusqu'à 2 en très grand.
   const interligne = r.espacements ? (r.taille === 'tresGrande' ? 2 : 1.5) : ratio;
@@ -130,12 +130,16 @@ function adapter(style: TextStyle, r: ReglagesEnfant): TextStyle {
   };
 }
 
-export function deriverTheme(r: ReglagesEnfant, reductionSysteme = false): ThemeEnfant {
+/**
+ * @param agrandissement Agrandissement propre à l'appareil (voir `echelleAppareil`) :
+ * sur tablette, le texte et les espaces grandissent un peu pour rester confortables.
+ */
+export function deriverTheme(r: ReglagesEnfant, reductionSysteme = false, agrandissement = 1): ThemeEnfant {
   const fonds = [COULEURS_FOND[r.fond], ...FONDS_DU_TEXTE];
   const typoAdaptee = Object.fromEntries(
-    (Object.keys(typo) as VarianteTexte[]).map((k) => [k, adapter(typo[k], r)]),
+    (Object.keys(typo) as VarianteTexte[]).map((k) => [k, adapter(typo[k], r, agrandissement)]),
   ) as Record<VarianteTexte, TextStyle>;
-  const facteurEcart = r.grandesCibles ? 1.5 : 1;
+  const facteurEcart = (r.grandesCibles ? 1.5 : 1) * agrandissement;
   return {
     reglages: r,
     typo: typoAdaptee,
@@ -148,4 +152,14 @@ export function deriverTheme(r: ReglagesEnfant, reductionSysteme = false): Theme
     animationsReduites: r.modeCalme || reductionSysteme,
     manuscritVisible: !aideALaLectureActive(r),
   };
+}
+
+/** Plus petit côté de l'écran à partir duquel on considère l'appareil comme une tablette. */
+export const COTE_TABLETTE = 600;
+/** Agrandissement du texte et des espaces sur tablette. */
+export const ECHELLE_TABLETTE = 1.15;
+
+/** Agrandissement propre à l'appareil, quelle que soit son orientation. */
+export function echelleAppareil(largeur: number, hauteur: number): number {
+  return Math.min(largeur, hauteur) >= COTE_TABLETTE ? ECHELLE_TABLETTE : 1;
 }

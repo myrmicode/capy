@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useThemeEnfant } from '@/accessibilite/contexte';
 import { creerAlea } from '@/exercices';
 import { mascotte } from '@/mascotte';
 import { nouveauDefi, type DefiParental } from '@/parents/controleParental';
-import { couleurs, espaces, formes, polices, typo } from '@/theme';
+import { couleurs, espaces, formes, polices } from '@/theme';
 
 import { Bouton } from './Bouton';
 import { IconeRetour } from './icones';
@@ -20,6 +21,7 @@ function tirerDefi(): DefiParental {
  * en chiffres. Une erreur propose simplement un autre nombre, sans blocage.
  */
 export function ControleParental({ onReussi }: { onReussi: () => void }) {
+  const { typo } = useThemeEnfant();
   const [defi, setDefi] = useState(tirerDefi);
   const [saisie, setSaisie] = useState('');
   const [autreNombre, setAutreNombre] = useState(false);

@@ -16,7 +16,6 @@ import Animated, {
 import { CarteEnonce } from '@/composants';
 import { creerAlea, nb } from '@/exercices';
 import { useThemeEnfant } from '@/accessibilite/contexte';
-import { ECHELLES_TEXTE } from '@/accessibilite/theme';
 import { couleurs, espaces, formes } from '@/theme';
 
 import type { PropsJeu } from './types';
@@ -70,7 +69,9 @@ function Luciole({ valeur, index, graine, etat, actif, onPress }: PropsLuciole) 
   const { typo, reglages, animationsReduites } = useThemeEnfant();
   // Immobiles en mode calme, avec « Réduire les animations », et quand viser doit rester facile.
   const reduit = animationsReduites || reglages.toucherPuisToucher || reglages.grandesCibles;
-  const echelle = ECHELLES_TEXTE[reglages.taille];
+  // Les lucioles grandissent avec le texte (réglage de taille, et sur tablette).
+  const echelle = (typo.enonce.fontSize ?? 18) / 18;
+  const taille = Math.round(TAILLE * echelle);
   const dx = useSharedValue(0);
   const dy = useSharedValue(0);
 
@@ -103,6 +104,7 @@ function Luciole({ valeur, index, graine, etat, actif, onPress }: PropsLuciole) 
           accessibilityLabel={`Luciole ${etiquette(valeur)}`}
           style={({ pressed }) => [
             styles.halo,
+            { width: taille + 24, height: taille + 24, borderRadius: (taille + 24) / 2 },
             typeof valeur === 'string' && [styles.haloMot, { width: Math.round(144 * echelle) }],
             pressed && styles.appuye,
           ]}
@@ -111,6 +113,7 @@ function Luciole({ valeur, index, graine, etat, actif, onPress }: PropsLuciole) 
           <View
             style={[
               styles.luciole,
+              { width: taille, height: taille, borderRadius: taille / 2 },
               typeof valeur === 'string' && [styles.lucioleMot, { width: Math.round(132 * echelle) }],
               { backgroundColor: couleur, borderColor: bord },
             ]}
@@ -119,7 +122,7 @@ function Luciole({ valeur, index, graine, etat, actif, onPress }: PropsLuciole) 
               style={[
                 typeof valeur === 'string'
                   ? [typo.enonce, styles.mot]
-                  : [styles.nombre, { fontFamily: typo.nombreReponse.fontFamily }],
+                  : [styles.nombre, { fontFamily: typo.nombreReponse.fontFamily, fontSize: Math.round(30 * echelle) }],
                 { color: texte },
               ]}
               {...(typeof valeur === 'number' ? { adjustsFontSizeToFit: true, numberOfLines: 1 } : {})}

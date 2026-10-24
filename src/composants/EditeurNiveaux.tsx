@@ -1,8 +1,9 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useThemeEnfant } from '@/accessibilite/contexte';
 import type { Domaine, DomaineId } from '@/config/domaines';
 import { SYMBOLES, symboleDe, valeurDe, type Symbole } from '@/toile/niveaux';
-import { couleurs, espaces, formes, polices, typo } from '@/theme';
+import { couleurs, espaces, formes, polices } from '@/theme';
 
 interface PropsEditeurNiveaux {
   domaines: readonly Domaine[];
@@ -12,6 +13,7 @@ interface PropsEditeurNiveaux {
 
 /** Saisie des niveaux de la fiche, axe par axe, avec les symboles de l'école : + / ++ / +++. */
 export function EditeurNiveaux({ domaines, niveaux, onChange }: PropsEditeurNiveaux) {
+  const { typo } = useThemeEnfant();
   const choisir = (id: DomaineId, s: Symbole) => onChange({ ...niveaux, [id]: valeurDe(s) });
 
   return (

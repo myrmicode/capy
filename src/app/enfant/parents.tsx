@@ -2,6 +2,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 
+import { useThemeEnfant } from '@/accessibilite/contexte';
 import { optionsActives } from '@/accessibilite/options';
 import { lireReglages } from '@/accessibilite/reglages';
 import { BarreProgression, Bouton, ControleParental, Ecran, Toile } from '@/composants';
@@ -17,7 +18,7 @@ import { useCompte } from '@/store/compte';
 import { useProfilActif, useProfils } from '@/store/profils';
 import { useReglages } from '@/store/reglages';
 import { ficheSaisie } from '@/toile/niveaux';
-import { couleurs, espaces, formes, typo } from '@/theme';
+import { couleurs, espaces, formes } from '@/theme';
 
 /** Espace parent, derrière le contrôle parental. Il se reverrouille dès qu'on le quitte. */
 export default function EspaceParents() {
@@ -48,6 +49,7 @@ export default function EspaceParents() {
 }
 
 function ContenuParents() {
+  const { typo } = useThemeEnfant();
   const profil = useProfilActif();
   const supprimerProfil = useProfils((e) => e.supprimerProfil);
   const { sons, activerSons } = useReglages();
@@ -227,6 +229,7 @@ function ContenuParents() {
 
 /** Compte parent facultatif : connexion, synchronisation, déconnexion, suppression complète. */
 function SectionCompte() {
+  const { typo } = useThemeEnfant();
   const { disponible, email, synchro, derniereSynchro } = useCompte();
   const [confirmer, setConfirmer] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -290,6 +293,7 @@ function SectionCompte() {
 }
 
 function Section({ titre, children }: { titre: string; children: React.ReactNode }) {
+  const { typo } = useThemeEnfant();
   return (
     <View style={styles.section}>
       <Text style={typo.titre3}>{titre}</Text>
@@ -299,6 +303,7 @@ function Section({ titre, children }: { titre: string; children: React.ReactNode
 }
 
 function Statistique({ valeur, libelle }: { valeur: string; libelle: string }) {
+  const { typo } = useThemeEnfant();
   return (
     <View style={styles.stat} accessible accessibilityLabel={`${valeur} ${libelle}`}>
       <Text style={[typo.titre2, { color: couleurs.sarcelle[900] }]}>{valeur}</Text>

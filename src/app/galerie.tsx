@@ -13,10 +13,12 @@ import {
   TuileReponse,
   type EtatTuile,
 } from '@/composants';
-import { couleurs, espaces, typo } from '@/theme';
+import { useThemeEnfant } from '@/accessibilite/contexte';
+import { couleurs, espaces } from '@/theme';
 
 /** Catalogue des composants de base, visible seulement en développement. */
 export default function Galerie() {
+  const { typo } = useThemeEnfant();
   const [choix, setChoix] = useState<number | null>(null);
   const [retour, setRetour] = useState<'bravo' | 'presque'>('presque');
   const etatTuile = (n: number): EtatTuile => {
@@ -91,6 +93,7 @@ export default function Galerie() {
 }
 
 function Section({ titre, children }: { titre: string; children: React.ReactNode }) {
+  const { typo } = useThemeEnfant();
   return (
     <View style={styles.section}>
       <Text style={typo.titre3}>{titre}</Text>

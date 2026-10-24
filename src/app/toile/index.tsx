@@ -1,17 +1,19 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { useThemeEnfant } from '@/accessibilite/contexte';
 import { BulleCapy, Bouton, CarteConfiance, Ecran, IconeCoche } from '@/composants';
 import { LIBELLES_MATIERES, MATIERES, type Matiere } from '@/config/domaines';
 import { dateEnFrancais } from '@/parents/format';
 import { useProfilActif } from '@/store/profils';
-import { couleurs, espaces, formes, typo } from '@/theme';
+import { couleurs, espaces, formes } from '@/theme';
 
 /**
  * Les fiches de l'école : une toile en français, une en mathématiques.
  * Le parent photographie (ou recopie) chacune, dans l'ordre qu'il veut.
  */
 export default function FichesEcole() {
+  const { typo } = useThemeEnfant();
   const profil = useProfilActif();
   const { apres } = useLocalSearchParams<{ apres?: string }>();
   if (!profil) return <Redirect href="/" />;

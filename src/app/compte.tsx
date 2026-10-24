@@ -2,16 +2,18 @@ import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { useThemeEnfant } from '@/accessibilite/contexte';
 import { BulleCapy, Bouton, CarteConfiance, Ecran } from '@/composants';
 import { emailValide, envoyerCode, verifierCode } from '@/serveur/compte';
 import { useCompte } from '@/store/compte';
-import { couleurs, espaces, formes, typo } from '@/theme';
+import { couleurs, espaces, formes } from '@/theme';
 
 /**
  * Création du compte ou connexion, sans mot de passe : le parent reçoit un code
  * par e-mail. Accessible seulement depuis l'espace parent (après le contrôle parental).
  */
 export default function Compte() {
+  const { typo } = useThemeEnfant();
   const disponible = useCompte((e) => e.disponible);
   const [etape, setEtape] = useState<'email' | 'code'>('email');
   const [email, setEmail] = useState('');
@@ -83,7 +85,7 @@ export default function Compte() {
             textContentType="emailAddress"
             accessibilityLabelledBy="libelleEmail"
             accessibilityLabel="Votre adresse e-mail"
-            style={styles.saisie}
+            style={[typo.enonce, styles.saisie]}
           />
         </View>
       ) : (
@@ -102,7 +104,7 @@ export default function Compte() {
             maxLength={10}
             accessibilityLabelledBy="libelleCode"
             accessibilityLabel="Code reçu par e-mail"
-            style={[styles.saisie, styles.code]}
+            style={[typo.enonce, styles.saisie, styles.code]}
           />
         </View>
       )}
@@ -120,7 +122,6 @@ const styles = StyleSheet.create({
   boutons: { gap: espaces.m },
   champ: { gap: espaces.s },
   saisie: {
-    ...typo.enonce,
     minHeight: 56,
     backgroundColor: couleurs.blanc,
     borderColor: couleurs.bordure,

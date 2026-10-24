@@ -5,6 +5,7 @@ import { useRef, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useThemeEnfant } from '@/accessibilite/contexte';
 import { BulleCapy, Bouton, CarteConfiance } from '@/composants';
 import { domainesDe, LIBELLES_MATIERES, MATIERES, type Matiere } from '@/config/domaines';
 import { mascotte } from '@/mascotte';
@@ -13,12 +14,13 @@ import { useReglages } from '@/store/reglages';
 import { analyserPhoto, messageEchec, type ResultatAnalyse } from '@/toile/analyse';
 import { cadreDansLaVue, cadreVersPhoto, type Taille } from '@/toile/cadrage';
 import { preparerToile } from '@/toile/photo';
-import { couleurs, espaces, formes, typo } from '@/theme';
+import { couleurs, espaces, formes } from '@/theme';
 
 const VOILE = 'rgba(18, 64, 79, 0.45)';
 
 /** Photo de la toile : le parent cadre uniquement la toile, l'image est recadrée sur le téléphone. */
 export default function PhotoToile() {
+  const { typo } = useThemeEnfant();
   const profil = useProfilActif();
   const { apres, matiere: matiereParam } = useLocalSearchParams<{ apres?: string; matiere?: string }>();
   const matiere: Matiere = (MATIERES as readonly string[]).includes(matiereParam ?? '') ? (matiereParam as Matiere) : 'mathematiques';

@@ -1,15 +1,33 @@
 // Fournit à tout un écran d'enfant le thème adapté à ses réglages.
-// Hors fournisseur (espace parent, saisie des fiches), le thème par défaut s'applique.
+// Hors fournisseur (espace parent, saisie des fiches), le thème par défaut
+// s'applique ; sur tablette, il grandit un peu dans les deux cas.
 import { createContext, useContext, useMemo, type ComponentType, type ReactNode } from 'react';
+import { useWindowDimensions } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 
 import { useProfilActif } from '@/store/profils';
 
 import { lireReglages, REGLAGES_PAR_DEFAUT, type ReglagesEnfant } from './reglages';
-import { deriverTheme, type ThemeEnfant } from './theme';
+import { deriverTheme, echelleAppareil, type ThemeEnfant } from './theme';
 
 const ContexteTheme = createContext<ThemeEnfant | null>(null);
-const THEME_PAR_DEFAUT = deriverTheme(REGLAGES_PAR_DEFAUT);
+/** Thèmes par défaut, un par agrandissement d'appareil (téléphone, tablette). */
+const THEMES_PAR_DEFAUT = new Map<number, ThemeEnfant>();
+
+function themeParDefaut(agrandissement: number): ThemeEnfant {
+  let theme = THEMES_PAR_DEFAUT.get(agrandissement);
+  if (!theme) {
+    theme = deriverTheme(REGLAGES_PAR_DEFAUT, false, agrandissement);
+    THEMES_PAR_DEFAUT.set(agrandissement, theme);
+  }
+  return theme;
+}
+
+/** Agrandissement de l'appareil en cours (il suit les changements de fenêtre). */
+function useAgrandissement(): number {
+  const { width, height } = useWindowDimensions();
+  return echelleAppareil(width, height);
+}
 
 interface PropsFournisseur {
   /** Réglages imposés (aperçu en direct) ; sinon ceux de l'enfant actif. */
@@ -20,18 +38,21 @@ interface PropsFournisseur {
 export function FournisseurReglages({ reglages, children }: PropsFournisseur) {
   const profil = useProfilActif();
   const reductionSysteme = useReducedMotion();
+  const agrandissement = useAgrandissement();
   const actifs = reglages ?? lireReglages(profil?.reglages);
   // Clé stable : on ne recalcule le thème que si un réglage change.
   const cle = JSON.stringify(actifs);
   const theme = useMemo(
-    () => deriverTheme(JSON.parse(cle) as ReglagesEnfant, reductionSysteme),
-    [cle, reductionSysteme],
+    () => deriverTheme(JSON.parse(cle) as ReglagesEnfant, reductionSysteme, agrandissement),
+    [cle, reductionSysteme, agrandissement],
   );
   return <ContexteTheme.Provider value={theme}>{children}</ContexteTheme.Provider>;
 }
 
 export function useThemeEnfant(): ThemeEnfant {
-  return useContext(ContexteTheme) ?? THEME_PAR_DEFAUT;
+  const theme = useContext(ContexteTheme);
+  const agrandissement = useAgrandissement();
+  return theme ?? themeParDefaut(agrandissement);
 }
 
 /** Écran d'enfant : tout ce qu'il affiche suit les réglages de l'enfant actif. */
