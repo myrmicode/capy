@@ -19,7 +19,7 @@ import {
   PanneauRetour,
   TableConsultable,
 } from '@/composants';
-import { trouverEtape } from '@/config/parcours';
+import { THEMES, trouverEtape } from '@/config/parcours';
 import { MOTS_EXPLIQUES } from '@/contenu/motsExpliques';
 import type { ExerciceQuelconque } from '@/exercices';
 import { COMPOSANTS_JEUX, JEUX, type JeuId } from '@/jeux';
@@ -30,7 +30,7 @@ import { avancement, derouler, etatInitial, pauseDue, resteEnMots } from '@/parc
 import { genererEtape } from '@/parcours/etape';
 import { niveauPourDomaine } from '@/parcours/niveau';
 import { etoilesPour, graineDePartie } from '@/parcours/progression';
-import { themeEstPropose } from '@/parcours/selection';
+import { serieEntrainement, themeEnEntrainement, themeEstPropose } from '@/parcours/selection';
 import { useProfilActif, useProfils } from '@/store/profils';
 import { couleurs, espaces, formes } from '@/theme';
 
@@ -62,14 +62,26 @@ export function textesALire(jeuId: JeuId, consigne: string, ex: ExerciceQuelconq
 function EcranEtape() {
   const profil = useProfilActif();
   const enregistrerEtape = useProfils((e) => e.enregistrerEtape);
-  const { etape: etapeId = '' } = useLocalSearchParams<{ etape?: string }>();
-  const trouvee = useMemo(() => trouverEtape(etapeId), [etapeId]);
+  const enregistrerEntrainement = useProfils((e) => e.enregistrerEntrainement);
+  // Une étape du parcours, ou une série d'entraînement libre sur un thème déjà à +++.
+  const { etape: idEtape, entrainement: idTheme } = useLocalSearchParams<{ etape?: string; entrainement?: string }>();
+  const enEntrainement = idTheme !== undefined;
+  const trouvee = useMemo(() => {
+    if (idTheme === undefined) return trouverEtape(idEtape ?? '');
+    const theme = THEMES.find((t) => t.id === idTheme);
+    return theme ? { theme, unite: theme.unites[0], etape: serieEntrainement(theme) } : undefined;
+  }, [idEtape, idTheme]);
+  const etapeId = trouvee?.etape.id ?? '';
   const domaine = trouvee?.theme.domaine;
   const theme = useThemeEnfant();
   const { reglages, typo } = theme;
 
   // Chaque partie (et chaque « Rejouer ») tire de nouveaux exercices, de façon reproductible.
-  const [foisAuDepart] = useState(() => profil?.progression.etapes[etapeId]?.fois ?? 0);
+  const [foisAuDepart] = useState(() =>
+    idTheme !== undefined
+      ? (profil?.progression.entrainement?.[idTheme]?.series ?? 0)
+      : (profil?.progression.etapes[etapeId]?.fois ?? 0),
+  );
   const [partie, setPartie] = useState(0);
   const [debut, setDebut] = useState(() => Date.now());
   // Niveau des exercices : celui de l'enfant sur cette compétence, recalculé à chaque partie.
@@ -127,13 +139,15 @@ function EcranEtape() {
   useEffect(() => {
     if (etat.phase !== 'terminee' || !profil || !domaine || partieEnregistree.current === partie) return;
     partieEnregistree.current = partie;
-    enregistrerEtape(profil.id, etapeId, {
+    const resultat = {
       domaine,
       reussiesPremierCoup: etat.reussiesPremierCoup,
       nombreQuestions: etat.nombreQuestions,
       dureeSecondes: Math.min(DUREE_MAX_SECONDES, (Date.now() - debut) / 1000),
-    });
-  }, [etat, profil, partie, etapeId, debut, domaine, enregistrerEtape]);
+    };
+    if (idTheme !== undefined) enregistrerEntrainement(profil.id, idTheme, resultat);
+    else enregistrerEtape(profil.id, etapeId, resultat);
+  }, [etat, profil, partie, etapeId, idTheme, debut, domaine, enregistrerEtape, enregistrerEntrainement]);
 
   // On coupe la voix en changeant de question ou en quittant l'étape. Avec la
   // lecture automatique, Capy lit ensuite la nouvelle question.
@@ -166,7 +180,12 @@ function EcranEtape() {
 
   if (!profil) return <Redirect href="/" />;
   // Aucun exercice sans le résultat de la toile : seuls les thèmes proposés s'ouvrent.
-  if (trouvee && !themeEstPropose(profil.classe, profil.toile, trouvee.theme.id)) return <Redirect href="/enfant" />;
+  const ouvert = trouvee
+    ? enEntrainement
+      ? themeEnEntrainement(profil.classe, profil.toile, trouvee.theme.id)
+      : themeEstPropose(profil.classe, profil.toile, trouvee.theme.id)
+    : true;
+  if (!ouvert) return <Redirect href="/enfant" />;
 
   if (questions.length === 0 || !jeu || !exercice || !question) {
     if (etat.phase !== 'terminee') {
@@ -194,13 +213,13 @@ function EcranEtape() {
         pied={
           <View style={styles.boutonsFin}>
             <Bouton titre="Retour au parcours" onPress={() => router.back()} />
-            <Bouton titre="Rejouer l’étape" variante="secondaire" onPress={rejouer} />
+            <Bouton titre={enEntrainement ? 'Une autre série' : 'Rejouer l’étape'} variante="secondaire" onPress={rejouer} />
           </View>
         }
       >
         <View style={styles.fin}>
           <Image source={mascotte.bravo} style={styles.capyFin} resizeMode="contain" accessible={false} />
-          <Text style={[typo.titre1, styles.centre]}>Étape terminée !</Text>
+          <Text style={[typo.titre1, styles.centre]}>{enEntrainement ? 'Série terminée !' : 'Étape terminée !'}</Text>
           <View
             style={styles.etoiles}
             accessible
@@ -214,7 +233,9 @@ function EcranEtape() {
             <Text style={[typo.manuscrit, styles.centre]}>Petit pas après petit pas…</Text>
           ) : null}
           <Text style={[typo.enonce, styles.centre]}>
-            Bravo {profil.prenom}, tu as fini « {trouvee!.etape.titre} ».
+            {enEntrainement
+              ? `Bravo ${profil.prenom}, tes étoiles s’ajoutent à ton trésor. Tu peux faire une autre série quand tu veux.`
+              : `Bravo ${profil.prenom}, tu as fini « ${trouvee!.etape.titre} ».`}
           </Text>
         </View>
       </Ecran>

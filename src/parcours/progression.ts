@@ -10,6 +10,13 @@ export interface ResultatEtape {
   fois: number;
 }
 
+export interface ResultatEntrainement {
+  /** Étoiles gagnées en tout dans les séries de ce thème (elles s'additionnent). */
+  etoiles: number;
+  /** Nombre de séries terminées. */
+  series: number;
+}
+
 export interface ProgressionEnfant {
   etapes: Record<string, ResultatEtape>;
   coffresOuverts: string[];
@@ -17,6 +24,8 @@ export interface ProgressionEnfant {
   jours: string[];
   /** Temps passé en étape, en secondes, par jour. */
   tempsParJour: Record<string, number>;
+  /** Entraînement libre, par thème (compétences déjà à +++ sur la fiche). Absent sur les anciens profils. */
+  entrainement?: Record<string, ResultatEntrainement>;
 }
 
 /** Étoiles gagnées en ouvrant un coffre. */
@@ -25,7 +34,7 @@ const JOURS_CONSERVES = 400;
 const JOURS_TEMPS_CONSERVES = 60;
 
 export function progressionVide(): ProgressionEnfant {
-  return { etapes: {}, coffresOuverts: [], jours: [], tempsParJour: {} };
+  return { etapes: {}, coffresOuverts: [], jours: [], tempsParJour: {}, entrainement: {} };
 }
 
 /**
@@ -75,6 +84,41 @@ export function enregistrerEtape(
   };
 }
 
+/**
+ * Une série d'entraînement libre terminée : ses étoiles s'ajoutent à celles du
+ * thème, et le jour et le temps comptent comme pour une étape.
+ */
+export function enregistrerEntrainement(
+  p: ProgressionEnfant,
+  themeId: string,
+  reussiesPremierCoup: number,
+  nombreQuestions: number,
+  dureeSecondes: number,
+  maintenant: Date,
+): ProgressionEnfant {
+  // Le jour et le temps se calculent comme pour une étape ; l'étape fictive est retirée ensuite.
+  const cle = `entrainement:${themeId}`;
+  const avec = enregistrerEtape(p, cle, reussiesPremierCoup, nombreQuestions, dureeSecondes, maintenant);
+  const { [cle]: _fictive, ...etapes } = avec.etapes;
+  const avant = p.entrainement?.[themeId];
+  return {
+    ...avec,
+    etapes,
+    entrainement: {
+      ...p.entrainement,
+      [themeId]: {
+        etoiles: (avant?.etoiles ?? 0) + etoilesPour(reussiesPremierCoup, nombreQuestions),
+        series: (avant?.series ?? 0) + 1,
+      },
+    },
+  };
+}
+
+/** Étoiles gagnées en entraînement libre, tous thèmes confondus. */
+export function etoilesEntrainement(p: ProgressionEnfant): number {
+  return Object.values(p.entrainement ?? {}).reduce((somme, r) => somme + r.etoiles, 0);
+}
+
 export function ouvrirCoffre(p: ProgressionEnfant, coffreId: string): ProgressionEnfant {
   if (p.coffresOuverts.includes(coffreId)) return p;
   return { ...p, coffresOuverts: [...p.coffresOuverts, coffreId] };
@@ -82,7 +126,7 @@ export function ouvrirCoffre(p: ProgressionEnfant, coffreId: string): Progressio
 
 export function totalEtoiles(p: ProgressionEnfant): number {
   const etapes = Object.values(p.etapes).reduce((somme, r) => somme + r.etoiles, 0);
-  return etapes + p.coffresOuverts.length * ETOILES_COFFRE;
+  return etapes + p.coffresOuverts.length * ETOILES_COFFRE + etoilesEntrainement(p);
 }
 
 /** Jours d'affilée jusqu'à aujourd'hui (ou hier, si l'enfant n'a pas encore joué aujourd'hui). */

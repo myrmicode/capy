@@ -48,6 +48,13 @@ interface EtatProfils {
     resultat: { domaine: DomaineId; reussiesPremierCoup: number; nombreQuestions: number; dureeSecondes: number },
     maintenant?: Date,
   ) => void;
+  /** Série d'entraînement libre terminée : étoiles, jour, temps, et la toile du jour évolue comme pour une étape. */
+  enregistrerEntrainement: (
+    id: string,
+    themeId: string,
+    resultat: { domaine: DomaineId; reussiesPremierCoup: number; nombreQuestions: number; dureeSecondes: number },
+    maintenant?: Date,
+  ) => void;
   /** Enregistre la fiche d'une matière : elle devient la référence de cette matière. */
   enregistrerToile: (id: string, matiere: Matiere, niveaux: Niveaux, maintenant?: Date) => void;
   ouvrirCoffre: (id: string, coffreId: string) => void;
@@ -117,6 +124,23 @@ export const useProfils = create<EtatProfils>()(
                 r.dureeSecondes,
                 m,
               ),
+              toile: p.toile && toileApresEtape(p.toile, r.domaine, r.reussiesPremierCoup, r.nombreQuestions),
+            }),
+            maintenant,
+          ),
+        enregistrerEntrainement: (id, themeId, r, maintenant = new Date()) =>
+          modifier(
+            id,
+            (p, m) => ({
+              progression: progression.enregistrerEntrainement(
+                p.progression,
+                themeId,
+                r.reussiesPremierCoup,
+                r.nombreQuestions,
+                r.dureeSecondes,
+                m,
+              ),
+              // Même règle que le parcours ; la fiche de septembre ne change jamais.
               toile: p.toile && toileApresEtape(p.toile, r.domaine, r.reussiesPremierCoup, r.nombreQuestions),
             }),
             maintenant,

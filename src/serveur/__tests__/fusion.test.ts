@@ -28,6 +28,7 @@ describe('fusion de deux progressions', () => {
       coffresOuverts: ['c1', 'c2'],
       jours: ['2026-10-20', '2026-10-21'],
       tempsParJour: { '2026-10-20': 300, '2026-10-21': 120 },
+      entrainement: {},
     });
   });
 });

@@ -15,7 +15,7 @@ import {
   totalEtoiles,
   type Noeud,
 } from '@/parcours/progression';
-import { themesProposes } from '@/parcours/selection';
+import { themesEntrainement, themesProposes } from '@/parcours/selection';
 import { verrouillerParents } from '@/parents/verrou';
 import { useProfilActif } from '@/store/profils';
 import { ficheSaisie, prioritesDe } from '@/toile/niveaux';
@@ -51,6 +51,11 @@ function Parcours() {
   const aujourdhui = dateLocale(new Date());
   const serie = serieDeJours(p.jours, aujourdhui);
   const absence = joursDepuisDerniereActivite(p.jours, aujourdhui);
+  // Ce qui est déjà à +++ sur la fiche se rejoue en entraînement libre.
+  const aEntrainer = themesEntrainement(profil.classe, profil.toile).length > 0;
+  const boutonEntrainement = aEntrainer ? (
+    <Bouton titre="Entraînement libre" variante="secondaire" onPress={() => router.push('/entrainement')} />
+  ) : null;
 
   const entete = (
     <View style={styles.entete}>
@@ -99,6 +104,7 @@ function Parcours() {
       >
         {entete}
         <BulleCapy pose={profil.toile ? 'bravo' : 'explorer'} tailleCapy={110} texte={texte} />
+        {boutonEntrainement}
       </Ecran>
     );
   }
@@ -205,6 +211,7 @@ function Parcours() {
             ))}
         </View>
       ))}
+      {boutonEntrainement}
     </Ecran>
   );
 }

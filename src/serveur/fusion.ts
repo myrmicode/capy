@@ -17,11 +17,17 @@ export function fusionnerProgression(a: ProgressionEnfant, b: ProgressionEnfant)
   const tempsParJour = { ...a.tempsParJour };
   // Le maximum, pas la somme : le même temps revient souvent des deux côtés après une synchronisation.
   for (const [jour, s] of Object.entries(b.tempsParJour)) tempsParJour[jour] = Math.max(tempsParJour[jour] ?? 0, s);
+  const entrainement = { ...a.entrainement };
+  for (const [theme, r] of Object.entries(b.entrainement ?? {})) {
+    const autre = entrainement[theme];
+    entrainement[theme] = autre ? { etoiles: Math.max(autre.etoiles, r.etoiles), series: Math.max(autre.series, r.series) } : r;
+  }
   return {
     etapes,
     coffresOuverts: [...new Set([...a.coffresOuverts, ...b.coffresOuverts])].sort(),
     jours: [...new Set([...a.jours, ...b.jours])].sort(),
     tempsParJour,
+    entrainement,
   };
 }
 

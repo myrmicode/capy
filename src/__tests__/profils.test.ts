@@ -16,7 +16,7 @@ describe('profils enfants', () => {
   it('ne stocke que le prénom, la classe et la progression (plus la date de modification)', () => {
     const profil = useProfils.getState().ajouterProfil('Lou', 'CE2');
     expect(Object.keys(profil).sort()).toEqual(['classe', 'id', 'modifieLe', 'prenom', 'progression']);
-    expect(Object.keys(profil.progression).sort()).toEqual(['coffresOuverts', 'etapes', 'jours', 'tempsParJour']);
+    expect(Object.keys(profil.progression).sort()).toEqual(['coffresOuverts', 'entrainement', 'etapes', 'jours', 'tempsParJour']);
   });
 
   it('enregistre une étape et un coffre pour le bon enfant seulement', () => {
@@ -50,7 +50,7 @@ describe('profils enfants', () => {
     const migrer = useProfils.persist.getOptions().migrate!;
     const ancien = { profils: [{ id: 'a', prenom: 'Lou', classe: 'CE2' }], profilActifId: 'a' };
     const migre = (await migrer(ancien, 1)) as { profils: { progression: unknown }[] };
-    expect(migre.profils[0].progression).toEqual({ etapes: {}, coffresOuverts: [], jours: [], tempsParJour: {} });
+    expect(migre.profils[0].progression).toEqual({ etapes: {}, coffresOuverts: [], jours: [], tempsParJour: {}, entrainement: {} });
   });
 
   it('ajoute une date de modification aux profils enregistrés avant la phase 7, sans rien perdre', async () => {

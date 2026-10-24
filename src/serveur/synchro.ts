@@ -24,6 +24,7 @@ const Ligne = z.object({
     coffresOuverts: z.array(z.string()),
     jours: z.array(z.string()),
     tempsParJour: z.record(z.string(), z.number()),
+    entrainement: z.record(z.string(), z.object({ etoiles: z.number(), series: z.number() })).optional(),
   }),
   // Vérifiée et remise au format actuel par migrerToile (anciennes toiles comprises).
   toile: z.unknown().nullable(),
