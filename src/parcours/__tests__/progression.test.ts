@@ -50,9 +50,11 @@ describe.each(THEMES.map((t) => [t.titre, t] as const))('thème « %s »', (_, t
     expect(new Set(tous).size).toBe(tous.length);
   });
 
-  it.each(etapes.map((e) => [e.titre, e] as const))('« %s » se génère toujours, avec au moins 2 mini-jeux', (_titre, etape) => {
-    for (let graine = 0; graine < 200; graine++) {
-      const questions = genererEtape({ classe: t.classe, domaine: t.domaine, graine, ...etape });
+  it.each(etapes.map((e) => [e.titre, e] as const))('« %s » se génère toujours, à tous les niveaux, avec au moins 2 mini-jeux', (_titre, etape) => {
+    for (let graine = 0; graine < 300; graine++) {
+      // Chaque étape doit se générer à tous les niveaux (+, ++, +++).
+      const niveau = ((graine % 3) + 1) as 1 | 2 | 3;
+      const questions = genererEtape({ classe: t.classe, domaine: t.domaine, graine, ...etape, niveau });
       expect(questions).toHaveLength(etape.nombreQuestions);
       expect(new Set(questions.map((q) => q.jeu)).size).toBeGreaterThanOrEqual(2);
       for (const q of questions) {

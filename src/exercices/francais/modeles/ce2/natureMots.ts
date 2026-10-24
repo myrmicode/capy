@@ -31,18 +31,21 @@ export const natureDuMot = definirModeleTexte({
   domaine: 'nature-mots',
   competence: 'Donner la nature d’un mot dans une phrase : nom, verbe, adjectif ou déterminant.',
   classes: ['CE2'],
-  construire: (alea) => {
+  // + : deux paniers (nom, verbe) ; ++ : l'adjectif en plus ; +++ : les quatre.
+  construire: (alea, _classe, niveau) => {
+    const paniers = NATURES.slice(0, niveau + 1);
     const p = phraseSimple(alea);
-    const cible = alea.entier(0, p.mots.length - 1);
+    const possibles = p.mots.map((_m, i) => i).filter((i) => paniers.includes(p.mots[i].nature));
+    const cible = alea.choix(possibles);
     const mot = p.mots[cible];
     const segments = p.mots.map((m, i) => ({ texte: i === 0 ? majuscule(m.texte) : m.texte, ...(i === cible ? { surligne: true } : {}) }));
     return {
       enonce: phrase(segments),
       question: `Quelle est la nature du mot « ${mot.texte} » ?`,
       reponse: mot.nature,
-      distracteurs: NATURES.filter((n) => n !== mot.nature).map((n) => ({ valeur: n, erreur: ERREUR_CONFUSION(n, mot.nature) })),
+      distracteurs: paniers.filter((n) => n !== mot.nature).map((n) => ({ valeur: n, erreur: ERREUR_CONFUSION(n, mot.nature) })),
       segments,
-      categories: [...NATURES],
+      categories: [...paniers],
       indice: INDICE,
       explication: explication(mot, p.infinitif),
     };
@@ -56,9 +59,10 @@ export const trouverLeMot = definirModeleTexte({
   domaine: 'nature-mots',
   competence: 'Repérer dans une phrase le verbe ou l’adjectif.',
   classes: ['CE2'],
-  construire: (alea) => {
+  // + : le verbe seulement ; ++ et +++ : le verbe ou l'adjectif.
+  construire: (alea, _classe, niveau) => {
     const p = phraseSimple(alea);
-    const cherchee = alea.choix<NatureMot>(['Verbe', 'Adjectif']);
+    const cherchee = niveau === 1 ? 'Verbe' : alea.choix<NatureMot>(['Verbe', 'Adjectif']);
     const mot = p.mots.find((m) => m.nature === cherchee)!;
     const segments = p.mots.map((m, i) => ({ texte: i === 0 ? majuscule(m.texte) : m.texte }));
     // Le mot cherché doit être unique dans la phrase.

@@ -16,6 +16,14 @@ export const ajouterDizaines = definirModele<{ nombre: number; dizaines: number 
       reponse: { min: 110, max: 989 },
     },
   },
+  reglesAccessibles: {
+    CE2: {
+      // + : nombres à deux chiffres, résultat inférieur à 100.
+      1: { donnees: { nombre: { min: 11, max: 59 }, dizaines: { min: 10, max: 40 } }, reponse: { min: 21, max: 99 } },
+      // ++ : nombres à trois chiffres, petits sauts.
+      2: { donnees: { nombre: { min: 100, max: 500 }, dizaines: { min: 10, max: 50 } }, reponse: { min: 110, max: 550 } },
+    },
+  },
   // Les dizaines ajoutées sont un multiple de 10.
   tirer: (alea, regles) => ({
     nombre: alea.entier(regles.donnees.nombre.min, regles.donnees.nombre.max),

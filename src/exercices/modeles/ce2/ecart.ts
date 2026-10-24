@@ -18,6 +18,14 @@ export const ecart = definirModele<{ grand: number; petit: number }>({
       reponse: { min: 2, max: 989 },
     },
   },
+  reglesAccessibles: {
+    CE2: {
+      // + : nombres inférieurs à 100.
+      1: { donnees: { grand: { min: 15, max: 99 }, petit: { min: 5, max: 90 } }, reponse: { min: 2, max: 94 } },
+      // ++ : nombres jusqu'à 500.
+      2: { donnees: { grand: { min: 30, max: 500 }, petit: { min: 10, max: 490 } }, reponse: { min: 2, max: 490 } },
+    },
+  },
   estValide: ({ grand, petit }) => grand > petit,
   calculer: ({ grand, petit }) => grand - petit,
   erreursTypiques: ({ grand: a, petit: b }) => [

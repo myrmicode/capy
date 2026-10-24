@@ -16,9 +16,11 @@ export const sujetEtVerbe = definirModeleTexte({
   domaine: 'sujet-verbe',
   competence: 'Repérer le verbe et le groupe sujet dans une phrase simple.',
   classes: ['CE2'],
-  construire: (alea) => {
+  // + : un groupe nominal en début de phrase ; ++ : aussi un pronom ou « Capy » ;
+  // +++ : aussi un complément placé en tête de phrase (le sujet n'est plus au début).
+  construire: (alea, _classe, niveau) => {
     // Le sujet : un groupe nominal, un pronom ou « Capy ».
-    const forme = alea.choix(['gn', 'gn', 'pronom', 'capy'] as const);
+    const forme = niveau === 1 ? 'gn' : alea.choix(['gn', 'gn', 'pronom', 'capy'] as const);
     let sujet: string;
     let pluriel: boolean;
     // Un pronom ou Capy peuvent tout faire ; un groupe nominal dépend du nom.
@@ -40,7 +42,7 @@ export const sujetEtVerbe = definirModeleTexte({
     const objet = tirerNom(alea, ['objet']);
     const groupeComplement = `${objet.genre === 'm' ? alea.choix(['un', 'le']) : alea.choix(['une', 'la'])} ${objet.singulier}`;
 
-    const debut = alea.choix([true, false]) ? alea.choix(DEBUTS) : null;
+    const debut = niveau === 3 && alea.choix([true, false]) ? alea.choix(DEBUTS) : null;
     const groupes = [...(debut ? [debut] : []), sujet, verbe, groupeComplement];
     const segments = groupes.map((g, i) => ({ texte: i === 0 ? majuscule(g) : g }));
     const indexSujet = debut ? 1 : 0;

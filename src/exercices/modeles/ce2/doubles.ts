@@ -17,6 +17,14 @@ export const doubles = definirModele<{ nombre: number }>({
       reponse: { min: 22, max: 98 },
     },
   },
+  reglesAccessibles: {
+    CE2: {
+      // + : doubles jusqu'à 25.
+      1: { donnees: { nombre: { min: 5, max: 25 } }, reponse: { min: 10, max: 50 } },
+      // ++ : doubles jusqu'à 35.
+      2: { donnees: { nombre: { min: 11, max: 35 } }, reponse: { min: 22, max: 70 } },
+    },
+  },
   calculer: ({ nombre }) => 2 * nombre,
   erreursTypiques: ({ nombre: n }) => [
     { valeur: additionSansRetenue(n, n), erreur: 'retenue oubliée en doublant les unités' },

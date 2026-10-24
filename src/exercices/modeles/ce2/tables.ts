@@ -16,6 +16,14 @@ export const tables = definirModele<{ a: number; b: number }>({
       reponse: { min: 6, max: 81 },
     },
   },
+  reglesAccessibles: {
+    CE2: {
+      // + : tables de 2 à 5.
+      1: { donnees: { a: { min: 2, max: 5 }, b: { min: 2, max: 5 } }, reponse: { min: 6, max: 25 } },
+      // ++ : toutes les tables, multipliées par 2 à 5.
+      2: { donnees: { a: { min: 2, max: 9 }, b: { min: 2, max: 5 } }, reponse: { min: 6, max: 45 } },
+    },
+  },
   // 2 × 2 = 2 + 2 : on ne distinguerait pas l'addition de la multiplication.
   estValide: ({ a, b }) => a * b !== a + b,
   calculer: ({ a, b }) => a * b,

@@ -19,6 +19,7 @@ import { arreterLecture, lireAVoixHaute, feliciter } from '@/jeux/retours';
 import { mascotte } from '@/mascotte';
 import { avancement, derouler, etatInitial } from '@/parcours/deroulement';
 import { genererEtape } from '@/parcours/etape';
+import { niveauPourDomaine } from '@/parcours/niveau';
 import { etoilesPour, graineDePartie } from '@/parcours/progression';
 import { themeEstPropose } from '@/parcours/selection';
 import { useProfilActif, useProfils } from '@/store/profils';
@@ -37,22 +38,24 @@ export default function EcranEtape() {
   const profil = useProfilActif();
   const enregistrerEtape = useProfils((e) => e.enregistrerEtape);
   const { etape: etapeId = '' } = useLocalSearchParams<{ etape?: string }>();
-  const trouvee = trouverEtape(etapeId);
+  const trouvee = useMemo(() => trouverEtape(etapeId), [etapeId]);
   const domaine = trouvee?.theme.domaine;
 
   // Chaque partie (et chaque « Rejouer ») tire de nouveaux exercices, de façon reproductible.
   const [foisAuDepart] = useState(() => profil?.progression.etapes[etapeId]?.fois ?? 0);
   const [partie, setPartie] = useState(0);
   const [debut, setDebut] = useState(() => Date.now());
+  // Niveau des exercices : celui de l'enfant sur cette compétence, recalculé à chaque partie.
+  const [niveauEtape, setNiveauEtape] = useState(() => (domaine ? niveauPourDomaine(profil?.toile, domaine) : 1));
   const graine = profil ? graineDePartie(profil.id, etapeId, foisAuDepart + partie) : 0;
   const classe = profil?.classe;
 
   const questions = useMemo(
     () =>
       classe && trouvee
-        ? genererEtape({ classe, domaine: trouvee.theme.domaine, graine, ...trouvee.etape })
+        ? genererEtape({ classe, domaine: trouvee.theme.domaine, graine, ...trouvee.etape, niveau: niveauEtape })
         : [],
-    [classe, trouvee, graine],
+    [classe, trouvee, graine, niveauEtape],
   );
   const [etat, envoyer] = useReducer(derouler, questions.length, etatInitial);
   // Numéro de la question dont l'indice est ouvert : il se referme tout seul à la question suivante.
@@ -100,6 +103,7 @@ export default function EcranEtape() {
     const etoiles = etoilesPour(etat.reussiesPremierCoup, etat.nombreQuestions);
     const rejouer = () => {
       setPartie((n) => n + 1);
+      if (domaine) setNiveauEtape(niveauPourDomaine(profil.toile, domaine));
       setDebut(Date.now());
       envoyer({ type: 'recommencer' });
     };
@@ -162,6 +166,11 @@ export default function EcranEtape() {
 
       <View style={styles.outils}>
         <Text style={[typo.titre3, styles.flex]}>{jeu.titre}</Text>
+        {exercice.niveau > niveauEtape ? (
+          <View style={styles.defi} accessible accessibilityLabel="Question défi">
+            <Text style={[typo.petit, styles.texteDefi]}>Question défi</Text>
+          </View>
+        ) : null}
         <Bouton
           titre="Écouter"
           variante="secondaire"
@@ -201,6 +210,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   outils: { flexDirection: 'row', alignItems: 'center', gap: espaces.s, flexWrap: 'wrap' },
+  defi: {
+    backgroundColor: couleurs.jaune[400],
+    borderRadius: formes.pilule,
+    paddingHorizontal: espaces.m,
+    paddingVertical: espaces.xs,
+  },
+  texteDefi: { color: couleurs.jaune.texte, fontFamily: typo.texteGras.fontFamily },
   flex: { flex: 1, minWidth: 140 },
   fin: { alignItems: 'center', gap: espaces.m, paddingTop: espaces.xxl },
   capyFin: { width: 200, height: 200 },

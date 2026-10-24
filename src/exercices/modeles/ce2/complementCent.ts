@@ -23,6 +23,18 @@ export const complementCent = definirModele<{ depart: number }>({
       reponse: { min: 11, max: 89 },
     },
   },
+  reglesAccessibles: {
+    CE2: {
+      1: { donnees: { depart: { min: 20, max: 80 } }, reponse: { min: 20, max: 80 } },
+      2: { donnees: { depart: { min: 15, max: 85 } }, reponse: { min: 15, max: 85 } },
+    },
+  },
+  // + : dizaines entières (30 + ? = 100) ; ++ : de 5 en 5 (35 + ? = 100) ; +++ : tout nombre.
+  tirer: (alea, regles, niveau) => {
+    const pas = niveau === 1 ? 10 : niveau === 2 ? 5 : 1;
+    const { min, max } = regles.donnees.depart;
+    return { depart: pas * alea.entier(Math.ceil(min / pas), Math.floor(max / pas)) };
+  },
   calculer: ({ depart }) => 100 - depart,
   erreursTypiques: ({ depart: n }) => [
     { valeur: complementChiffreAChiffre(n), erreur: 'chaque chiffre complété à 10' },

@@ -19,6 +19,14 @@ export const ajout = definirModele<{ depart: number; ajout: number }>({
       reponse: { min: 30, max: 999 },
     },
   },
+  reglesAccessibles: {
+    CE2: {
+      // + : nombres inférieurs à 100.
+      1: { donnees: { depart: { min: 10, max: 79 }, ajout: { min: 5, max: 20 } }, reponse: { min: 15, max: 99 } },
+      // ++ : nombres jusqu'à 600.
+      2: { donnees: { depart: { min: 20, max: 400 }, ajout: { min: 10, max: 199 } }, reponse: { min: 30, max: 599 } },
+    },
+  },
   calculer: ({ depart, ajout: b }) => depart + b,
   erreursTypiques: ({ depart: a, ajout: b }) => [
     { valeur: additionSansRetenue(a, b), erreur: 'retenue oubliée' },

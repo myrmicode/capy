@@ -18,6 +18,14 @@ export const partage = definirModele<{ total: number; parts: number }>({
       reponse: { min: 2, max: 10 },
     },
   },
+  reglesAccessibles: {
+    CE2: {
+      // + : partager en 2 ou 3, petites parts.
+      1: { donnees: { total: { min: 4, max: 15 }, parts: { min: 2, max: 3 } }, reponse: { min: 2, max: 5 } },
+      // ++ : partager jusqu'en 4.
+      2: { donnees: { total: { min: 4, max: 32 }, parts: { min: 2, max: 4 } }, reponse: { min: 2, max: 8 } },
+    },
+  },
   // On tire le nombre de parts et la valeur d'une part : le partage tombe toujours juste.
   tirer: (alea, regles) => {
     const parts = alea.entier(regles.donnees.parts.min, regles.donnees.parts.max);

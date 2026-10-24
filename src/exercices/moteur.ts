@@ -1,7 +1,16 @@
 import type { Classe } from '@/config/classes';
 
 import { creerAlea, type Alea } from './alea';
-import type { DefinitionModele, Distracteur, Donnees, Exercice, ModeleExercice, ReglesClasse } from './types';
+import {
+  NIVEAU_CIBLE,
+  type DefinitionModele,
+  type Distracteur,
+  type Donnees,
+  type Exercice,
+  type ModeleExercice,
+  type NiveauDifficulte,
+  type ReglesClasse,
+} from './types';
 
 export const NOMBRE_DISTRACTEURS = 3;
 const ESSAIS_MAX = 10_000;
@@ -41,10 +50,11 @@ export function choisirDistracteurs(reponse: number, candidats: Distracteur[], a
 export function definirModele<D extends Donnees>(def: DefinitionModele<D>): ModeleExercice {
   const classes = Object.keys(def.regles) as Classe[];
 
-  const reglesDe = (classe: Classe): ReglesClasse<D> => {
+  const reglesDe = (classe: Classe, niveau: NiveauDifficulte = NIVEAU_CIBLE): ReglesClasse<D> => {
     const regles = def.regles[classe];
     if (!regles) throw new Error(`Le modèle « ${def.id} » n'a pas de règles pour la classe ${classe}.`);
-    return regles;
+    if (niveau === 3) return regles;
+    return def.reglesAccessibles?.[classe]?.[niveau] ?? regles;
   };
 
   return {
@@ -54,12 +64,13 @@ export function definirModele<D extends Donnees>(def: DefinitionModele<D>): Mode
     competence: def.competence,
     operations: def.operations,
     classes,
-    regles: (classe) => reglesDe(classe) as ReglesClasse<Donnees>,
+    regles: (classe, niveau) => reglesDe(classe, niveau) as ReglesClasse<Donnees>,
     generer: (classe, graine, options = {}): Exercice => {
-      const regles = reglesDe(classe);
+      const niveau = options.niveau ?? NIVEAU_CIBLE;
+      const regles = reglesDe(classe, niveau);
       const alea = creerAlea(graine);
       for (let essai = 0; essai < ESSAIS_MAX; essai++) {
-        const d = def.tirer ? def.tirer(alea, regles) : tirageUniforme(alea, regles);
+        const d = def.tirer ? def.tirer(alea, regles, niveau) : tirageUniforme(alea, regles);
         if (def.estValide && !def.estValide(d)) continue;
         const reponse = def.calculer(d);
         if (reponse < regles.reponse.min || reponse > regles.reponse.max) continue;
@@ -72,6 +83,7 @@ export function definirModele<D extends Donnees>(def: DefinitionModele<D>): Mode
         return {
           nature: 'nombre',
           modeleId: def.id,
+          niveau,
           domaine: def.domaine,
           classe,
           graine,

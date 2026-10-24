@@ -20,8 +20,15 @@ export const accordAdjectif = definirModeleTexte({
   domaine: 'accord-nom-adjectif',
   competence: 'Accorder l’adjectif en genre et en nombre avec le nom dans le groupe nominal.',
   classes: ['CE2'],
-  construire: (alea) => {
-    const gn = groupeNominal(alea, ['animal', 'humain', 'objet'], { adjectif: true });
+  // + : singulier seulement (masculin ou féminin) ; ++ : pluriels réguliers en -s ;
+  // +++ : tous les pluriels (chevaux, bateaux…).
+  construire: (alea, _classe, niveau) => {
+    const gn = groupeNominal(alea, ['animal', 'humain', 'objet'], {
+      adjectif: true,
+      ...(niveau === 1 ? { nombre: 'singulier' as const } : {}),
+    });
+    const pluriel = gn.nombre === 'pluriel';
+    if (niveau === 2 && pluriel && gn.nom.pluriel !== `${gn.nom.singulier}s`) return null;
     const a = gn.adjectif!;
     const forme = formeAdjectif(a, gn.genre, gn.nombre);
     const nomTexte = gn.mots.find((m) => m.nature === 'Nom')!.texte;

@@ -5,6 +5,15 @@ import type { Alea } from './alea';
 
 export type Operation = '+' | '−' | '×' | '÷';
 
+/**
+ * Niveau de difficulté d'un exercice, calé sur les symboles de la fiche :
+ * 1 = « + » (accessible), 2 = « ++ », 3 = « +++ », le niveau attendu en fin d'année.
+ */
+export type NiveauDifficulte = 1 | 2 | 3;
+export const NIVEAUX: readonly NiveauDifficulte[] = [1, 2, 3];
+/** Le niveau visé : on y emmène l'enfant pas à pas. */
+export const NIVEAU_CIBLE: NiveauDifficulte = 3;
+
 export interface Intervalle {
   min: number;
   max: number;
@@ -30,6 +39,7 @@ export interface ReglesClasse<D extends Donnees> {
 export interface Exercice {
   nature: 'nombre';
   modeleId: string;
+  niveau: NiveauDifficulte;
   domaine: DomaineId;
   classe: Classe;
   graine: number;
@@ -62,11 +72,17 @@ export interface DefinitionModele<D extends Donnees> {
   /** Compétence visée, formulée d'après les attendus officiels (relecture par un enseignant). */
   competence: string;
   operations: Operation[];
+  /** Règles du niveau visé (+++), par classe. */
   regles: Partial<Record<Classe, ReglesClasse<D>>>;
+  /**
+   * Règles plus accessibles pour les niveaux 1 (+) et 2 (++). Un niveau absent
+   * reprend les règles du niveau visé.
+   */
+  reglesAccessibles?: Partial<Record<Classe, Partial<Record<1 | 2, ReglesClasse<D>>>>>;
   /** Contraintes entre les nombres (ex. « on ne retire pas plus qu'il n'y a »). */
   estValide?: (d: D) => boolean;
   /** Tirage personnalisé ; par défaut chaque nombre est tiré uniformément dans ses bornes. */
-  tirer?: (alea: Alea, regles: ReglesClasse<D>) => D;
+  tirer?: (alea: Alea, regles: ReglesClasse<D>, niveau: NiveauDifficulte) => D;
   /** La réponse est toujours calculée, jamais écrite à la main. */
   calculer: (d: D) => number;
   /** Variantes d'histoire ; l'une d'elles est choisie au hasard. */
@@ -87,6 +103,13 @@ export type Histoire<D extends Donnees> = (
   autresQuestions?: readonly string[];
 };
 
+export interface OptionsGeneration {
+  /** Variante d'histoire imposée (index dans « histoires »). */
+  histoire?: number;
+  /** Niveau de difficulté (le niveau visé si absent). */
+  niveau?: NiveauDifficulte;
+}
+
 /** Modèle prêt à l'emploi, tel que l'utilisent le parcours et les mini-jeux. */
 export interface ModeleExercice {
   id: string;
@@ -95,9 +118,9 @@ export interface ModeleExercice {
   competence: string;
   operations: Operation[];
   classes: Classe[];
-  regles: (classe: Classe) => ReglesClasse<Donnees>;
+  regles: (classe: Classe, niveau?: NiveauDifficulte) => ReglesClasse<Donnees>;
   /** `histoire` impose une variante d'histoire (index dans `histoires`), utile pour un mini-jeu illustré. */
-  generer: (classe: Classe, graine: number, options?: { histoire?: number }) => Exercice;
+  generer: (classe: Classe, graine: number, options?: OptionsGeneration) => Exercice;
 }
 
 // --- Exercices dont la réponse est un mot ou un groupe de mots (français) ---
@@ -117,6 +140,7 @@ export interface DistracteurTexte {
 export interface ExerciceTexte {
   nature: 'texte';
   modeleId: string;
+  niveau: NiveauDifficulte;
   domaine: DomaineId;
   classe: Classe;
   graine: number;
@@ -144,7 +168,7 @@ export interface ModeleTexte {
   domaine: DomaineId;
   competence: string;
   classes: Classe[];
-  generer: (classe: Classe, graine: number, options?: { histoire?: number }) => ExerciceTexte;
+  generer: (classe: Classe, graine: number, options?: OptionsGeneration) => ExerciceTexte;
 }
 
 export type ModeleQuelconque = ModeleExercice | ModeleTexte;

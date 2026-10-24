@@ -5,7 +5,7 @@ import type { Classe } from '@/config/classes';
 import type { DomaineId } from '@/config/domaines';
 
 import { creerAlea, type Alea } from '../alea';
-import type { DistracteurTexte, ExerciceTexte, ModeleTexte, Segment } from '../types';
+import { NIVEAU_CIBLE, type DistracteurTexte, type ExerciceTexte, type ModeleTexte, type NiveauDifficulte, type Segment } from '../types';
 
 export const NOMBRE_DISTRACTEURS_TEXTE = 3;
 const ESSAIS_MAX = 1000;
@@ -29,8 +29,11 @@ export interface DefinitionModeleTexte {
   /** Compétence visée, formulée d'après les attendus officiels (relecture par un enseignant). */
   competence: string;
   classes: Classe[];
-  /** Fabrique un exercice ; renvoie null pour retenter un autre tirage. */
-  construire: (alea: Alea, classe: Classe) => ContenuTexte | null;
+  /**
+   * Fabrique un exercice au niveau demandé (1 : +, 2 : ++, 3 : +++, le niveau visé) ;
+   * renvoie null pour retenter un autre tirage.
+   */
+  construire: (alea: Alea, classe: Classe, niveau: NiveauDifficulte) => ContenuTexte | null;
 }
 
 /** Garde des distracteurs différents de la réponse et entre eux. */
@@ -52,19 +55,21 @@ export function definirModeleTexte(def: DefinitionModeleTexte): ModeleTexte {
     domaine: def.domaine,
     competence: def.competence,
     classes: def.classes,
-    generer: (classe, graine): ExerciceTexte => {
+    generer: (classe, graine, options = {}): ExerciceTexte => {
+      const niveau = options.niveau ?? NIVEAU_CIBLE;
       if (!def.classes.includes(classe)) {
         throw new Error(`Le modèle « ${def.id} » n'a pas de règles pour la classe ${classe}.`);
       }
       const alea = creerAlea(graine);
       for (let essai = 0; essai < ESSAIS_MAX; essai++) {
-        const contenu = def.construire(alea, classe);
+        const contenu = def.construire(alea, classe, niveau);
         if (!contenu) continue;
         const distracteurs = choisirDistracteursTexte(contenu.reponse, contenu.distracteurs);
         if (!contenu.categories && distracteurs.length < 2) continue;
         return {
           nature: 'texte',
           modeleId: def.id,
+          niveau,
           domaine: def.domaine,
           classe,
           graine,

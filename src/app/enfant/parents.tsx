@@ -4,6 +4,7 @@ import { StyleSheet, Switch, Text, View } from 'react-native';
 
 import { BarreProgression, Bouton, ControleParental, Ecran, Toile } from '@/composants';
 import { domainesDe, LIBELLES_MATIERES, MATIERES } from '@/config/domaines';
+import { niveauPourDomaine } from '@/parcours/niveau';
 import { themesProposes } from '@/parcours/selection';
 import { dateEnFrancais, dureeEnFrancais } from '@/parents/format';
 import { dateLocale, serieDeJours, tempsDeLaSemaine } from '@/parcours/progression';
@@ -108,6 +109,9 @@ function ContenuParents() {
           return (
             <View key={theme.id} style={styles.theme}>
               <Text style={typo.texteGras}>{theme.titre}</Text>
+              <Text style={typo.petit}>
+                Exercices au niveau {['+', '++', '+++'][niveauPourDomaine(profil.toile, theme.domaine) - 1]}, objectif +++
+              </Text>
               <View style={styles.ligneTheme}>
                 <BarreProgression valeur={faites / etapes.length} />
                 <Text style={typo.petit}>

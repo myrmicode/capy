@@ -19,6 +19,14 @@ export const retrait = definirModele<{ depart: number; retrait: number }>({
       reponse: { min: 10, max: 989 },
     },
   },
+  reglesAccessibles: {
+    CE2: {
+      // + : nombres inférieurs à 100.
+      1: { donnees: { depart: { min: 20, max: 99 }, retrait: { min: 5, max: 50 } }, reponse: { min: 5, max: 94 } },
+      // ++ : nombres jusqu'à 500.
+      2: { donnees: { depart: { min: 100, max: 500 }, retrait: { min: 10, max: 300 } }, reponse: { min: 10, max: 490 } },
+    },
+  },
   estValide: ({ depart, retrait: b }) => b < depart,
   calculer: ({ depart, retrait: b }) => depart - b,
   erreursTypiques: ({ depart: a, retrait: b }) => [

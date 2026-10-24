@@ -34,14 +34,16 @@ function conjugaisonDe(id: string, titre: string, tempsPossibles: readonly Temps
     domaine: 'conjugaison',
     competence: `Conjuguer être, avoir et les verbes du 1er groupe (${tempsPossibles.map((t) => NOMS_TEMPS[t]).join(', ')}).`,
     classes: ['CE2'],
-    construire: (alea) => {
-      // Être ou avoir une fois sur trois, un verbe du 1er groupe sinon.
-      const verbe = alea.entier(0, 2) === 0 ? alea.choix([ETRE, AVOIR]) : alea.choix(VERBES_PREMIER_GROUPE);
+    // + : verbes du 1er groupe, sujets pronoms ; ++ : aussi être et avoir ;
+    // +++ : aussi un sujet qui n'est pas un pronom (« Capy »).
+    construire: (alea, _classe, niveau) => {
+      // Être ou avoir une fois sur trois (à partir de ++), un verbe du 1er groupe sinon.
+      const verbe = niveau > 1 && alea.entier(0, 2) === 0 ? alea.choix([ETRE, AVOIR]) : alea.choix(VERBES_PREMIER_GROUPE);
       // Pas de « je » avec être et avoir : l'élision (j'ai, j'étais) trahirait la réponse.
       const possibles = verbe === ETRE || verbe === AVOIR ? PERSONNES.filter((p) => p !== 0) : PERSONNES;
       const personne = alea.choix(possibles);
       const temps = alea.choix(tempsPossibles);
-      const sujet = personne === 2 && alea.entier(0, 2) === 0 ? 'Capy' : pronom(personne, alea.choix([true, false]));
+      const sujet = niveau === 3 && personne === 2 && alea.entier(0, 2) === 0 ? 'Capy' : pronom(personne, alea.choix([true, false]));
       const forme = conjuguer(verbe.infinitif, temps, personne);
       const repere = alea.choix(REPERES_TEMPS[temps]);
 

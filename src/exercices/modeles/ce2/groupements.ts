@@ -17,6 +17,14 @@ export const groupements = definirModele<{ groupes: number; parGroupe: number }>
       reponse: { min: 6, max: 81 },
     },
   },
+  reglesAccessibles: {
+    CE2: {
+      // + : petits groupes (tables de 2 à 5).
+      1: { donnees: { groupes: { min: 2, max: 5 }, parGroupe: { min: 2, max: 5 } }, reponse: { min: 6, max: 25 } },
+      // ++ : plus de groupes, groupes encore petits.
+      2: { donnees: { groupes: { min: 2, max: 9 }, parGroupe: { min: 2, max: 6 } }, reponse: { min: 6, max: 54 } },
+    },
+  },
   // 2 × 2 = 2 + 2 : l'exercice ne distinguerait pas l'addition de la multiplication.
   estValide: ({ groupes, parGroupe }) => groupes * parGroupe !== groupes + parGroupe,
   calculer: ({ groupes, parGroupe }) => groupes * parGroupe,

@@ -14,8 +14,10 @@ export const memeFamille = definirModeleTexte({
   domaine: 'familles-mots',
   competence: 'Trouver un mot de la même famille qu’un mot donné.',
   classes: ['CE2'],
-  construire: (alea) => {
+  // + : sans mot-piège parmi les propositions ; ++ et +++ : avec le mot qui ressemble.
+  construire: (alea, _classe, niveau) => {
     const famille = alea.choix(FAMILLES);
+    const avecPiege = niveau > 1 && famille.piege !== undefined;
     const reponse = alea.choix(famille.membres);
     const autres = alea.melanger(FAMILLES.filter((f) => f !== famille)).map((f) => alea.choix(f.membres));
     return {
@@ -23,13 +25,13 @@ export const memeFamille = definirModeleTexte({
       question: 'Quel mot est de la même famille ?',
       reponse,
       distracteurs: [
-        ...(famille.piege ? [{ valeur: famille.piege, erreur: 'mot qui ressemble mais d’une autre famille' }] : []),
+        ...(avecPiege ? [{ valeur: famille.piege!, erreur: 'mot qui ressemble mais d’une autre famille' }] : []),
         ...autres.map((m) => ({ valeur: m, erreur: 'mot d’une autre famille' })),
       ],
       indice: INDICE,
       explication:
         `« ${reponse} » est de la même famille que « ${famille.mot} » : ils ont une partie commune et parlent de la même chose.` +
-        (famille.piege ? ` « ${famille.piege} » lui ressemble, mais son sens n’a rien à voir.` : ''),
+        (avecPiege ? ` « ${famille.piege} » lui ressemble, mais son sens n’a rien à voir.` : ''),
     };
   },
 });

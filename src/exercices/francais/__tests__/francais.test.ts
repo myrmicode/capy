@@ -1,3 +1,4 @@
+import { NIVEAUX } from '../../types';
 import { conjuguer, PERSONNES, TEMPS, VERBES_PREMIER_GROUPE } from '../conjugaison';
 import { MODELES_FRANCAIS } from '../index';
 import { ADJECTIFS, FAMILLES, NOMS, SYNONYMES } from '../lexique';
@@ -84,18 +85,21 @@ describe.each(MODELES_FRANCAIS.map((m) => [m.id, m] as const))('modèle « %s »
     expect(modele.competence.length).toBeGreaterThan(20);
   });
 
-  it.each(modele.classes)(`reste juste sur ${TIRAGES} tirages en %s`, (classe) => {
+  const cas = modele.classes.flatMap((classe) => NIVEAUX.map((niveau) => [classe, niveau] as const));
+  it.each(cas)(`reste juste sur ${TIRAGES} tirages en %s, niveau %i`, (classe, niveau) => {
     const problemes: string[] = [];
     const enonces = new Set<string>();
     for (let graine = 0; graine < TIRAGES && problemes.length < 20; graine++) {
-      const ex = modele.generer(classe, graine);
+      const ex = modele.generer(classe, graine, { niveau });
       const signaler = (message: string) => problemes.push(`graine ${graine} : ${message}`);
       const textes = [ex.enonce, ex.question, ex.reponse, ex.indice, ex.explication, ...ex.choix];
 
       if (!ex.reponse.trim()) signaler('réponse vide');
       if (!ex.choix.includes(ex.reponse)) signaler('la réponse n’est pas proposée');
       if (new Set(ex.choix).size !== ex.choix.length) signaler(`choix en double ${ex.choix}`);
-      if (ex.choix.length < 3) signaler(`${ex.choix.length} choix seulement`);
+      // Au niveau +, le jeu des paniers peut n'avoir que deux paniers (nom, verbe).
+      if (ex.choix.length < (ex.categories ? 2 : 3)) signaler(`${ex.choix.length} choix seulement`);
+      if (ex.niveau !== niveau) signaler(`niveau ${ex.niveau} au lieu de ${niveau}`);
       for (const d of ex.distracteurs) if (d.valeur === ex.reponse) signaler(`distracteur = réponse (${d.valeur})`);
       for (const t of textes) {
         if (/undefined|null|NaN/.test(t)) signaler(`texte cassé : ${t}`);
@@ -120,7 +124,7 @@ describe.each(MODELES_FRANCAIS.map((m) => [m.id, m] as const))('modèle « %s »
       enonces.add(`${ex.enonce} ${ex.question} ${ex.reponse}`);
     }
     expect(problemes).toEqual([]);
-    expect(enonces.size).toBeGreaterThan(15);
+    expect(enonces.size).toBeGreaterThan(niveau === 3 ? 15 : 8);
   });
 
   it('redonne exactement le même exercice avec la même graine', () => {
@@ -130,4 +134,42 @@ describe.each(MODELES_FRANCAIS.map((m) => [m.id, m] as const))('modèle « %s »
 
 it('refuse de générer pour une classe sans règles', () => {
   expect(() => MODELES_FRANCAIS[0].generer('CP', 1)).toThrow(/pas de règles/);
+});
+
+describe('progression de la difficulté en français', () => {
+  const modele = (id: string) => MODELES_FRANCAIS.find((m) => m.id === id)!;
+  const tirages = (id: string, niveau: 1 | 2 | 3, n = 500) =>
+    Array.from({ length: n }, (_, g) => modele(id).generer('CE2', g, { niveau }));
+
+  it('accord : singulier seulement au niveau +, pluriels irréguliers seulement au niveau +++', () => {
+    expect(tirages('accord-adjectif', 1).every((e) => !/\b(les|des)\b/i.test(e.enonce + e.reponse))).toBe(true);
+    const irreguliers = (n: 1 | 2 | 3) => tirages('accord-adjectif', n, 3000).some((e) => /(chevaux|bateaux|chapeaux|gâteaux|manteaux)/.test(e.enonce + e.reponse));
+    expect(irreguliers(2)).toBe(false);
+    expect(irreguliers(3)).toBe(true);
+  });
+
+  it('nature : 2 paniers, puis 3, puis 4', () => {
+    expect(tirages('nature-du-mot', 1, 1)[0].categories).toEqual(['Nom', 'Verbe']);
+    expect(tirages('nature-du-mot', 2, 1)[0].categories).toEqual(['Nom', 'Verbe', 'Adjectif']);
+    expect(tirages('nature-du-mot', 3, 1)[0].categories).toHaveLength(4);
+  });
+
+  it('sujet et verbe : pas de complément en tête avant le niveau +++', () => {
+    const enTete = (n: 1 | 2 | 3) => tirages('sujet-et-verbe', n).some((e) => e.segments![0].texte.endsWith(','));
+    expect(enTete(1)).toBe(false);
+    expect(enTete(2)).toBe(false);
+    expect(enTete(3)).toBe(true);
+  });
+
+  it('synonymes et familles : pas de piège au niveau +', () => {
+    expect(tirages('synonymes', 1).every((e) => !e.distracteurs.some((d) => d.erreur === 'mot de sens contraire'))).toBe(true);
+    expect(tirages('meme-famille', 1).every((e) => !e.distracteurs.some((d) => d.erreur.startsWith('mot qui ressemble')))).toBe(true);
+    expect(tirages('synonymes', 2).some((e) => e.distracteurs.some((d) => d.erreur === 'mot de sens contraire'))).toBe(true);
+  });
+
+  it('conjugaison : être et avoir à partir du niveau ++', () => {
+    const avecEtreAvoir = (n: 1 | 2 | 3) => tirages('conjugaison', n).some((e) => /« (être|avoir) »/.test(e.question));
+    expect(avecEtreAvoir(1)).toBe(false);
+    expect(avecEtreAvoir(2)).toBe(true);
+  });
 });

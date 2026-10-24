@@ -1,6 +1,6 @@
 import { MODELES } from '../modeles';
 import { nb } from '../moteur';
-import type { Donnees, Exercice } from '../types';
+import { NIVEAUX, type Donnees, type Exercice } from '../types';
 
 const TIRAGES = 10_000;
 
@@ -39,8 +39,9 @@ describe.each(MODELES.map((m) => [m.id, m] as const))('modèle « %s »', (id, m
     expect(modele.classes.length).toBeGreaterThan(0);
   });
 
-  it.each(modele.classes)(`reste juste sur ${TIRAGES} tirages en %s`, (classe) => {
-    const regles = modele.regles(classe);
+  const cas = modele.classes.flatMap((classe) => NIVEAUX.map((niveau) => [classe, niveau] as const));
+  it.each(cas)(`reste juste sur ${TIRAGES} tirages en %s, niveau %i`, (classe, niveau) => {
+    const regles = modele.regles(classe, niveau);
     const oracle = ORACLES[id];
     const enonces = new Set<string>();
     // Les anomalies sont collectées puis vérifiées en une fois : c'est bien plus
@@ -48,7 +49,8 @@ describe.each(MODELES.map((m) => [m.id, m] as const))('modèle « %s »', (id, m
     const problemes: string[] = [];
 
     for (let graine = 0; graine < TIRAGES && problemes.length < 20; graine++) {
-      const ex: Exercice = modele.generer(classe, graine);
+      const ex: Exercice = modele.generer(classe, graine, { niveau });
+      if (ex.niveau !== niveau) problemes.push(`graine ${graine} : niveau ${ex.niveau} au lieu de ${niveau}`);
       const signaler = (message: string) => problemes.push(`graine ${graine} : ${message}`);
 
       // Réponse juste, entière et dans les bornes de la classe.
@@ -103,8 +105,25 @@ describe.each(MODELES.map((m) => [m.id, m] as const))('modèle « %s »', (id, m
     }
 
     expect(problemes).toEqual([]);
-    // Les tirages sont variés.
-    expect(enonces.size).toBeGreaterThan(Math.min(50, TIRAGES / 10));
+    // Les tirages sont variés (moins aux niveaux accessibles : il y a moins de combinaisons, par construction).
+    expect(enonces.size).toBeGreaterThan(niveau === 3 ? 50 : 5);
+  });
+
+  it('monte en difficulté du niveau + au niveau +++', () => {
+    for (const classe of modele.classes) {
+      const max = NIVEAUX.map((n) => modele.regles(classe, n).reponse.max);
+      expect(max[0]).toBeLessThanOrEqual(max[1]);
+      expect(max[1]).toBeLessThanOrEqual(max[2]);
+      // Le niveau + est vraiment plus accessible que le niveau visé.
+      const facile = new Set<number>();
+      const vise = new Set<number>();
+      for (let g = 0; g < 2000; g++) {
+        facile.add(modele.generer(classe, g, { niveau: 1 }).reponse);
+        vise.add(modele.generer(classe, g, { niveau: 3 }).reponse);
+      }
+      expect(Math.max(...facile)).toBeLessThanOrEqual(Math.max(...vise));
+      expect(facile).not.toEqual(vise);
+    }
   });
 
   it('redonne exactement le même exercice avec la même graine', () => {

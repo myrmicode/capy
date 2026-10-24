@@ -1,7 +1,9 @@
 import type { Classe } from '@/config/classes';
 import type { DomaineId } from '@/config/domaines';
-import { creerAlea, modelesPour, type ExerciceQuelconque } from '@/exercices';
+import { creerAlea, modelesPour, NIVEAU_CIBLE, type ExerciceQuelconque, type NiveauDifficulte } from '@/exercices';
 import { JEUX, type JeuId } from '@/jeux/registre';
+
+import { niveauxDesQuestions } from './niveau';
 
 export interface QuestionEtape {
   jeu: JeuId;
@@ -17,6 +19,8 @@ export interface ParametresEtape {
   /** Modèles travaillés dans l'étape (tous ceux du domaine si absent). */
   modeles?: readonly string[];
   nombreQuestions?: number;
+  /** Niveau de difficulté de l'étape (le niveau visé si absent) ; la dernière question est un cran au-dessus. */
+  niveau?: NiveauDifficulte;
 }
 
 const ESSAIS_PAR_QUESTION = 200;
@@ -33,7 +37,9 @@ export function genererEtape({
   jeux,
   modeles: modelesVoulus,
   nombreQuestions = 5,
+  niveau = NIVEAU_CIBLE,
 }: ParametresEtape): QuestionEtape[] {
+  const niveaux = niveauxDesQuestions(niveau, nombreQuestions);
   const alea = creerAlea(graine);
   const modeles = modelesPour(domaine, classe).filter((m) => !modelesVoulus || modelesVoulus.includes(m.id));
   const jeuxPossibles = jeux.filter((j) => {
@@ -58,7 +64,7 @@ export function genererEtape({
     let exercice: ExerciceQuelconque | null = null;
     for (let essai = 0; essai < ESSAIS_PAR_QUESTION && !exercice; essai++) {
       const modele = alea.choix(choisis);
-      const ex = modele.generer(classe, alea.entier(0, 2 ** 31 - 1), { histoire: jeu.histoire });
+      const ex = modele.generer(classe, alea.entier(0, 2 ** 31 - 1), { histoire: jeu.histoire, niveau: niveaux[i] });
       if (jeu.accepte(ex) && !dejaPosees.has(ex.enonce)) exercice = ex;
     }
     if (!exercice) throw new Error(`Aucun exercice ne convient au jeu « ${jeu.id} » en ${classe}.`);

@@ -18,6 +18,14 @@ export const deuxEtapes = definirModele<{ depart: number; premier: number; secon
       reponse: { min: 1, max: 93 },
     },
   },
+  reglesAccessibles: {
+    CE2: {
+      // + : petits nombres, jusqu'à 30.
+      1: { donnees: { depart: { min: 10, max: 30 }, premier: { min: 2, max: 10 }, second: { min: 2, max: 5 } }, reponse: { min: 1, max: 26 } },
+      // ++ : jusqu'à 60.
+      2: { donnees: { depart: { min: 20, max: 60 }, premier: { min: 5, max: 30 }, second: { min: 2, max: 15 } }, reponse: { min: 1, max: 53 } },
+    },
+  },
   estValide: ({ depart, premier, second }) => premier !== second && premier + second < depart,
   calculer: ({ depart, premier, second }) => depart - premier - second,
   erreursTypiques: ({ depart: a, premier: b, second: c }) => [

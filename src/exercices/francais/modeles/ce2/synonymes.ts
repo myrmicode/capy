@@ -12,8 +12,12 @@ export const synonymes = definirModeleTexte({
   domaine: 'synonymes',
   competence: 'Trouver le synonyme d’un mot parmi des mots de même classe.',
   classes: ['CE2'],
-  construire: (alea) => {
-    const paire = alea.choix(SYNONYMES);
+  // + : adjectifs, sans le piège du contraire ; ++ : adjectifs et verbes, avec le
+  // contraire ; +++ : tous les mots, noms compris.
+  construire: (alea, _classe, niveau) => {
+    const classes = niveau === 1 ? ['adjectif'] : niveau === 2 ? ['adjectif', 'verbe'] : ['adjectif', 'verbe', 'nom'];
+    const paire = alea.choix(SYNONYMES.filter((p) => classes.includes(p.classe)));
+    const avecContraire = niveau > 1 && paire.contraire !== undefined;
     // On demande dans un sens ou dans l'autre.
     const [mot, reponse] = alea.choix([true, false]) ? [paire.mot, paire.synonyme] : [paire.synonyme, paire.mot];
     const memeClasse = SYNONYMES.filter((p) => p !== paire && p.classe === paire.classe);
@@ -23,7 +27,7 @@ export const synonymes = definirModeleTexte({
       // Aucun autre mot proposé ne doit pouvoir passer pour un synonyme.
       .filter((m) => m !== paire.contraire);
     const distracteurs = [
-      ...(paire.contraire ? [{ valeur: paire.contraire, erreur: 'mot de sens contraire' }] : []),
+      ...(avecContraire ? [{ valeur: paire.contraire!, erreur: 'mot de sens contraire' }] : []),
       ...autres.map((m) => ({ valeur: m, erreur: 'mot sans rapport de sens' })),
     ];
     return {
@@ -34,7 +38,7 @@ export const synonymes = definirModeleTexte({
       indice: 'Imagine une phrase avec ce mot, puis remplace-le par chaque proposition : le sens doit rester le même.',
       explication:
         `« ${mot} » et « ${reponse} » veulent presque dire la même chose : ce sont des synonymes.` +
-        (paire.contraire ? ` Attention, « ${paire.contraire} » veut dire le contraire.` : ''),
+        (avecContraire ? ` Attention, « ${paire.contraire} » veut dire le contraire.` : ''),
     };
   },
 });
