@@ -121,24 +121,46 @@ describe('écran « Réglages de lecture et de jeu »', () => {
     expect(screen.queryByText('Réglages de lecture et de jeu')).toBeNull();
   });
 
-  it('applique un raccourci, puis revient aux réglages par défaut', async () => {
+  it('un raccourci s’active, puis se retire au second toucher', async () => {
     deverrouillerParents();
     await render(<ReglagesLecture />);
     expect(screen.getByText(/Aucune information de santé/)).toBeTruthy();
-    await fireEvent.press(screen.getByRole('button', { name: /^Aide à la lecture\./ }));
+    expect(screen.getByText('Aucun réglage activé')).toBeTruthy();
+    const raccourci = () => screen.getByRole('switch', { name: /^Aide à la lecture\./ });
+    await fireEvent.press(raccourci());
     expect(reglagesDeLou().police).toBe('andika');
     expect(reglagesDeLou().syllabes).toBe(true);
-    await fireEvent.press(screen.getByRole('button', { name: 'Revenir aux réglages par défaut' }));
+    expect(screen.getByText('Activé')).toBeTruthy();
+    await fireEvent.press(raccourci());
     expect(reglagesDeLou()).toEqual(REGLAGES_PAR_DEFAUT);
   });
 
-  it('règle une option une par une', async () => {
+  it('chaque option s’active et se désactive seule, avec son choix une fois activée', async () => {
     deverrouillerParents();
     await render(<ReglagesLecture />);
-    await fireEvent.press(screen.getByRole('radio', { name: 'Taille du texte : Très grande' }));
-    expect(reglagesDeLou().taille).toBe('tresGrande');
+    // Désactivée, l'option ne montre pas ses valeurs.
+    expect(screen.queryByRole('radio', { name: 'Police adaptée : Luciole' })).toBeNull();
+    await fireEvent(screen.getByLabelText('Police adaptée'), 'valueChange', true);
+    expect(reglagesDeLou().police).toBe('andika');
+    await fireEvent.press(screen.getByRole('radio', { name: 'Police adaptée : Luciole' }));
+    expect(reglagesDeLou().police).toBe('luciole');
     await fireEvent(screen.getByLabelText('Mode calme'), 'valueChange', true);
     expect(reglagesDeLou().modeCalme).toBe(true);
+    expect(screen.getByText('2 réglages activés')).toBeTruthy();
+    await fireEvent(screen.getByLabelText('Police adaptée'), 'valueChange', false);
+    expect(reglagesDeLou().police).toBe('nunito');
+    expect(reglagesDeLou().modeCalme).toBe(true);
+    await fireEvent.press(screen.getByRole('button', { name: 'Tout désactiver' }));
+    expect(reglagesDeLou()).toEqual(REGLAGES_PAR_DEFAUT);
+  });
+
+  it('montre les couleurs des syllabes seulement quand les syllabes en couleur sont activées', async () => {
+    deverrouillerParents();
+    await render(<ReglagesLecture />);
+    expect(screen.queryByText('Couleurs des syllabes')).toBeNull();
+    await fireEvent(screen.getByLabelText('Syllabes en couleur'), 'valueChange', true);
+    await fireEvent.press(screen.getByRole('radio', { name: 'Couleurs des syllabes : Bleu et rouge' }));
+    expect(reglagesDeLou().couleursSyllabes).toBe('bleuRouge');
   });
 
   it('se propose, sans obligation, à la création d’un profil', async () => {
@@ -149,37 +171,5 @@ describe('écran « Réglages de lecture et de jeu »', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Plus tard' }));
     expect(mockRouter.replace).toHaveBeenCalledWith({ pathname: '/toile', params: { apres: 'creation' } });
     expect(reglagesDeLou()).toEqual(REGLAGES_PAR_DEFAUT);
-  });
-});
-
-describe('interrupteur général à l’écran', () => {
-  it('désactive les réglages sans les perdre, puis les réactive', async () => {
-    useProfils.setState({ profils: [], profilActifId: null, suppressionsEnAttente: [] });
-    const id = useProfils.getState().ajouterProfil('Lou', 'CE2').id;
-    useProfils.getState().modifierReglages(id, { ...REGLAGES_PAR_DEFAUT, syllabes: true, police: 'andika' });
-    mockParams.profil = id;
-    delete mockParams.apres;
-    deverrouillerParents();
-    await render(<ReglagesLecture />);
-    const reglages = () => lireReglages(useProfils.getState().profils[0].reglages);
-    await fireEvent(screen.getByLabelText('Activer les réglages de lecture et de jeu'), 'valueChange', false);
-    expect(reglages()).toEqual({ ...REGLAGES_PAR_DEFAUT, syllabes: true, police: 'andika', actifs: false });
-    expect(screen.getByText('Réglages désactivés')).toBeTruthy();
-    await fireEvent(screen.getByLabelText('Activer les réglages de lecture et de jeu'), 'valueChange', true);
-    expect(reglages().actifs).toBe(true);
-    expect(reglages().police).toBe('andika');
-  });
-
-  it('un enfant aux réglages désactivés voit l’affichage habituel', async () => {
-    useProfils.setState({ profils: [], profilActifId: null, suppressionsEnAttente: [] });
-    const p = useProfils.getState().ajouterProfil('Lou', 'CE2');
-    useProfils.getState().choisirProfil(p.id);
-    useProfils.getState().modifierReglages(p.id, { ...REGLAGES_PAR_DEFAUT, syllabes: true, espacements: true, actifs: false });
-    await render(
-      <FournisseurReglages>
-        <TexteAccessible texte="Le chat" coloration />
-      </FournisseurReglages>,
-    );
-    expect(screen.getByText('Le chat')).toBeTruthy();
   });
 });

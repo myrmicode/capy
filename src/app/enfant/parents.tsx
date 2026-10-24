@@ -2,7 +2,8 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 
-import { lireReglages, sontParDefaut } from '@/accessibilite/reglages';
+import { optionsActives } from '@/accessibilite/options';
+import { lireReglages } from '@/accessibilite/reglages';
 import { BarreProgression, Bouton, ControleParental, Ecran, Toile } from '@/composants';
 import { domainesDe, LIBELLES_MATIERES, MATIERES } from '@/config/domaines';
 import { niveauPourDomaine } from '@/parcours/niveau';
@@ -49,14 +50,13 @@ export default function EspaceParents() {
 function ContenuParents() {
   const profil = useProfilActif();
   const supprimerProfil = useProfils((e) => e.supprimerProfil);
-  const modifierReglages = useProfils((e) => e.modifierReglages);
   const { sons, activerSons } = useReglages();
   const [confirmerSuppression, setConfirmerSuppression] = useState(false);
   const connecte = useCompte((e) => e.email !== null);
   if (!profil) return null;
 
   const p = profil.progression;
-  const reglagesLecture = lireReglages(profil.reglages);
+  const optionsLecture = optionsActives(lireReglages(profil.reglages));
   const aujourdhui = dateLocale(new Date());
   const etapesReussies = Object.keys(p.etapes).length;
   const serie = serieDeJours(p.jours, aujourdhui);
@@ -157,28 +157,28 @@ function ContenuParents() {
       </Section>
 
       <Section titre="Réglages de lecture et de jeu">
-        <Text style={typo.texte}>
-          {sontParDefaut(reglagesLecture)
-            ? 'Réglages habituels.'
-            : 'Des réglages sont adaptés pour ' + profil.prenom + '.'}{' '}
-          Police, taille du texte, syllabes en couleur, lecture à voix haute, toucher au lieu de glisser, mode calme…
-        </Text>
-        {!sontParDefaut({ ...reglagesLecture, actifs: true }) ? (
-          <View style={styles.reglage}>
-            <Text style={[typo.texte, styles.flex]}>
-              {reglagesLecture.actifs ? 'Réglages activés' : 'Réglages désactivés (gardés pour plus tard)'}
+        {optionsLecture.length === 0 ? (
+          <Text style={typo.texte}>
+            Aucun réglage activé. Police, taille du texte, syllabes en couleur, lecture à voix haute, toucher au lieu de
+            glisser, mode calme… Chaque réglage s’active et se désactive seul.
+          </Text>
+        ) : (
+          <>
+            <Text style={typo.texte}>
+              {optionsLecture.length} réglage{optionsLecture.length > 1 ? 's' : ''} activé{optionsLecture.length > 1 ? 's' : ''} pour{' '}
+              {profil.prenom} :
             </Text>
-            <Switch
-              value={reglagesLecture.actifs}
-              onValueChange={(v) => modifierReglages(profil.id, { ...reglagesLecture, actifs: v })}
-              trackColor={{ true: couleurs.sarcelle[700], false: couleurs.gris[300] }}
-              thumbColor={couleurs.blanc}
-              accessibilityLabel="Activer les réglages de lecture et de jeu"
-            />
-          </View>
-        ) : null}
+            <View style={styles.puces}>
+              {optionsLecture.map((o) => (
+                <View key={o.cle} style={styles.puceReglage}>
+                  <Text style={[typo.petit, styles.texteReglage]}>{o.titre}</Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
         <Bouton
-          titre="Adapter la lecture et les jeux"
+          titre={optionsLecture.length === 0 ? 'Adapter la lecture et les jeux' : 'Modifier les réglages'}
           variante="secondaire"
           onPress={() =>
             router.push({
@@ -329,6 +329,14 @@ const styles = StyleSheet.create({
   },
   theme: { gap: espaces.xs },
   ligneTheme: { flexDirection: 'row', alignItems: 'center', gap: espaces.m },
+  puces: { flexDirection: 'row', flexWrap: 'wrap', gap: espaces.s },
+  puceReglage: {
+    backgroundColor: couleurs.menthe[100],
+    borderRadius: formes.pilule,
+    paddingHorizontal: espaces.m,
+    paddingVertical: espaces.xs,
+  },
+  texteReglage: { color: couleurs.sarcelle[900] },
   reglage: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -4,10 +4,11 @@ import { rapportContraste } from '../contraste';
 import {
   aideALaLectureActive,
   appliquerRaccourci,
+  basculerRaccourci,
+  raccourciActif,
   COULEURS_SYLLABES,
   FONDS,
   lireReglages,
-  reglagesEffectifs,
   RACCOURCIS,
   REGLAGES_PAR_DEFAUT,
   sontParDefaut,
@@ -15,7 +16,7 @@ import {
 } from '../reglages';
 import { decouperMot, lireNotation, motDeNotation } from '../syllabes';
 import { COULEURS_FOND, deriverTheme } from '../theme';
-import { OPTIONS } from '../options';
+import { basculerOption, OPTIONS, optionActive, optionsActives } from '../options';
 import { motsDuContenu, textesDesJeux } from '@/contenu/motsAffiches';
 import { MOTS_EXPLIQUES } from '@/contenu/motsExpliques';
 import { SYLLABES } from '@/contenu/syllabes';
@@ -53,8 +54,7 @@ describe('réglages de lecture et de jeu', () => {
       expect(o.explication.length).toBeGreaterThan(10);
       expect(o.explication.length).toBeLessThan(110);
     }
-    // L'interrupteur général est à part, en haut de l'écran.
-    expect(OPTIONS.map((o) => o.cle).sort()).toEqual(Object.keys(REGLAGES_PAR_DEFAUT).filter((k) => k !== 'actifs').sort());
+    expect(OPTIONS.map((o) => o.cle).sort()).toEqual(Object.keys(REGLAGES_PAR_DEFAUT).sort());
   });
 
   it('masque le manuscrit dès qu’une aide à la lecture est active', () => {
@@ -219,22 +219,60 @@ describe('aides en calcul et attention', () => {
   });
 });
 
-describe('interrupteur général des réglages', () => {
-  const choisis = { ...REGLAGES_PAR_DEFAUT, police: 'luciole' as const, taille: 'tresGrande' as const, toucherPuisToucher: true };
 
-  it('désactivés, l’enfant retrouve l’appli habituelle ; les réglages restent gardés', () => {
-    const coupes = { ...choisis, actifs: false };
-    expect(reglagesEffectifs(coupes)).toEqual(REGLAGES_PAR_DEFAUT);
-    expect(reglagesEffectifs(choisis)).toBe(choisis);
-    expect(lireReglages(coupes)).toEqual(coupes);
-    expect(deriverTheme(reglagesEffectifs(coupes)).typo.enonce).toEqual(typo.enonce);
+describe('chaque option s’active et se désactive seule', () => {
+  const option = (cle: string) => OPTIONS.find((o) => o.cle === cle)!;
+
+  it('un interrupteur passe de la valeur habituelle à activé, et revient', () => {
+    const o = option('syllabes');
+    if (o.type === 'variante') throw new Error('type inattendu');
+    const active = basculerOption(o, REGLAGES_PAR_DEFAUT, true);
+    expect(active.syllabes).toBe(true);
+    expect(optionActive(o, active)).toBe(true);
+    expect(basculerOption(o, active, false)).toEqual(REGLAGES_PAR_DEFAUT);
   });
 
-  it('se réactive quand on choisit un raccourci', () => {
-    expect(appliquerRaccourci({ ...choisis, actifs: false }, RACCOURCIS[0]).actifs).toBe(true);
+  it('une option à choix s’active sur sa première valeur et revient à l’habituelle', () => {
+    const police = option('police');
+    if (police.type !== 'choix') throw new Error('type inattendu');
+    const active = basculerOption(police, REGLAGES_PAR_DEFAUT, true);
+    expect(active.police).toBe('andika');
+    expect(optionActive(police, { ...active, police: 'luciole' })).toBe(true);
+    expect(basculerOption(police, { ...active, police: 'luciole' }, false).police).toBe('nunito');
+    // Aucune option à choix ne propose la valeur habituelle : désactiver suffit pour y revenir.
+    for (const o of OPTIONS) {
+      if (o.type === 'choix') expect(o.valeurs.map((v) => v.valeur)).not.toContain(REGLAGES_PAR_DEFAUT[o.cle]);
+    }
   });
 
-  it('reste activé par défaut, même sur un ancien profil', () => {
-    expect(lireReglages({ police: 'andika' }).actifs).toBe(true);
+  it('les couleurs des syllabes n’apparaissent que si les syllabes en couleur sont activées', () => {
+    const couleursOption = option('couleursSyllabes');
+    expect(optionActive(couleursOption, REGLAGES_PAR_DEFAUT)).toBe(false);
+    expect(optionActive(couleursOption, { ...REGLAGES_PAR_DEFAUT, syllabes: true })).toBe(true);
+  });
+
+  it('liste les réglages activés pour l’espace parent', () => {
+    const r = { ...REGLAGES_PAR_DEFAUT, syllabes: true, nombreChoix: 3 as const, modeCalme: true };
+    expect(optionsActives(r).map((o) => o.cle)).toEqual(['syllabes', 'nombreChoix', 'modeCalme']);
+    expect(optionsActives(REGLAGES_PAR_DEFAUT)).toEqual([]);
+  });
+});
+
+describe('raccourcis dans les deux sens', () => {
+  const [lecture, calcul, , attention] = RACCOURCIS;
+
+  it('un second toucher retire ce que le raccourci avait activé', () => {
+    const avec = basculerRaccourci(REGLAGES_PAR_DEFAUT, lecture);
+    expect(raccourciActif(avec, lecture)).toBe(true);
+    expect(basculerRaccourci(avec, lecture)).toEqual(REGLAGES_PAR_DEFAUT);
+  });
+
+  it('garde ce dont un autre raccourci activé a encore besoin', () => {
+    const deux = basculerRaccourci(basculerRaccourci(REGLAGES_PAR_DEFAUT, calcul), attention);
+    const sansAttention = basculerRaccourci(deux, attention);
+    expect(sansAttention.modeCalme).toBe(false);
+    // « Moins de réponses » sert aussi à l'aide en calcul, encore activée.
+    expect(sansAttention.nombreChoix).toBe(3);
+    expect(raccourciActif(sansAttention, calcul)).toBe(true);
   });
 });

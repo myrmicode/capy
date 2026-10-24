@@ -1,10 +1,16 @@
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BulleCapy, Bouton, Ecran, IconePlus } from '@/composants';
 import { mascotte, RATIO_PAYSAGE } from '@/mascotte';
 import { useProfils, type ProfilEnfant } from '@/store/profils';
 import { couleurs, espaces, formes, typo } from '@/theme';
+
+/** Proportions du cadre du bandeau (plus haut que l'image, qui est donc recadrée). */
+const RATIO_CADRE = RATIO_PAYSAGE / 2.2;
+/** Position horizontale de Capy dans l'image (de 0 à 1) : le cadrage reste centré sur lui. */
+const CENTRE_CAPY = 0.48;
 
 /** Accueil : choix de l'enfant qui joue. */
 export default function Accueil() {
@@ -27,12 +33,7 @@ export default function Accueil() {
         />
       }
     >
-      <Image
-        source={mascotte.paysage}
-        style={styles.paysage}
-        resizeMode="cover"
-        accessible={false}
-      />
+      <Paysage />
       <Text style={[typo.manuscrit, styles.centre]}>Grandes découvertes à petits pas !</Text>
 
       {profils.length === 0 ? (
@@ -83,8 +84,9 @@ function CarteProfil({ profil, onPress }: { profil: ProfilEnfant; onPress: () =>
 const styles = StyleSheet.create({
   paysage: {
     width: '100%',
-    aspectRatio: RATIO_PAYSAGE / 2.2,
+    aspectRatio: RATIO_CADRE,
     borderRadius: formes.carte.rayon,
+    overflow: 'hidden',
   },
   centre: { textAlign: 'center' },
   liste: { gap: espaces.m },
@@ -112,3 +114,24 @@ const styles = StyleSheet.create({
   },
   lienDev: { minHeight: formes.cibleTactile, justifyContent: 'center' },
 });
+
+/**
+ * Bandeau d'accueil, recadré autour de Capy. La phrase écrite à droite de
+ * l'image reste hors champ sur tous les écrans, au lieu d'apparaître coupée.
+ */
+function Paysage() {
+  const [largeur, setLargeur] = useState(0);
+  const hauteur = largeur / RATIO_CADRE;
+  const largeurImage = hauteur * RATIO_PAYSAGE;
+  return (
+    <View style={styles.paysage} onLayout={(e) => setLargeur(e.nativeEvent.layout.width)}>
+      {largeur > 0 ? (
+        <Image
+          source={mascotte.paysage}
+          style={{ position: 'absolute', top: 0, height: hauteur, width: largeurImage, left: largeur / 2 - CENTRE_CAPY * largeurImage }}
+          accessible={false}
+        />
+      ) : null}
+    </View>
+  );
+}

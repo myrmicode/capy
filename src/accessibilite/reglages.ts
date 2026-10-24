@@ -27,11 +27,6 @@ export const COULEURS_SYLLABES = {
 export type CouleursSyllabes = keyof typeof COULEURS_SYLLABES;
 
 export interface ReglagesEnfant {
-  /**
-   * Interrupteur général : désactivés, les réglages sont gardés mais l'enfant
-   * retrouve l'affichage et les jeux habituels.
-   */
-  actifs: boolean;
   // Lecture et texte
   police: PoliceLecture;
   taille: TailleTexte;
@@ -61,7 +56,6 @@ export interface ReglagesEnfant {
 }
 
 export const REGLAGES_PAR_DEFAUT: ReglagesEnfant = {
-  actifs: true,
   police: 'nunito',
   taille: 'normale',
   espacements: false,
@@ -90,7 +84,6 @@ export const REGLAGES_PAR_DEFAUT: ReglagesEnfant = {
  * reprend sa valeur par défaut.
  */
 export const SchemaReglages = z.object({
-  actifs: z.boolean().catch(true),
   police: z.enum(POLICES_LECTURE).catch(REGLAGES_PAR_DEFAUT.police),
   taille: z.enum(TAILLES_TEXTE).catch(REGLAGES_PAR_DEFAUT.taille),
   espacements: z.boolean().catch(false),
@@ -117,11 +110,6 @@ export const SchemaReglages = z.object({
 export function lireReglages(brut: unknown): ReglagesEnfant {
   const objet = typeof brut === 'object' && brut !== null ? brut : {};
   return SchemaReglages.parse({ ...REGLAGES_PAR_DEFAUT, ...objet });
-}
-
-/** Les réglages qui s'appliquent vraiment : ceux de l'enfant s'ils sont activés, sinon l'affichage habituel. */
-export function reglagesEffectifs(r: ReglagesEnfant): ReglagesEnfant {
-  return r.actifs ? r : REGLAGES_PAR_DEFAUT;
 }
 
 export function sontParDefaut(r: ReglagesEnfant): boolean {
@@ -218,6 +206,29 @@ export const RACCOURCIS: readonly Raccourci[] = [
 ];
 
 export function appliquerRaccourci(r: ReglagesEnfant, raccourci: Raccourci): ReglagesEnfant {
-  // Choisir un raccourci, c'est vouloir l'utiliser : les réglages sont activés.
-  return { ...r, ...raccourci.reglages, actifs: true };
+  return { ...r, ...raccourci.reglages };
+}
+
+/** Un raccourci est actif quand tous ses réglages sont en place. */
+export function raccourciActif(r: ReglagesEnfant, raccourci: Raccourci): boolean {
+  return (Object.entries(raccourci.reglages) as [keyof ReglagesEnfant, unknown][]).every(([k, v]) => r[k] === v);
+}
+
+/**
+ * Retire un raccourci : ses réglages reviennent à leur valeur habituelle, sauf
+ * ceux dont un autre raccourci encore actif a besoin.
+ */
+export function retirerRaccourci(r: ReglagesEnfant, raccourci: Raccourci): ReglagesEnfant {
+  const autres = RACCOURCIS.filter((x) => x.id !== raccourci.id && raccourciActif(r, x));
+  const garder = new Set(autres.flatMap((x) => Object.keys(x.reglages)));
+  const retour = { ...r } as Record<keyof ReglagesEnfant, unknown>;
+  for (const k of Object.keys(raccourci.reglages) as (keyof ReglagesEnfant)[]) {
+    if (!garder.has(k)) retour[k] = REGLAGES_PAR_DEFAUT[k];
+  }
+  return retour as unknown as ReglagesEnfant;
+}
+
+/** Un toucher sur un raccourci : il s'active, ou se retire s'il l'était déjà. */
+export function basculerRaccourci(r: ReglagesEnfant, raccourci: Raccourci): ReglagesEnfant {
+  return raccourciActif(r, raccourci) ? retirerRaccourci(r, raccourci) : appliquerRaccourci(r, raccourci);
 }
