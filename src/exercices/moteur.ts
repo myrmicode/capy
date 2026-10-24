@@ -55,7 +55,7 @@ export function definirModele<D extends Donnees>(def: DefinitionModele<D>): Mode
     operations: def.operations,
     classes,
     regles: (classe) => reglesDe(classe) as ReglesClasse<Donnees>,
-    generer: (classe, graine): Exercice => {
+    generer: (classe, graine, options = {}): Exercice => {
       const regles = reglesDe(classe);
       const alea = creerAlea(graine);
       for (let essai = 0; essai < ESSAIS_MAX; essai++) {
@@ -64,7 +64,10 @@ export function definirModele<D extends Donnees>(def: DefinitionModele<D>): Mode
         const reponse = def.calculer(d);
         if (reponse < regles.reponse.min || reponse > regles.reponse.max) continue;
 
-        const { enonce, question, indice, explication } = alea.choix(def.histoires)(d, reponse);
+        const tiree = alea.choix(def.histoires);
+        const histoire = options.histoire === undefined ? tiree : def.histoires[options.histoire];
+        if (!histoire) throw new Error(`Le modèle « ${def.id} » n'a pas d'histoire n° ${options.histoire}.`);
+        const { enonce, question, indice, explication } = histoire(d, reponse);
         const distracteurs = choisirDistracteurs(reponse, def.erreursTypiques(d), alea);
         return {
           modeleId: def.id,

@@ -1,0 +1,45 @@
+import type { Exercice } from '@/exercices';
+
+export type JeuId = 'marche' | 'bonFil' | 'reponses';
+
+export interface DefinitionJeu {
+  id: JeuId;
+  titre: string;
+  /** Consigne courte affichée au-dessus du jeu (et lue par « Écouter »). */
+  consigne: string;
+  /** Modèles d'exercices que ce jeu sait illustrer (tous si absent). */
+  modeles?: readonly string[];
+  /** Variante d'histoire imposée, pour que le décor colle au jeu. */
+  histoire?: number;
+  /** L'exercice convient-il à ce jeu (taille des nombres, opération) ? */
+  accepte: (ex: Exercice) => boolean;
+}
+
+/** Opérations proposées dans « Le bon fil ». */
+export const OPERATIONS_BON_FIL = ['+', '−', '×'] as const;
+
+export const JEUX: Record<JeuId, DefinitionJeu> = {
+  marche: {
+    id: 'marche',
+    titre: 'Le marché',
+    consigne: 'Glisse les fraises dans les paniers, puis valide.',
+    modeles: ['groupements'],
+    histoire: 0,
+    // Assez peu de fraises pour que les glisser une par une reste un plaisir.
+    accepte: (ex) => ex.reponse <= 30 && ex.donnees.groupes <= 5,
+  },
+  bonFil: {
+    id: 'bonFil',
+    titre: 'Le bon fil',
+    consigne: 'Trace un fil entre l’histoire et la bonne opération.',
+    modeles: ['groupements', 'ajout', 'retrait', 'ecart'],
+    accepte: (ex) =>
+      ex.operations.length === 1 && (OPERATIONS_BON_FIL as readonly string[]).includes(ex.operations[0]),
+  },
+  reponses: {
+    id: 'reponses',
+    titre: 'La bonne réponse',
+    consigne: 'Choisis la bonne réponse.',
+    accepte: () => true,
+  },
+};

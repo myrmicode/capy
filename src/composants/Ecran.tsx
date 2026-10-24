@@ -9,16 +9,22 @@ interface PropsEcran {
   /** Contenu fixé en bas de l'écran (bouton principal). */
   pied?: ReactNode;
   defilant?: boolean;
+  /** Faux pour bloquer le défilement pendant un glisser-déposer. */
+  defilementActif?: boolean;
 }
 
 /** Cadre commun des écrans : fond de page, marges, largeur limitée sur tablette. */
-export function Ecran({ children, pied, defilant = true }: PropsEcran) {
+export function Ecran({ children, pied, defilant = true, defilementActif = true }: PropsEcran) {
   const contenu = <View style={styles.colonne}>{children}</View>;
   return (
     <SafeAreaView style={styles.fond} edges={['top', 'bottom', 'left', 'right']}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {defilant ? (
-          <ScrollView contentContainerStyle={styles.defilement} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            contentContainerStyle={styles.defilement}
+            keyboardShouldPersistTaps="handled"
+            scrollEnabled={defilementActif}
+          >
             {contenu}
           </ScrollView>
         ) : (

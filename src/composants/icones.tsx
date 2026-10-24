@@ -116,3 +116,30 @@ export function IconePoint({ taille = 12, couleur }: PropsIcone) {
     </Svg>
   );
 }
+
+export function IconeCroix({ taille = 24, couleur }: PropsIcone) {
+  return (
+    <Svg width={taille} height={taille} viewBox="0 0 24 24">
+      <Path d="M6 6l12 12M18 6L6 18" stroke={couleur} strokeWidth={3} {...trait} />
+    </Svg>
+  );
+}
+
+export function IconeMoins({ taille = 24, couleur }: PropsIcone) {
+  return (
+    <Svg width={taille} height={taille} viewBox="0 0 24 24">
+      <Path d="M5 12h14" stroke={couleur} strokeWidth={3} {...trait} />
+    </Svg>
+  );
+}
+
+/** Fraise du mini-jeu « Le marché ». Les couleurs viennent de la charte (décor). */
+export function IconeFraise({ taille = 24 }: { taille?: number }) {
+  return (
+    <Svg width={taille} height={taille} viewBox="0 0 24 24">
+      <Path d="M12 7.5c4.6 0 7.5 2 7.5 5 0 4.4-4.4 9-7.5 9s-7.5-4.6-7.5-9c0-3 2.9-5 7.5-5z" fill="#fb845f" />
+      <Path d="M12 7.5L8 4.5M12 7.5l4-3M12 7.5V3" stroke="#3d9f8c" strokeWidth={2.2} {...trait} />
+      <Path d="M9 11.5v.1M12 13v.1M15 11.5v.1M10.5 16v.1M13.5 16v.1" stroke="#fdf0e0" strokeWidth={1.8} {...trait} />
+    </Svg>
+  );
+}

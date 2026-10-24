@@ -7,3 +7,5 @@ export { PanneauRetour } from './PanneauRetour';
 export { SurfaceEnRelief } from './SurfaceEnRelief';
 export { TuileReponse, type EtatTuile } from './TuileReponse';
 export * from './icones';
+export { BarreProgression } from './BarreProgression';
+export { CarteEnonce } from './CarteEnonce';

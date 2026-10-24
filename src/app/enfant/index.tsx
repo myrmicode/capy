@@ -21,10 +21,20 @@ export default function ParcoursEnfant() {
 
   return (
     <Ecran
-      pied={<Bouton titre="Changer d’enfant" variante="secondaire" onPress={() => router.replace('/')} />}
+      pied={
+        <View style={styles.boutons}>
+          <Bouton
+            titre="Jouer une étape"
+            onPress={() =>
+              router.push({ pathname: '/etape', params: { graine: String(Math.floor(Math.random() * 1e9)) } })
+            }
+          />
+          <Bouton titre="Changer d’enfant" variante="secondaire" onPress={() => router.replace('/')} />
+        </View>
+      }
     >
       <Text style={typo.titre1}>Salut {profil.prenom} !</Text>
-      <BulleCapy pose="reussite" tailleCapy={110} texte="Ton parcours arrive très bientôt. On va bien s’amuser !" />
+      <BulleCapy pose="reussite" tailleCapy={110} texte="Ton parcours arrive bientôt. En attendant, joue une étape d’essai !" />
       <View style={styles.chemin}>
         {APERCU.map((e, i) => (
           <View key={i} style={{ transform: [{ translateX: DECALAGES[i] }] }}>
@@ -38,4 +48,5 @@ export default function ParcoursEnfant() {
 
 const styles = StyleSheet.create({
   chemin: { alignItems: 'center', gap: espaces.m, paddingVertical: espaces.l },
+  boutons: { gap: espaces.m },
 });

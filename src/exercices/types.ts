@@ -82,5 +82,6 @@ export interface ModeleExercice {
   operations: Operation[];
   classes: Classe[];
   regles: (classe: Classe) => ReglesClasse<Donnees>;
-  generer: (classe: Classe, graine: number) => Exercice;
+  /** `histoire` impose une variante d'histoire (index dans `histoires`), utile pour un mini-jeu illustré. */
+  generer: (classe: Classe, graine: number, options?: { histoire?: number }) => Exercice;
 }

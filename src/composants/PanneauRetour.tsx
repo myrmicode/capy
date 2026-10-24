@@ -1,5 +1,13 @@
-import { Image, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useEffect } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { mascotte } from '@/mascotte';
 import { couleurs, espaces, formes, typo } from '@/theme';
@@ -9,20 +17,27 @@ import { IconeAmpoule } from './icones';
 
 interface PropsPanneauRetour {
   type: 'bravo' | 'presque';
-  /** Explication de la méthode, affichée dans les deux cas. */
-  explication: string;
-  /** Indice qui guide sans donner la réponse, affiché après une erreur. */
+  /** Explication de la méthode, montrée après une bonne réponse. */
+  explication?: string;
+  /** Indice qui guide sans donner la réponse, montré après une erreur. */
   indice?: string;
   onContinuer: () => void;
 }
 
 /**
  * Retour après une réponse. Jamais punitif : après une erreur on affiche
- * « Presque ! », un indice et « Réessayer », sans limite. Capy réfléchit,
- * il n'est jamais triste.
+ * « Presque ! », un indice et « Réessayer », sans limite. L'explication complète
+ * n'arrive qu'après la bonne réponse, pour que l'enfant cherche encore.
+ * Capy réfléchit, il n'est jamais triste.
  */
 export function PanneauRetour({ type, explication, indice, onContinuer }: PropsPanneauRetour) {
   const bravo = type === 'bravo';
+  const echelle = useSharedValue(1);
+  useEffect(() => {
+    if (bravo) echelle.value = withSequence(withTiming(1.18, { duration: 180 }), withSpring(1));
+  }, [bravo, echelle]);
+  const styleCapy = useAnimatedStyle(() => ({ transform: [{ scale: echelle.value }] }));
+
   return (
     <Animated.View
       entering={FadeInDown.duration(260)}
@@ -30,9 +45,9 @@ export function PanneauRetour({ type, explication, indice, onContinuer }: PropsP
       accessibilityLiveRegion="polite"
     >
       <View style={styles.entete}>
-        <Image
+        <Animated.Image
           source={bravo ? mascotte.heureux : mascotte.reflechi}
-          style={styles.capy}
+          style={[styles.capy, styleCapy]}
           resizeMode="contain"
           accessible={false}
         />
@@ -40,13 +55,13 @@ export function PanneauRetour({ type, explication, indice, onContinuer }: PropsP
           {bravo ? 'Bravo !' : 'Presque !'}
         </Text>
       </View>
-      {!bravo && indice ? (
+      {bravo && explication ? <Text style={typo.texte}>{explication}</Text> : null}
+      {!bravo ? (
         <View style={styles.indice}>
           <IconeAmpoule taille={22} couleur={couleurs.brun[600]} />
-          <Text style={[typo.enonce, styles.flex]}>{indice}</Text>
+          <Text style={[typo.enonce, styles.flex]}>{indice ?? 'Relis bien l’histoire, tu vas trouver.'}</Text>
         </View>
       ) : null}
-      <Text style={typo.texte}>{explication}</Text>
       <Bouton
         titre={bravo ? 'Continuer' : 'Réessayer'}
         variante={bravo ? 'principal' : 'reessayer'}
@@ -63,7 +78,7 @@ const styles = StyleSheet.create({
     gap: espaces.m,
   },
   entete: { flexDirection: 'row', alignItems: 'center', gap: espaces.m },
-  capy: { width: 64, height: 64 },
+  capy: { width: 64, height: 64, borderRadius: 16 },
   indice: { flexDirection: 'row', gap: espaces.s, alignItems: 'flex-start' },
   flex: { flex: 1 },
 });
