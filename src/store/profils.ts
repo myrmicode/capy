@@ -20,11 +20,17 @@ export interface ProfilEnfant {
   classe: Classe;
   progression: ProgressionEnfant;
   toile?: ToileEnfant;
+  /** Date (ISO) de la dernière modification, pour fusionner entre appareils. */
+  modifieLe: string;
+  /** Date (ISO) de la dernière synchronisation avec le compte ; propre à l'appareil, jamais envoyée. */
+  synchroniseLe?: string;
 }
 
 interface EtatProfils {
   profils: ProfilEnfant[];
   profilActifId: string | null;
+  /** Profils supprimés sur cet appareil, à effacer aussi du serveur à la prochaine synchronisation. */
+  suppressionsEnAttente: string[];
   ajouterProfil: (prenom: string, classe: Classe) => ProfilEnfant;
   modifierProfil: (id: string, modifs: Partial<Pick<ProfilEnfant, 'prenom' | 'classe'>>) => void;
   supprimerProfil: (id: string) => void;
@@ -38,6 +44,10 @@ interface EtatProfils {
   /** Enregistre une nouvelle fiche de l'école : elle devient la toile de référence. */
   enregistrerToile: (id: string, niveaux: Niveaux, maintenant?: Date) => void;
   ouvrirCoffre: (id: string, coffreId: string) => void;
+  /** Résultat d'une synchronisation : nouvelle liste de profils, suppressions envoyées au serveur. */
+  appliquerSynchro: (profils: ProfilEnfant[], suppressionsTraitees: string[]) => void;
+  /** Après une déconnexion : les profils ne sont plus liés à un compte. */
+  oublierSynchro: () => void;
 }
 
 function nouvelId(): string {
@@ -47,72 +57,88 @@ function nouvelId(): string {
 export const useProfils = create<EtatProfils>()(
   persist(
     (set) => {
-      const majProgression = (id: string, maj: (p: ProgressionEnfant) => ProgressionEnfant) =>
+      /** Modifie un profil et note la date de modification. */
+      const modifier = (id: string, maj: (p: ProfilEnfant, maintenant: Date) => Partial<ProfilEnfant>, maintenant = new Date()) =>
         set((etat) => ({
-          profils: etat.profils.map((p) => (p.id === id ? { ...p, progression: maj(p.progression) } : p)),
+          profils: etat.profils.map((p) =>
+            p.id === id ? { ...p, ...maj(p, maintenant), modifieLe: maintenant.toISOString() } : p,
+          ),
         }));
 
       return {
         profils: [],
         profilActifId: null,
+        suppressionsEnAttente: [],
         ajouterProfil: (prenom, classe) => {
-          const profil: ProfilEnfant = { id: nouvelId(), prenom, classe, progression: progression.progressionVide() };
+          const profil: ProfilEnfant = {
+            id: nouvelId(),
+            prenom,
+            classe,
+            progression: progression.progressionVide(),
+            modifieLe: new Date().toISOString(),
+          };
           set((etat) => ({ profils: [...etat.profils, profil] }));
           return profil;
         },
-        modifierProfil: (id, modifs) =>
-          set((etat) => ({
-            profils: etat.profils.map((p) => (p.id === id ? { ...p, ...modifs } : p)),
-          })),
+        modifierProfil: (id, modifs) => modifier(id, () => modifs),
         supprimerProfil: (id) =>
-          set((etat) => ({
-            profils: etat.profils.filter((p) => p.id !== id),
-            profilActifId: etat.profilActifId === id ? null : etat.profilActifId,
-          })),
+          set((etat) => {
+            const profil = etat.profils.find((p) => p.id === id);
+            return {
+              profils: etat.profils.filter((p) => p.id !== id),
+              profilActifId: etat.profilActifId === id ? null : etat.profilActifId,
+              suppressionsEnAttente: profil?.synchroniseLe
+                ? [...etat.suppressionsEnAttente, id]
+                : etat.suppressionsEnAttente,
+            };
+          }),
         choisirProfil: (id) => set({ profilActifId: id }),
         enregistrerEtape: (id, etapeId, r, maintenant = new Date()) =>
-          set((etat) => ({
-            profils: etat.profils.map((p) =>
-              p.id === id
-                ? {
-                    ...p,
-                    progression: progression.enregistrerEtape(
-                      p.progression,
-                      etapeId,
-                      r.reussiesPremierCoup,
-                      r.nombreQuestions,
-                      r.dureeSecondes,
-                      maintenant,
-                    ),
-                    toile: p.toile && toileApresEtape(p.toile, r.domaine, r.reussiesPremierCoup, r.nombreQuestions),
-                  }
-                : p,
-            ),
-          })),
+          modifier(
+            id,
+            (p, m) => ({
+              progression: progression.enregistrerEtape(
+                p.progression,
+                etapeId,
+                r.reussiesPremierCoup,
+                r.nombreQuestions,
+                r.dureeSecondes,
+                m,
+              ),
+              toile: p.toile && toileApresEtape(p.toile, r.domaine, r.reussiesPremierCoup, r.nombreQuestions),
+            }),
+            maintenant,
+          ),
         enregistrerToile: (id, niveaux, maintenant = new Date()) =>
+          modifier(id, (p, m) => ({ toile: nouvelleToile(p.classe, niveaux, progression.dateLocale(m)) }), maintenant),
+        ouvrirCoffre: (id, coffreId) =>
+          modifier(id, (p) => ({ progression: progression.ouvrirCoffre(p.progression, coffreId) })),
+        appliquerSynchro: (profils, suppressionsTraitees) =>
           set((etat) => ({
-            profils: etat.profils.map((p) =>
-              p.id === id ? { ...p, toile: nouvelleToile(p.classe, niveaux, progression.dateLocale(maintenant)) } : p,
-            ),
+            profils,
+            profilActifId: profils.some((p) => p.id === etat.profilActifId) ? etat.profilActifId : null,
+            suppressionsEnAttente: etat.suppressionsEnAttente.filter((id) => !suppressionsTraitees.includes(id)),
           })),
-        ouvrirCoffre: (id, coffreId) => majProgression(id, (p) => progression.ouvrirCoffre(p, coffreId)),
+        oublierSynchro: () =>
+          set((etat) => ({
+            profils: etat.profils.map(({ synchroniseLe: _ignore, ...p }) => p),
+            suppressionsEnAttente: [],
+          })),
       };
     },
     {
       name: 'capy-profils',
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: ({ profils, profilActifId }) => ({ profils, profilActifId }),
-      // Version 1 (phase 1) : les profils n'avaient pas encore de progression.
+      partialize: ({ profils, profilActifId, suppressionsEnAttente }) => ({ profils, profilActifId, suppressionsEnAttente }),
       migrate: (ancien, version) => {
-        const etat = ancien as { profils: Omit<ProfilEnfant, 'progression'>[]; profilActifId: string | null };
-        if (version < 2) {
-          return {
-            ...etat,
-            profils: etat.profils.map((p) => ({ ...p, progression: progression.progressionVide() })),
-          };
-        }
-        return etat;
+        const etat = ancien as { profils: Partial<ProfilEnfant>[]; profilActifId: string | null };
+        let profils = etat.profils;
+        // Version 1 (phase 1) : pas encore de progression.
+        if (version < 2) profils = profils.map((p) => ({ ...p, progression: progression.progressionVide() }));
+        // Version 2 (phases 4 à 6) : pas encore de date de modification.
+        if (version < 3) profils = profils.map((p) => ({ ...p, modifieLe: p.modifieLe ?? new Date().toISOString() }));
+        return { ...etat, profils: profils as ProfilEnfant[], suppressionsEnAttente: [] };
       },
     },
   ),

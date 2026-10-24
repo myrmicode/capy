@@ -7,6 +7,7 @@
     "@expo-google-fonts/fredoka": "^0.4.1",
     "@expo-google-fonts/nunito": "^0.4.2",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@supabase/supabase-js": "2.117.3",
     "expo": "~58.0.19",
     "expo-asset": "~58.0.18",
     "expo-audio": "~58.0.10",
@@ -54,7 +55,7 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "verifier": "npm run typecheck && npm run lint && npm test",
-    "verifier:serveur": "cd supabase/functions/analyser-toile && npx --yes deno@2 check index.ts"
+    "verifier:serveur": "cd supabase/functions/analyser-toile && npx --yes deno@2 check index.ts && cd ../supprimer-compte && npx --yes deno@2 check index.ts"
   },
   "private": true,
   "jest": {

@@ -50,3 +50,44 @@ Sans fichier `.env`, l'appli fonctionne quand même : le bouton photo bascule si
 - Seule l'image recadrée (environ 1024 px, en mémoire) est envoyée à la fonction, avec la liste des domaines.
 - La fonction la transmet à l'API Claude pour lecture, renvoie les niveaux, et ne l'enregistre nulle part (ni base, ni stockage, ni journal).
 - Anthropic intervient comme sous-traitant pour cette lecture : à mentionner dans la politique de confidentialité de l'appli.
+
+---
+
+# Compte parent facultatif (phase 7)
+
+À faire une fois l'analyse de la photo en place (mêmes projet et dossier).
+
+## 5. Créer la table et la fonction de suppression
+
+Dans PowerShell, dans le dossier `Capy` :
+
+```
+npx supabase db push
+npx supabase functions deploy supprimer-compte --use-api
+```
+
+`db push` crée la table `profils_enfants` avec la Row Level Security : chaque parent ne voit que ses propres profils.
+
+## 6. Recevoir un code par e-mail (pas de mot de passe)
+
+Dans Supabase, **Authentication > Emails > Templates > Magic link** (ou « Magic Link / OTP ») :
+remplacez le contenu par un message qui affiche le code, par exemple :
+
+```
+<h2>Votre code Capy</h2>
+<p>Voici votre code de connexion : <strong>{{ .Token }}</strong></p>
+<p>Il est valable quelques minutes. Si vous n'avez rien demandé, ignorez ce message.</p>
+```
+
+Le sujet peut être : `Votre code Capy`.
+
+Bon à savoir : le service d'e-mail intégré de Supabase n'envoie que quelques messages par heure. C'est suffisant
+pour tester ; avant la publication, il faudra brancher un service d'envoi (SMTP) dans
+**Authentication > Emails > SMTP Settings**.
+
+## Ce qui est enregistré avec un compte
+
+- Le parent : son adresse e-mail (gérée par Supabase Auth).
+- Pour chaque enfant : prénom ou surnom, classe, toile (niveaux), progression, date de modification.
+- « Supprimer le profil » efface aussi le profil du serveur ; « Supprimer le compte » efface le compte et tous
+  les profils du serveur (les profils restent sur l'appareil).

@@ -13,9 +13,9 @@ describe('profils enfants', () => {
     expect(lou.id).not.toBe(tim.id);
   });
 
-  it('ne stocke que le prénom, la classe et la progression', () => {
+  it('ne stocke que le prénom, la classe et la progression (plus la date de modification)', () => {
     const profil = useProfils.getState().ajouterProfil('Lou', 'CE2');
-    expect(Object.keys(profil).sort()).toEqual(['classe', 'id', 'prenom', 'progression']);
+    expect(Object.keys(profil).sort()).toEqual(['classe', 'id', 'modifieLe', 'prenom', 'progression']);
     expect(Object.keys(profil.progression).sort()).toEqual(['coffresOuverts', 'etapes', 'jours', 'tempsParJour']);
   });
 
@@ -51,6 +51,29 @@ describe('profils enfants', () => {
     const ancien = { profils: [{ id: 'a', prenom: 'Lou', classe: 'CE2' }], profilActifId: 'a' };
     const migre = (await migrer(ancien, 1)) as { profils: { progression: unknown }[] };
     expect(migre.profils[0].progression).toEqual({ etapes: {}, coffresOuverts: [], jours: [], tempsParJour: {} });
+  });
+
+  it('ajoute une date de modification aux profils enregistrés avant la phase 7, sans rien perdre', async () => {
+    const migrer = useProfils.persist.getOptions().migrate!;
+    const toile = { septembre: { nombres: 0.4 }, actuelle: { nombres: 0.5 }, saisieLe: '2026-09-20' };
+    const progression = { etapes: { 'ce2-rp-1': { etoiles: 2, fois: 1 } }, coffresOuverts: [], jours: ['2026-10-24'], tempsParJour: {} };
+    const ancien = { profils: [{ id: 'a', prenom: 'Lou', classe: 'CE2', progression, toile }], profilActifId: 'a' };
+    const migre = (await migrer(ancien, 2)) as { profils: Record<string, unknown>[]; suppressionsEnAttente: string[] };
+    expect(migre.profils[0]).toMatchObject({ id: 'a', prenom: 'Lou', progression, toile });
+    expect(typeof migre.profils[0].modifieLe).toBe('string');
+    expect(migre.suppressionsEnAttente).toEqual([]);
+  });
+
+  it('retient la suppression d’un profil déjà synchronisé, pour l’effacer aussi du serveur', () => {
+    const { ajouterProfil, supprimerProfil, appliquerSynchro } = useProfils.getState();
+    const lou = ajouterProfil('Lou', 'CE2');
+    const tim = ajouterProfil('Tim', 'CP');
+    appliquerSynchro([{ ...lou, synchroniseLe: '2026-10-24T10:00:00.000Z' }, tim], []);
+    supprimerProfil(lou.id);
+    supprimerProfil(tim.id);
+    expect(useProfils.getState().suppressionsEnAttente).toEqual([lou.id]);
+    appliquerSynchro([], [lou.id]);
+    expect(useProfils.getState().suppressionsEnAttente).toEqual([]);
   });
 
   it('choisit, modifie et supprime un profil', () => {

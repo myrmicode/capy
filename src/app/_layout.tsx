@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { demarrerCompte } from '@/serveur/compte';
 import { useHydratation } from '@/store/useHydratation';
 import { couleurs } from '@/theme';
 
@@ -29,6 +30,9 @@ export default function RacineLayout() {
   useEffect(() => {
     if (pret) SplashScreen.hideAsync();
   }, [pret]);
+
+  // Compte parent facultatif : branché une fois les données locales chargées.
+  useEffect(() => (donneesPretes ? demarrerCompte() : undefined), [donneesPretes]);
 
   if (!pret) return null;
 

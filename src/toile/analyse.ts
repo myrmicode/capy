@@ -5,6 +5,7 @@
 import { z } from 'zod';
 
 import type { Domaine, DomaineId } from '@/config/domaines';
+import { configServeur, type ConfigServeur } from '@/serveur/config';
 
 import { borner, type Niveaux } from './niveaux';
 
@@ -33,18 +34,6 @@ export function interpreterReponse(donnees: unknown, domaines: readonly Domaine[
   if (domaines.some((d) => niveaux[d.id] === undefined)) return { ok: false, raison: 'illisible' };
   if (lu.data.confiance < SEUIL_CONFIANCE) return { ok: false, raison: 'peu_sur' };
   return { ok: true, niveaux, confiance: lu.data.confiance };
-}
-
-export interface ConfigServeur {
-  url: string;
-  clePublique: string;
-}
-
-/** Configuration lue au moment de la compilation (fichier .env, voir .env.example). */
-export function configServeur(): ConfigServeur | null {
-  const url = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
-  const clePublique = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '';
-  return url && clePublique ? { url, clePublique } : null;
 }
 
 export async function analyserPhoto(

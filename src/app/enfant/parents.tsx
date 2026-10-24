@@ -7,6 +7,9 @@ import { domainesDe } from '@/config/domaines';
 import { themesDe } from '@/config/parcours';
 import { dateEnFrancais, dureeEnFrancais } from '@/parents/format';
 import { dateLocale, serieDeJours, tempsDeLaSemaine } from '@/parcours/progression';
+import { seDeconnecter, supprimerCompte } from '@/serveur/compte';
+import { synchroniser } from '@/serveur/synchro';
+import { useCompte } from '@/store/compte';
 import { useProfilActif, useProfils } from '@/store/profils';
 import { useReglages } from '@/store/reglages';
 import { couleurs, espaces, formes, typo } from '@/theme';
@@ -28,6 +31,7 @@ function ContenuParents() {
   const supprimerProfil = useProfils((e) => e.supprimerProfil);
   const { sons, activerSons } = useReglages();
   const [confirmerSuppression, setConfirmerSuppression] = useState(false);
+  const connecte = useCompte((e) => e.email !== null);
   if (!profil) return null;
 
   const p = profil.progression;
@@ -38,6 +42,9 @@ function ContenuParents() {
 
   const supprimer = () => {
     supprimerProfil(profil.id);
+    // Avec un compte, les données du serveur sont effacées tout de suite
+    // (ou à la prochaine connexion si l'appareil est hors ligne).
+    if (connecte) void synchroniser();
     router.replace('/');
   };
 
@@ -121,19 +128,14 @@ function ContenuParents() {
         </View>
       </Section>
 
-      <Section titre="Compte (facultatif)">
-        <Text style={typo.texte}>
-          Capy fonctionne entièrement sans compte : tout reste sur cet appareil. Un compte servira seulement à
-          retrouver la progression sur un autre appareil. Bientôt disponible.
-        </Text>
-      </Section>
+      <SectionCompte />
 
       <Section titre="Supprimer le profil">
         {confirmerSuppression ? (
           <>
             <Text style={typo.texte}>
-              Toutes les données de {profil.prenom} (toile et progression) seront effacées de cet appareil. Cette
-              action est définitive.
+              Toutes les données de {profil.prenom} (toile et progression) seront effacées de cet appareil
+              {connecte ? ' et du compte' : ''}. Cette action est définitive.
             </Text>
             <Bouton titre={`Oui, supprimer ${profil.prenom}`} variante="reessayer" onPress={supprimer} />
             <Bouton titre="Annuler" variante="secondaire" onPress={() => setConfirmerSuppression(false)} />
@@ -143,6 +145,69 @@ function ContenuParents() {
         )}
       </Section>
     </>
+  );
+}
+
+/** Compte parent facultatif : connexion, synchronisation, déconnexion, suppression complète. */
+function SectionCompte() {
+  const { disponible, email, synchro, derniereSynchro } = useCompte();
+  const [confirmer, setConfirmer] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const titre = 'Compte (facultatif)';
+  if (!disponible) {
+    return (
+      <Section titre={titre}>
+        <Text style={typo.texte}>Capy fonctionne entièrement sans compte : tout reste sur cet appareil.</Text>
+      </Section>
+    );
+  }
+  if (!email) {
+    return (
+      <Section titre={titre}>
+        <Text style={typo.texte}>
+          Capy fonctionne entièrement sans compte : tout reste sur cet appareil. Un compte sert seulement à retrouver
+          la progression sur un autre appareil.
+        </Text>
+        <Bouton titre="Créer un compte ou se connecter" variante="secondaire" onPress={() => router.push('/compte')} />
+      </Section>
+    );
+  }
+
+  let etat = 'Synchronisation en attente.';
+  if (synchro === 'en_cours') etat = 'Synchronisation en cours…';
+  else if (synchro === 'erreur') etat = 'La dernière synchronisation n’a pas abouti. Elle sera retentée automatiquement.';
+  else if (derniereSynchro) {
+    const heure = new Date(derniereSynchro);
+    etat = `Synchronisé à ${String(heure.getHours()).padStart(2, '0')} h ${String(heure.getMinutes()).padStart(2, '0')}.`;
+  }
+
+  const supprimer = async () => {
+    setMessage(null);
+    if (await supprimerCompte()) setConfirmer(false);
+    else setMessage('La suppression n’a pas abouti. Vérifiez la connexion et réessayez.');
+  };
+
+  return (
+    <Section titre={titre}>
+      <Text style={typo.texte}>Connecté avec {email}</Text>
+      <Text style={typo.petit}>{etat}</Text>
+      <Bouton titre="Synchroniser maintenant" variante="secondaire" onPress={() => void synchroniser()} />
+      <Bouton titre="Se déconnecter" variante="secondaire" onPress={() => void seDeconnecter()} />
+      {confirmer ? (
+        <>
+          <Text style={typo.texte}>
+            Le compte et toutes les données enregistrées sur le serveur seront effacés. Les profils restent sur cet
+            appareil. Cette action est définitive.
+          </Text>
+          <Bouton titre="Oui, supprimer le compte" variante="reessayer" onPress={() => void supprimer()} />
+          <Bouton titre="Annuler" variante="secondaire" onPress={() => setConfirmer(false)} />
+        </>
+      ) : (
+        <Bouton titre="Supprimer le compte" variante="secondaire" onPress={() => setConfirmer(true)} />
+      )}
+      {message ? <Text style={[typo.texte, { color: couleurs.brun[800] }]}>{message}</Text> : null}
+    </Section>
   );
 }
 
