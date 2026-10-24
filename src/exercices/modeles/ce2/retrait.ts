@@ -31,18 +31,21 @@ export const retrait = definirModele<{ depart: number; retrait: number }>({
     ({ depart: a, retrait: b }, r) => ({
       enonce: `Dans la bibliothèque, il y a ${nb(a)} livres sur les étagères. Capy en range ${nb(b)} dans des cartons.`,
       question: 'Combien de livres reste-t-il sur les étagères ?',
+      autresQuestions: ['Combien de cartons Capy a-t-il remplis ?', 'Combien de pages a chaque livre ?'],
       indice: `Au début, il y a ${nb(a)} livres. Si on en enlève, en reste-t-il plus ou moins ?`,
       explication: `On enlève les livres rangés : ${nb(a)} − ${nb(b)} = ${nb(r)}. Il reste ${nb(r)} livres sur les étagères.`,
     }),
     ({ depart: a, retrait: b }, r) => ({
       enonce: `Capy a ${nb(a)} graines de tournesol. Il en plante ${nb(b)}.`,
       question: 'Combien de graines lui reste-t-il ?',
+      autresQuestions: ['Combien de graines Capy plantera-t-il demain ?', 'Combien coûte le sachet de graines ?'],
       indice: 'Les graines plantées ne sont plus dans le sachet. Quelle opération permet de trouver ce qui reste ?',
       explication: `Il reste ${nb(a)} − ${nb(b)} = ${nb(r)} graines. Tu peux vérifier : ${nb(r)} + ${nb(b)} = ${nb(a)}.`,
     }),
     ({ depart: a, retrait: b }, r) => ({
       enonce: `Un train transporte ${nb(a)} voyageurs. À la gare, ${nb(b)} voyageurs descendent.`,
       question: 'Combien de voyageurs reste-t-il dans le train ?',
+      autresQuestions: ['Combien de voyageurs montent à la gare ?', 'À quelle heure le train arrive-t-il ?'],
       indice: 'Des voyageurs descendent : le train en transporte moins. Pense à la soustraction.',
       explication: `${nb(a)} − ${nb(b)} = ${nb(r)}. Il reste ${nb(r)} voyageurs dans le train.`,
     }),

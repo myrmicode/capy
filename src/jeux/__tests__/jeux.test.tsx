@@ -5,7 +5,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { modeleParId } from '@/exercices';
 
 import { JeuBonFil } from '../JeuBonFil';
+import { JeuFunambule } from '../JeuFunambule';
+import { JeuLucioles } from '../JeuLucioles';
 import { JeuMarche } from '../JeuMarche';
+import { JeuQuestionPerdue } from '../JeuQuestionPerdue';
 import { JeuReponses } from '../JeuReponses';
 
 const render = (ui: ReactElement) => renderBrut(<GestureHandlerRootView>{ui}</GestureHandlerRootView>);
@@ -80,5 +83,49 @@ describe('La bonne réponse', () => {
     await render(<JeuReponses exercice={ex} actif={false} onRepondre={onRepondre} />);
     await fireEvent.press(screen.getByRole('button', { name: String(ex.reponse) }));
     expect(onRepondre).not.toHaveBeenCalled();
+  });
+});
+
+describe('Attrape-lucioles', () => {
+  it('accepte la luciole qui porte la bonne réponse', async () => {
+    const ex = modeleParId('tables')!.generer('CE2', 4);
+    const onRepondre = jest.fn();
+    await render(<JeuLucioles exercice={ex} actif onRepondre={onRepondre} />);
+    const mauvaise = ex.choix.find((v) => v !== ex.reponse)!;
+    await fireEvent.press(screen.getByRole('button', { name: `Luciole ${mauvaise}` }));
+    expect(onRepondre).toHaveBeenLastCalledWith(false);
+    await fireEvent.press(screen.getByRole('button', { name: `Luciole ${ex.reponse}` }));
+    expect(onRepondre).toHaveBeenLastCalledWith(true);
+  });
+});
+
+describe('La question perdue', () => {
+  it('reconnaît la question qui va avec l’histoire', async () => {
+    const ex = modeleParId('retrait')!.generer('CE2', 2);
+    const onRepondre = jest.fn();
+    await render(<JeuQuestionPerdue exercice={ex} actif onRepondre={onRepondre} />);
+    // La question n'est pas affichée avec l'histoire : elle fait partie des choix.
+    expect(screen.getAllByText(ex.question)).toHaveLength(1);
+    const leurre = ex.questionsAuChoix!.find((q) => q !== ex.question)!;
+    await fireEvent.press(screen.getByRole('button', { name: leurre }));
+    expect(onRepondre).toHaveBeenLastCalledWith(false);
+    await fireEvent.press(screen.getByRole('button', { name: ex.question }));
+    expect(onRepondre).toHaveBeenLastCalledWith(true);
+  });
+});
+
+describe('Le funambule', () => {
+  it('fait avancer Capy de graduation en graduation jusqu’au bon nombre', async () => {
+    const ex = modeleParId('placer-grands-pas')!.generer('CE2', 9);
+    const rang = (ex.reponse - ex.donnees.debut) / ex.donnees.pas;
+    const onRepondre = jest.fn();
+    await render(<JeuFunambule exercice={ex} actif onRepondre={onRepondre} />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Valider' }));
+    expect(onRepondre).toHaveBeenLastCalledWith(false);
+    for (let i = 0; i < rang; i++) {
+      await fireEvent.press(screen.getByRole('button', { name: 'Avancer d’une graduation' }));
+    }
+    await fireEvent.press(screen.getByRole('button', { name: 'Valider' }));
+    expect(onRepondre).toHaveBeenLastCalledWith(true);
   });
 });

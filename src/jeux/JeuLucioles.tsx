@@ -1,0 +1,138 @@
+// Mini-jeu « Attrape-lucioles » (calcul mental) : des lucioles portent des nombres
+// et flottent lentement ; l'enfant touche celle qui porte la bonne réponse.
+// Pas de chrono : les lucioles ne s'envolent jamais, elles bougent juste un peu.
+import { useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
+
+import { CarteEnonce } from '@/composants';
+import { creerAlea, nb } from '@/exercices';
+import { couleurs, espaces, formes, polices } from '@/theme';
+
+import type { PropsJeu } from './types';
+
+const TAILLE = 104;
+/** Amplitude du vol, en pixels : assez pour vivre, assez peu pour viser facilement. */
+const AMPLITUDE = 10;
+
+export function JeuLucioles({ exercice, actif, onRepondre }: PropsJeu) {
+  const [touchee, setTouchee] = useState<number | null>(null);
+
+  const toucher = (valeur: number) => {
+    if (!actif) return;
+    setTouchee(valeur);
+    onRepondre(valeur === exercice.reponse);
+  };
+
+  return (
+    <View style={styles.jeu}>
+      <CarteEnonce enonce={exercice.enonce} question={exercice.question} />
+      <View style={styles.ciel}>
+        {exercice.choix.map((valeur, i) => (
+          <Luciole
+            key={valeur}
+            valeur={valeur}
+            index={i}
+            graine={exercice.graine}
+            etat={touchee === valeur ? (valeur === exercice.reponse ? 'juste' : 'presque') : 'normal'}
+            actif={actif}
+            onPress={() => toucher(valeur)}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+interface PropsLuciole {
+  valeur: number;
+  index: number;
+  graine: number;
+  etat: 'normal' | 'juste' | 'presque';
+  actif: boolean;
+  onPress: () => void;
+}
+
+function Luciole({ valeur, index, graine, etat, actif, onPress }: PropsLuciole) {
+  const reduit = useReducedMotion();
+  const dx = useSharedValue(0);
+  const dy = useSharedValue(0);
+
+  useEffect(() => {
+    if (reduit) return;
+    // Un petit vol propre à chaque luciole, reproductible.
+    const alea = creerAlea(graine + index * 7919);
+    const duree = 1800 + alea.entier(0, 900);
+    const vers = (v: number) => withTiming(v, { duration: duree, easing: Easing.inOut(Easing.sin) });
+    dx.value = withDelay(index * 200, withRepeat(withSequence(vers(AMPLITUDE), vers(-AMPLITUDE)), -1, true));
+    dy.value = withDelay(index * 300, withRepeat(withSequence(vers(-AMPLITUDE), vers(AMPLITUDE)), -1, true));
+  }, [dx, dy, graine, index, reduit]);
+
+  const style = useAnimatedStyle(() => ({ transform: [{ translateX: dx.value }, { translateY: dy.value }] }));
+  const couleur =
+    etat === 'juste' ? couleurs.menthe[500] : etat === 'presque' ? couleurs.brun[100] : couleurs.jaune[400];
+  const bord = etat === 'juste' ? couleurs.sarcelle[700] : etat === 'presque' ? couleurs.brun[600] : couleurs.jaune[600];
+  const texte = etat === 'presque' ? couleurs.brun[800] : etat === 'juste' ? couleurs.encre : couleurs.jaune.texte;
+
+  return (
+    <View style={styles.place}>
+      <Animated.View style={style}>
+        <Pressable
+          onPress={onPress}
+          disabled={!actif}
+          accessibilityRole="button"
+          accessibilityLabel={`Luciole ${nb(valeur)}`}
+          style={({ pressed }) => [styles.halo, pressed && styles.appuye]}
+        >
+          <View style={[styles.luciole, { backgroundColor: couleur, borderColor: bord }]}>
+            <Text style={[styles.nombre, { color: texte }]} adjustsFontSizeToFit numberOfLines={1}>
+              {nb(valeur)}
+            </Text>
+          </View>
+        </Pressable>
+      </Animated.View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  jeu: { gap: espaces.l },
+  ciel: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-around',
+    rowGap: espaces.xl,
+    paddingVertical: espaces.xl,
+    backgroundColor: couleurs.sarcelle[900],
+    borderRadius: formes.carte.rayon,
+  },
+  place: { width: '45%', alignItems: 'center' },
+  halo: {
+    width: TAILLE + 24,
+    height: TAILLE + 24,
+    borderRadius: (TAILLE + 24) / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(252, 196, 72, 0.18)',
+  },
+  appuye: { transform: [{ scale: 0.95 }] },
+  luciole: {
+    width: TAILLE,
+    height: TAILLE,
+    borderRadius: TAILLE / 2,
+    borderWidth: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: espaces.s,
+  },
+  nombre: { fontFamily: polices.fredokaGras, fontSize: 30 },
+});

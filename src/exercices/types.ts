@@ -45,6 +45,11 @@ export interface Exercice {
   indice: string;
   /** Explication de la méthode, affichée dans le panneau Bravo / Presque. */
   explication: string;
+  /**
+   * Pour « La question perdue » : la bonne question et des questions auxquelles
+   * l'histoire ne permet pas de répondre, mélangées de façon reproductible.
+   */
+  questionsAuChoix?: string[];
 }
 
 /** Ce qu'on écrit pour créer un modèle (voir `modeles/`). */
@@ -71,7 +76,14 @@ export interface DefinitionModele<D extends Donnees> {
 export type Histoire<D extends Donnees> = (
   d: D,
   reponse: number,
-) => { enonce: string; question: string; indice: string; explication: string };
+) => {
+  enonce: string;
+  question: string;
+  indice: string;
+  explication: string;
+  /** Questions qui semblent aller avec l'histoire mais auxquelles ses nombres ne permettent pas de répondre. */
+  autresQuestions?: readonly string[];
+};
 
 /** Modèle prêt à l'emploi, tel que l'utilisent le parcours et les mini-jeux. */
 export interface ModeleExercice {

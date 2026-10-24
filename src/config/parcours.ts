@@ -47,7 +47,7 @@ const RESOUDRE_PROBLEMES_CE2: Theme = {
           id: 'ce2-rp-4',
           titre: 'Ajouter ou enlever ?',
           modeles: ['ajout', 'retrait'],
-          jeux: ['bonFil', 'reponses'],
+          jeux: ['bonFil', 'questionPerdue', 'reponses'],
           nombreQuestions: 5,
         },
         {
@@ -76,7 +76,7 @@ const RESOUDRE_PROBLEMES_CE2: Theme = {
           id: 'ce2-rp-8',
           titre: 'En deux étapes',
           modeles: ['deux-etapes', 'ajout'],
-          jeux: ['bonFil', 'reponses'],
+          jeux: ['bonFil', 'questionPerdue', 'reponses'],
           nombreQuestions: 5,
         },
         {
@@ -90,7 +90,7 @@ const RESOUDRE_PROBLEMES_CE2: Theme = {
           id: 'ce2-rp-10',
           titre: 'Grande révision',
           modeles: ['groupements', 'ajout', 'retrait', 'ecart', 'partage', 'deux-etapes'],
-          jeux: ['marche', 'bonFil', 'reponses'],
+          jeux: ['marche', 'bonFil', 'questionPerdue', 'reponses'],
           nombreQuestions: 7,
         },
       ],
@@ -98,7 +98,84 @@ const RESOUDRE_PROBLEMES_CE2: Theme = {
   ],
 };
 
-export const THEMES: readonly Theme[] = [RESOUDRE_PROBLEMES_CE2];
+const CALCUL_MENTAL_CE2: Theme = {
+  id: 'ce2-calcul-mental',
+  domaine: 'calcul-mental',
+  classe: 'CE2',
+  titre: 'Calcul mental',
+  unites: [
+    {
+      id: 'ce2-cm-u1',
+      titre: 'Le carnet de calcul',
+      coffre: 'ce2-cm-u1-coffre',
+      etapes: [
+        { id: 'ce2-cm-1', titre: 'Les tables', modeles: ['tables'], jeux: ['lucioles', 'reponses'], nombreQuestions: 6 },
+        { id: 'ce2-cm-2', titre: 'Le double', modeles: ['doubles'], jeux: ['lucioles', 'reponses'], nombreQuestions: 5 },
+        { id: 'ce2-cm-3', titre: 'Aller jusqu’à 100', modeles: ['complement-cent'], jeux: ['lucioles', 'reponses'], nombreQuestions: 5 },
+        {
+          id: 'ce2-cm-4',
+          titre: 'De dizaine en dizaine',
+          modeles: ['ajouter-dizaines'],
+          jeux: ['lucioles', 'reponses'],
+          nombreQuestions: 5,
+        },
+        {
+          id: 'ce2-cm-5',
+          titre: 'Révision',
+          modeles: ['tables', 'doubles', 'complement-cent', 'ajouter-dizaines'],
+          jeux: ['lucioles', 'reponses'],
+          nombreQuestions: 7,
+        },
+      ],
+    },
+  ],
+};
+
+const LIGNE_GRADUEE_CE2: Theme = {
+  id: 'ce2-ligne-graduee',
+  domaine: 'ligne-graduee',
+  classe: 'CE2',
+  titre: 'Ligne graduée',
+  unites: [
+    {
+      id: 'ce2-lg-u1',
+      titre: 'Le fil du funambule',
+      coffre: 'ce2-lg-u1-coffre',
+      etapes: [
+        {
+          id: 'ce2-lg-1',
+          titre: 'Petits pas',
+          modeles: ['placer-petits-pas', 'lire-petits-pas'],
+          jeux: ['funambule', 'reponses'],
+          nombreQuestions: 5,
+        },
+        {
+          id: 'ce2-lg-2',
+          titre: 'Grands pas',
+          modeles: ['placer-grands-pas', 'lire-grands-pas'],
+          jeux: ['funambule', 'reponses'],
+          nombreQuestions: 5,
+        },
+        {
+          id: 'ce2-lg-3',
+          titre: 'Tous les pas',
+          modeles: ['placer-petits-pas', 'placer-grands-pas', 'lire-petits-pas', 'lire-grands-pas'],
+          jeux: ['funambule', 'reponses'],
+          nombreQuestions: 6,
+        },
+        {
+          id: 'ce2-lg-4',
+          titre: 'Révision',
+          modeles: ['placer-petits-pas', 'placer-grands-pas', 'lire-petits-pas', 'lire-grands-pas'],
+          jeux: ['funambule', 'reponses'],
+          nombreQuestions: 7,
+        },
+      ],
+    },
+  ],
+};
+
+export const THEMES: readonly Theme[] = [RESOUDRE_PROBLEMES_CE2, CALCUL_MENTAL_CE2, LIGNE_GRADUEE_CE2];
 
 export function themesDe(classe: Classe): Theme[] {
   return THEMES.filter((t) => t.classe === classe);
@@ -122,7 +199,10 @@ export function trouverCoffre(coffreId: string): { theme: Theme; unite: Unite } 
   return undefined;
 }
 
-/** Thèmes d'une classe, du domaine le plus fragile au plus solide (ordre de la toile). */
+/**
+ * Thèmes d'une classe, du domaine le plus fragile au plus solide (ordre de la toile).
+ * Sans toile (ordre vide), on garde l'ordre du parcours.
+ */
 export function themesParPriorite(classe: Classe, ordreDomaines: readonly DomaineId[]): Theme[] {
   const rang = (t: Theme) => {
     const i = ordreDomaines.indexOf(t.domaine);

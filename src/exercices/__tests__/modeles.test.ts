@@ -15,6 +15,14 @@ const ORACLES: Record<string, (d: Donnees) => number> = {
   ecart: (d) => d.grand - d.petit,
   partage: (d) => d.total / d.parts,
   'deux-etapes': (d) => d.depart - (d.premier + d.second),
+  tables: (d) => d.a * d.b,
+  doubles: (d) => d.nombre + d.nombre,
+  'complement-cent': (d) => 100 - d.depart,
+  'ajouter-dizaines': (d) => d.nombre + d.dizaines,
+  'placer-petits-pas': (d) => d.cible,
+  'placer-grands-pas': (d) => d.cible,
+  'lire-petits-pas': (d) => d.debut + d.rang * d.pas,
+  'lire-grands-pas': (d) => d.debut + d.rang * d.pas,
 };
 
 /** Nombres écrits dans un texte (avec l'espace fine des milliers). */
@@ -50,15 +58,15 @@ describe.each(MODELES.map((m) => [m.id, m] as const))('modèle « %s »', (id, m
         signaler(`réponse ${ex.reponse} hors bornes`);
       }
 
-      // Chaque nombre de l'histoire est entier et dans ses bornes, et apparaît dans l'énoncé.
-      const nombresEnonce = nombresDans(ex.enonce);
+      // Chaque nombre de l'histoire est entier et dans ses bornes, et apparaît dans l'énoncé ou la question.
+      const nombresEnonce = nombresDans(`${ex.enonce} ${ex.question}`);
       for (const [nom, valeur] of Object.entries(ex.donnees)) {
         const bornes = regles.donnees[nom];
         if (!bornes) signaler(`« ${nom} » n'a pas de bornes`);
         else if (!Number.isInteger(valeur) || valeur < bornes.min || valeur > bornes.max) {
           signaler(`« ${nom} » = ${valeur} hors bornes`);
         }
-        if (!nombresEnonce.includes(valeur)) signaler(`« ${nom} » = ${valeur} absent de l'énoncé`);
+        if (!nombresEnonce.includes(valeur)) signaler(`« ${nom} » = ${valeur} absent de l'énoncé et de la question`);
       }
 
       // Trois distracteurs : entiers, positifs, distincts entre eux et de la réponse.
@@ -85,7 +93,13 @@ describe.each(MODELES.map((m) => [m.id, m] as const))('modèle « %s »', (id, m
         signaler('vocabulaire interdit');
       }
 
-      enonces.add(ex.enonce);
+      // La question perdue : la bonne question et deux autres, toutes différentes.
+      if (ex.questionsAuChoix) {
+        if (ex.questionsAuChoix.length !== 3 || new Set(ex.questionsAuChoix).size !== 3) signaler('questions au choix invalides');
+        if (!ex.questionsAuChoix.includes(ex.question)) signaler('la bonne question manque');
+      }
+
+      enonces.add(`${ex.enonce} ${ex.question}`);
     }
 
     expect(problemes).toEqual([]);

@@ -14,7 +14,7 @@ import {
   PanneauRetour,
 } from '@/composants';
 import { trouverEtape } from '@/config/parcours';
-import { COMPOSANTS_JEUX, JEUX } from '@/jeux';
+import { COMPOSANTS_JEUX, JEUX, type JeuId } from '@/jeux';
 import { arreterLecture, lireAVoixHaute, feliciter } from '@/jeux/retours';
 import { mascotte } from '@/mascotte';
 import { avancement, derouler, etatInitial } from '@/parcours/deroulement';
@@ -22,6 +22,11 @@ import { genererEtape } from '@/parcours/etape';
 import { etoilesPour, graineDePartie } from '@/parcours/progression';
 import { useProfilActif, useProfils } from '@/store/profils';
 import { couleurs, espaces, formes, typo } from '@/theme';
+
+/** Jeux où l'on glisse le doigt : l'écran ne défile pas pendant la question. */
+const JEUX_A_GLISSER: readonly JeuId[] = ['marche', 'bonFil', 'funambule'];
+/** Jeux qui gardent leur état quand l'enfant réessaie (il ajuste au lieu de tout refaire). */
+const JEUX_QUI_GARDENT_LEUR_ETAT: readonly JeuId[] = ['marche', 'funambule'];
 
 /** Au-delà, on considère que l'enfant a fait une pause : le temps n'est pas compté. */
 const DUREE_MAX_SECONDES = 30 * 60;
@@ -124,16 +129,21 @@ export default function EcranEtape() {
   const jeu = JEUX[question.jeu];
   const Jeu = COMPOSANTS_JEUX[question.jeu];
   const { exercice } = question;
+  const indice = jeu.indice ?? exercice.indice;
+  // Dans « La question perdue », on lit les trois questions, jamais la bonne seule.
+  const aLire = exercice.questionsAuChoix && question.jeu === 'questionPerdue'
+    ? `${jeu.consigne} ${exercice.enonce} ${exercice.questionsAuChoix.join(' ')}`
+    : `${jeu.consigne} ${exercice.enonce} ${exercice.question}`;
 
   let pied = null;
   if (etat.phase === 'bravo') {
     pied = <PanneauRetour type="bravo" explication={exercice.explication} onContinuer={() => envoyer({ type: 'continuer' })} />;
   } else if (etat.phase === 'presque') {
-    pied = <PanneauRetour type="presque" indice={exercice.indice} onContinuer={() => envoyer({ type: 'reessayer' })} />;
+    pied = <PanneauRetour type="presque" indice={indice} onContinuer={() => envoyer({ type: 'reessayer' })} />;
   }
 
   return (
-    <Ecran pied={pied} defilementActif={question.jeu === 'reponses' || etat.phase !== 'question'}>
+    <Ecran pied={pied} defilementActif={!JEUX_A_GLISSER.includes(question.jeu) || etat.phase !== 'question'}>
       <View style={styles.entete}>
         <Pressable
           onPress={() => router.back()}
@@ -154,7 +164,7 @@ export default function EcranEtape() {
           variante="secondaire"
           pleineLargeur={false}
           icone={(c) => <IconeHautParleur taille={22} couleur={c} />}
-          onPress={() => lireAVoixHaute(`${jeu.consigne} ${exercice.enonce} ${exercice.question}`)}
+          onPress={() => lireAVoixHaute(aLire)}
         />
         <Bouton
           titre="Indice"
@@ -166,11 +176,11 @@ export default function EcranEtape() {
       </View>
 
       <Text style={typo.texte}>{jeu.consigne}</Text>
-      {indiceVisible ? <BulleCapy pose="reflechi" tailleCapy={72} texte={exercice.indice} /> : null}
+      {indiceVisible ? <BulleCapy pose="reflechi" tailleCapy={72} texte={indice} /> : null}
 
       {/* La clé remet le mini-jeu à zéro pour chaque question, et pour chaque nouvel essai du bon fil. */}
       <Jeu
-        key={`${etat.index}-${question.jeu === 'marche' ? 0 : etat.essaisRates}`}
+        key={`${etat.index}-${JEUX_QUI_GARDENT_LEUR_ETAT.includes(question.jeu) ? 0 : etat.essaisRates}`}
         exercice={exercice}
         actif={etat.phase === 'question'}
         onRepondre={(juste) => envoyer({ type: 'repondre', juste })}

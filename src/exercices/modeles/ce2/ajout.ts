@@ -30,18 +30,21 @@ export const ajout = definirModele<{ depart: number; ajout: number }>({
     ({ depart: a, ajout: b }, r) => ({
       enonce: `Capy a ${nb(a)} billes. Son amie Lina lui en donne ${nb(b)}.`,
       question: 'Combien de billes Capy a-t-il maintenant ?',
+      autresQuestions: ['Combien de billes Lina avait-elle au départ ?', 'De quelle couleur sont les billes ?'],
       indice: 'Capy reçoit des billes : en a-t-il plus ou moins qu’avant ? Faut-il ajouter ou enlever ?',
       explication: `Capy avait ${nb(a)} billes et en reçoit ${nb(b)}. On ajoute : ${nb(a)} + ${nb(b)} = ${nb(r)}. Capy a maintenant ${nb(r)} billes.`,
     }),
     ({ depart: a, ajout: b }, r) => ({
       enonce: `La bibliothèque de l’école a ${nb(a)} livres. Ce matin, on lui livre ${nb(b)} livres neufs.`,
       question: 'Combien de livres la bibliothèque a-t-elle maintenant ?',
+      autresQuestions: ['Combien de livres sont prêtés aujourd’hui ?', 'Combien de pages a le plus gros livre ?'],
       indice: 'Les livres neufs s’ajoutent à ceux qui étaient déjà là. Quelle opération faut-il faire ?',
       explication: `On réunit les livres : ${nb(a)} + ${nb(b)} = ${nb(r)}. La bibliothèque a ${nb(r)} livres.`,
     }),
     ({ depart: a, ajout: b }, r) => ({
       enonce: `Capy fait ${nb(a)} pas pour aller au parc, puis ${nb(b)} pas pour aller jusqu’à la rivière.`,
       question: 'Combien de pas Capy a-t-il faits en tout ?',
+      autresQuestions: ['Combien de temps Capy a-t-il marché ?', 'Combien de pas fait Capy pour rentrer chez lui ?'],
       indice: 'On cherche le nombre total de pas. Pense à bien aligner les unités, les dizaines et les centaines.',
       explication: `En tout : ${nb(a)} + ${nb(b)} = ${nb(r)}. Capy a fait ${nb(r)} pas.`,
     }),

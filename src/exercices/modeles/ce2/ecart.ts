@@ -30,18 +30,21 @@ export const ecart = definirModele<{ grand: number; petit: number }>({
     ({ grand: a, petit: b }, r) => ({
       enonce: `Capy a cueilli ${nb(a)} pommes. Son ami Noé en a cueilli ${nb(b)}.`,
       question: 'Combien de pommes Capy a-t-il cueillies de plus que Noé ?',
+      autresQuestions: ['Combien de pommes reste-t-il sur l’arbre ?', 'Combien pèse une pomme ?'],
       indice: 'Imagine les deux tas de pommes côte à côte. Combien de pommes dépassent dans le tas de Capy ?',
       explication: `L’écart se trouve par une soustraction : ${nb(a)} − ${nb(b)} = ${nb(r)}. Capy a cueilli ${nb(r)} pommes de plus que Noé.`,
     }),
     ({ grand: a, petit: b }, r) => ({
       enonce: `Le grand chêne mesure ${nb(a)} cm. Le petit sapin mesure ${nb(b)} cm.`,
       question: 'De combien de centimètres le chêne est-il plus haut que le sapin ?',
+      autresQuestions: ['Quel âge a le grand chêne ?', 'Combien de feuilles a le petit sapin ?'],
       indice: 'On ne cherche pas la hauteur des deux arbres empilés, mais la différence entre les deux.',
       explication: `${nb(a)} − ${nb(b)} = ${nb(r)}. Le chêne est plus haut de ${nb(r)} cm.`,
     }),
     ({ grand: a, petit: b }, r) => ({
       enonce: `Lina a ${nb(a)} autocollants. Capy en a ${nb(b)}.`,
       question: 'Combien d’autocollants Capy a-t-il de moins que Lina ?',
+      autresQuestions: ['Combien d’autocollants Lina a-t-elle achetés ce matin ?', 'Combien coûte un autocollant ?'],
       indice: 'Combien d’autocollants manque-t-il à Capy pour en avoir autant que Lina ?',
       explication: `Il manque ${nb(a)} − ${nb(b)} = ${nb(r)} autocollants à Capy. Tu peux vérifier : ${nb(b)} + ${nb(r)} = ${nb(a)}.`,
     }),

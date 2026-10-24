@@ -30,18 +30,21 @@ export const deuxEtapes = definirModele<{ depart: number; premier: number; secon
     ({ depart: a, premier: b, second: c }, r) => ({
       enonce: `Capy a ${nb(a)} € dans sa tirelire. Il achète un livre à ${nb(b)} € et une boîte de crayons à ${nb(c)} €.`,
       question: 'Combien d’euros reste-t-il à Capy ?',
+      autresQuestions: ['Combien coûte un cahier ?', 'Combien d’euros Capy avait-il l’année dernière ?'],
       indice: 'Il y a deux étapes. Commence par chercher combien Capy dépense en tout.',
       explication: `Capy dépense ${nb(b)} + ${nb(c)} = ${nb(b + c)} €. Il lui reste ${nb(a)} − ${nb(b + c)} = ${nb(r)} €.`,
     }),
     ({ depart: a, premier: b, second: c }, r) => ({
       enonce: `Le cinéma du quartier a ${nb(a)} places. D’abord, ${nb(b)} enfants s’installent, puis ${nb(c)} adultes.`,
       question: 'Combien de places reste-t-il libres ?',
+      autresQuestions: ['Combien coûte une place de cinéma ?', 'Combien de temps dure le film ?'],
       indice: 'Il y a deux étapes. Cherche d’abord combien de personnes sont assises.',
       explication: `${nb(b)} + ${nb(c)} = ${nb(b + c)} personnes sont assises. Il reste ${nb(a)} − ${nb(b + c)} = ${nb(r)} places libres.`,
     }),
     ({ depart: a, premier: b, second: c }, r) => ({
       enonce: `Capy a ${nb(a)} timbres. Il en colle ${nb(b)} sur des lettres et en donne ${nb(c)} à Lina.`,
       question: 'Combien de timbres lui reste-t-il ?',
+      autresQuestions: ['Combien de lettres Lina a-t-elle reçues ?', 'Combien coûte un timbre ?'],
       indice: 'Capy enlève des timbres deux fois. Tu peux faire une soustraction, puis une autre.',
       explication: `Après les lettres : ${nb(a)} − ${nb(b)} = ${nb(a - b)}. Après le cadeau à Lina : ${nb(a - b)} − ${nb(c)} = ${nb(r)}. Il reste ${nb(r)} timbres.`,
     }),

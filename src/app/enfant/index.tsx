@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { BulleCapy, Ecran, EtapeParcours, IconeEtoile, IconeFlamme } from '@/composants';
 import { themesParPriorite } from '@/config/parcours';
@@ -23,13 +24,17 @@ const ABSENCE_LONGUE = 3;
 
 export default function Parcours() {
   const profil = useProfilActif();
+  const [themeChoisiId, setThemeChoisiId] = useState<string | null>(null);
   if (!profil) return null;
 
-  // Le parcours commence par le domaine prioritaire de la toile.
-  const theme = themesParPriorite(profil.classe, domainesParPriorite(profil.classe, profil.toile?.actuelle))[0];
-  const prioritaire =
-    !!theme && !!profil.toile && analyserToile(profil.classe, profil.toile.actuelle).priorite?.id === theme.domaine;
   const p = profil.progression;
+  // Les thèmes vont du domaine prioritaire de la toile au plus solide. Par défaut,
+  // on ouvre le premier thème qui n'est pas terminé.
+  const themes = themesParPriorite(profil.classe, profil.toile ? domainesParPriorite(profil.classe, profil.toile.actuelle) : []);
+  const parDefaut = themes.find((t) => cheminDuTheme(t, p).some((n) => n.etat === 'enCours')) ?? themes[0];
+  const theme = themes.find((t) => t.id === themeChoisiId) ?? parDefaut;
+  const prioriteId = profil.toile ? analyserToile(profil.classe, profil.toile.actuelle).priorite?.id : undefined;
+  const prioritaire = !!theme && prioriteId === theme.domaine;
   const aujourdhui = dateLocale(new Date());
   const serie = serieDeJours(p.jours, aujourdhui);
   const absence = joursDepuisDerniereActivite(p.jours, aujourdhui);
@@ -82,7 +87,7 @@ export default function Parcours() {
     message = 'Tu m’as manqué ! On reprend ensemble, tout doucement ?';
   } else if (!enCours) {
     pose = 'bravo';
-    message = 'Tu as fini tout le parcours ! Tu peux rejouer les étapes quand tu veux.';
+    message = 'Tu as fini ce thème ! Rejoue ses étapes quand tu veux, ou choisis un autre thème.';
   } else if (enCours.type === 'coffre') {
     pose = 'surpris';
     message = 'Un coffre t’attend au bout du chemin. Va vite l’ouvrir !';
@@ -102,6 +107,27 @@ export default function Parcours() {
   return (
     <Ecran>
       {entete}
+
+      {themes.length > 1 ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.themes}>
+          {themes.map((t) => {
+            const choisi = t.id === theme.id;
+            return (
+              <Pressable
+                key={t.id}
+                onPress={() => setThemeChoisiId(t.id)}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: choisi }}
+                accessibilityLabel={`${t.titre}${t.domaine === prioriteId ? ', priorité' : ''}`}
+                style={[styles.puceTheme, choisi && styles.puceChoisie]}
+              >
+                {t.domaine === prioriteId ? <View style={styles.pointPriorite} /> : null}
+                <Text style={[typo.texteGras, choisi && styles.texteBlanc]}>{t.titre}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      ) : null}
 
       <View style={styles.bandeau}>
         <View style={styles.flex}>
@@ -180,6 +206,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: espaces.m,
     minHeight: formes.cibleTactile,
   },
+  themes: { gap: espaces.s, paddingVertical: espaces.xs },
+  puceTheme: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: espaces.s,
+    minHeight: formes.cibleTactile,
+    paddingHorizontal: espaces.l,
+    borderRadius: formes.pilule,
+    borderWidth: 2,
+    borderColor: couleurs.bordure,
+    backgroundColor: couleurs.blanc,
+  },
+  puceChoisie: { backgroundColor: couleurs.sarcelle[700], borderColor: couleurs.sarcelle[700] },
+  pointPriorite: { width: 10, height: 10, borderRadius: 5, backgroundColor: couleurs.brun[600] },
   bandeau: {
     flexDirection: 'row',
     alignItems: 'center',

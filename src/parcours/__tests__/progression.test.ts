@@ -1,4 +1,4 @@
-import { THEMES } from '@/config/parcours';
+import { THEMES, themesParPriorite } from '@/config/parcours';
 import { JEUX } from '@/jeux/registre';
 
 import { genererEtape } from '../etape';
@@ -32,6 +32,27 @@ describe('thème « Résoudre des problèmes » CE2', () => {
     expect(etape.jeux.length).toBeGreaterThanOrEqual(2);
     for (let graine = 0; graine < 200; graine++) {
       const questions = genererEtape({ classe: theme.classe, domaine: theme.domaine, graine, ...etape });
+      expect(questions).toHaveLength(etape.nombreQuestions);
+      expect(new Set(questions.map((q) => q.jeu)).size).toBeGreaterThanOrEqual(2);
+      for (const q of questions) {
+        expect(etape.modeles).toContain(q.exercice.modeleId);
+        expect(JEUX[q.jeu].accepte(q.exercice)).toBe(true);
+      }
+    }
+  });
+});
+
+describe.each(THEMES.map((t) => [t.titre, t] as const))('thème « %s »', (_, t) => {
+  const etapes = t.unites.flatMap((u) => u.etapes);
+
+  it('a des identifiants uniques et un coffre par unité', () => {
+    const tous = THEMES.flatMap((x) => x.unites.flatMap((u) => [u.coffre, ...u.etapes.map((e) => e.id)]));
+    expect(new Set(tous).size).toBe(tous.length);
+  });
+
+  it.each(etapes.map((e) => [e.titre, e] as const))('« %s » se génère toujours, avec au moins 2 mini-jeux', (_titre, etape) => {
+    for (let graine = 0; graine < 200; graine++) {
+      const questions = genererEtape({ classe: t.classe, domaine: t.domaine, graine, ...etape });
       expect(questions).toHaveLength(etape.nombreQuestions);
       expect(new Set(questions.map((q) => q.jeu)).size).toBeGreaterThanOrEqual(2);
       for (const q of questions) {
@@ -120,4 +141,11 @@ describe('chemin du parcours', () => {
 it('donne une nouvelle graine à chaque partie, reproductible', () => {
   expect(graineDePartie('lou', 'e1', 0)).toBe(graineDePartie('lou', 'e1', 0));
   expect(graineDePartie('lou', 'e1', 0)).not.toBe(graineDePartie('lou', 'e1', 1));
+});
+
+describe('ordre des thèmes', () => {
+  it('suit la toile quand elle existe, sinon l’ordre du parcours', () => {
+    expect(themesParPriorite('CE2', []).map((t) => t.domaine)).toEqual(['resoudre-problemes', 'calcul-mental', 'ligne-graduee']);
+    expect(themesParPriorite('CE2', ['ligne-graduee', 'calcul-mental', 'resoudre-problemes'])[0].domaine).toBe('ligne-graduee');
+  });
 });
