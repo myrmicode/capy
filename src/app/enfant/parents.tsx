@@ -49,12 +49,14 @@ export default function EspaceParents() {
 function ContenuParents() {
   const profil = useProfilActif();
   const supprimerProfil = useProfils((e) => e.supprimerProfil);
+  const modifierReglages = useProfils((e) => e.modifierReglages);
   const { sons, activerSons } = useReglages();
   const [confirmerSuppression, setConfirmerSuppression] = useState(false);
   const connecte = useCompte((e) => e.email !== null);
   if (!profil) return null;
 
   const p = profil.progression;
+  const reglagesLecture = lireReglages(profil.reglages);
   const aujourdhui = dateLocale(new Date());
   const etapesReussies = Object.keys(p.etapes).length;
   const serie = serieDeJours(p.jours, aujourdhui);
@@ -156,11 +158,25 @@ function ContenuParents() {
 
       <Section titre="Réglages de lecture et de jeu">
         <Text style={typo.texte}>
-          {sontParDefaut(lireReglages(profil.reglages))
+          {sontParDefaut(reglagesLecture)
             ? 'Réglages habituels.'
             : 'Des réglages sont adaptés pour ' + profil.prenom + '.'}{' '}
           Police, taille du texte, syllabes en couleur, lecture à voix haute, toucher au lieu de glisser, mode calme…
         </Text>
+        {!sontParDefaut({ ...reglagesLecture, actifs: true }) ? (
+          <View style={styles.reglage}>
+            <Text style={[typo.texte, styles.flex]}>
+              {reglagesLecture.actifs ? 'Réglages activés' : 'Réglages désactivés (gardés pour plus tard)'}
+            </Text>
+            <Switch
+              value={reglagesLecture.actifs}
+              onValueChange={(v) => modifierReglages(profil.id, { ...reglagesLecture, actifs: v })}
+              trackColor={{ true: couleurs.sarcelle[700], false: couleurs.gris[300] }}
+              thumbColor={couleurs.blanc}
+              accessibilityLabel="Activer les réglages de lecture et de jeu"
+            />
+          </View>
+        ) : null}
         <Bouton
           titre="Adapter la lecture et les jeux"
           variante="secondaire"

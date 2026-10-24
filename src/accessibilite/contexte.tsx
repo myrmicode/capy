@@ -5,7 +5,7 @@ import { useReducedMotion } from 'react-native-reanimated';
 
 import { useProfilActif } from '@/store/profils';
 
-import { lireReglages, REGLAGES_PAR_DEFAUT, type ReglagesEnfant } from './reglages';
+import { lireReglages, reglagesEffectifs, REGLAGES_PAR_DEFAUT, type ReglagesEnfant } from './reglages';
 import { deriverTheme, type ThemeEnfant } from './theme';
 
 const ContexteTheme = createContext<ThemeEnfant | null>(null);
@@ -20,7 +20,7 @@ interface PropsFournisseur {
 export function FournisseurReglages({ reglages, children }: PropsFournisseur) {
   const profil = useProfilActif();
   const reductionSysteme = useReducedMotion();
-  const actifs = reglages ?? lireReglages(profil?.reglages);
+  const actifs = reglages ?? reglagesEffectifs(lireReglages(profil?.reglages));
   // Clé stable : on ne recalcule le thème que si un réglage change.
   const cle = JSON.stringify(actifs);
   const theme = useMemo(

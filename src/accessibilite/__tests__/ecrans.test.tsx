@@ -151,3 +151,35 @@ describe('écran « Réglages de lecture et de jeu »', () => {
     expect(reglagesDeLou()).toEqual(REGLAGES_PAR_DEFAUT);
   });
 });
+
+describe('interrupteur général à l’écran', () => {
+  it('désactive les réglages sans les perdre, puis les réactive', async () => {
+    useProfils.setState({ profils: [], profilActifId: null, suppressionsEnAttente: [] });
+    const id = useProfils.getState().ajouterProfil('Lou', 'CE2').id;
+    useProfils.getState().modifierReglages(id, { ...REGLAGES_PAR_DEFAUT, syllabes: true, police: 'andika' });
+    mockParams.profil = id;
+    delete mockParams.apres;
+    deverrouillerParents();
+    await render(<ReglagesLecture />);
+    const reglages = () => lireReglages(useProfils.getState().profils[0].reglages);
+    await fireEvent(screen.getByLabelText('Activer les réglages de lecture et de jeu'), 'valueChange', false);
+    expect(reglages()).toEqual({ ...REGLAGES_PAR_DEFAUT, syllabes: true, police: 'andika', actifs: false });
+    expect(screen.getByText('Réglages désactivés')).toBeTruthy();
+    await fireEvent(screen.getByLabelText('Activer les réglages de lecture et de jeu'), 'valueChange', true);
+    expect(reglages().actifs).toBe(true);
+    expect(reglages().police).toBe('andika');
+  });
+
+  it('un enfant aux réglages désactivés voit l’affichage habituel', async () => {
+    useProfils.setState({ profils: [], profilActifId: null, suppressionsEnAttente: [] });
+    const p = useProfils.getState().ajouterProfil('Lou', 'CE2');
+    useProfils.getState().choisirProfil(p.id);
+    useProfils.getState().modifierReglages(p.id, { ...REGLAGES_PAR_DEFAUT, syllabes: true, espacements: true, actifs: false });
+    await render(
+      <FournisseurReglages>
+        <TexteAccessible texte="Le chat" coloration />
+      </FournisseurReglages>,
+    );
+    expect(screen.getByText('Le chat')).toBeTruthy();
+  });
+});

@@ -7,6 +7,7 @@ import {
   COULEURS_SYLLABES,
   FONDS,
   lireReglages,
+  reglagesEffectifs,
   RACCOURCIS,
   REGLAGES_PAR_DEFAUT,
   sontParDefaut,
@@ -52,7 +53,8 @@ describe('réglages de lecture et de jeu', () => {
       expect(o.explication.length).toBeGreaterThan(10);
       expect(o.explication.length).toBeLessThan(110);
     }
-    expect(OPTIONS.map((o) => o.cle).sort()).toEqual(Object.keys(REGLAGES_PAR_DEFAUT).sort());
+    // L'interrupteur général est à part, en haut de l'écran.
+    expect(OPTIONS.map((o) => o.cle).sort()).toEqual(Object.keys(REGLAGES_PAR_DEFAUT).filter((k) => k !== 'actifs').sort());
   });
 
   it('masque le manuscrit dès qu’une aide à la lecture est active', () => {
@@ -214,5 +216,25 @@ describe('aides en calcul et attention', () => {
       expect(mot).toBe(mot.toLowerCase());
       expect(phrasesTropLongues(explication)).toEqual([]);
     }
+  });
+});
+
+describe('interrupteur général des réglages', () => {
+  const choisis = { ...REGLAGES_PAR_DEFAUT, police: 'luciole' as const, taille: 'tresGrande' as const, toucherPuisToucher: true };
+
+  it('désactivés, l’enfant retrouve l’appli habituelle ; les réglages restent gardés', () => {
+    const coupes = { ...choisis, actifs: false };
+    expect(reglagesEffectifs(coupes)).toEqual(REGLAGES_PAR_DEFAUT);
+    expect(reglagesEffectifs(choisis)).toBe(choisis);
+    expect(lireReglages(coupes)).toEqual(coupes);
+    expect(deriverTheme(reglagesEffectifs(coupes)).typo.enonce).toEqual(typo.enonce);
+  });
+
+  it('se réactive quand on choisit un raccourci', () => {
+    expect(appliquerRaccourci({ ...choisis, actifs: false }, RACCOURCIS[0]).actifs).toBe(true);
+  });
+
+  it('reste activé par défaut, même sur un ancien profil', () => {
+    expect(lireReglages({ police: 'andika' }).actifs).toBe(true);
   });
 });

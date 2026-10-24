@@ -97,6 +97,26 @@ export default function ReglagesLecture() {
         les réglages choisis sont gardés.
       </Text>
 
+      <View style={[styles.section, styles.interrupteurGeneral, !reglages.actifs && styles.desactives]}>
+        <View style={styles.ligne}>
+          <View style={styles.flex}>
+            <Text style={typo.titre3}>{reglages.actifs ? 'Réglages activés' : 'Réglages désactivés'}</Text>
+            <Text style={typo.petit}>
+              {reglages.actifs
+                ? `${profil.prenom} voit l’appli avec les réglages ci-dessous.`
+                : `${profil.prenom} voit l’appli habituelle. Les réglages sont gardés : réactivez-les quand vous voulez.`}
+            </Text>
+          </View>
+          <Switch
+            value={reglages.actifs}
+            onValueChange={(v) => changer({ ...reglages, actifs: v })}
+            trackColor={{ true: couleurs.sarcelle[700], false: couleurs.gris[300] }}
+            thumbColor={couleurs.blanc}
+            accessibilityLabel="Activer les réglages de lecture et de jeu"
+          />
+        </View>
+      </View>
+
       <Section titre="Raccourcis">
         <Text style={typo.petit}>
           Un raccourci active plusieurs réglages d’un coup ; vous les ajustez ensuite un par un.
@@ -145,7 +165,7 @@ function Apercu({ reglages }: { reglages: ReglagesEnfant }) {
   const [essai, setEssai] = useState(0);
   return (
     <FournisseurReglages reglages={reglages}>
-      <Section titre="Aperçu">
+      <Section titre={reglages.actifs ? 'Aperçu' : 'Aperçu (réglages désactivés pour l’instant)'}>
         <TexteAccessible texte={PHRASE_APERCU} variante="enonce" coloration />
         <Bouton
           titre="Écouter"
@@ -232,6 +252,8 @@ function Section({ titre, children }: { titre: string; children: React.ReactNode
 
 const styles = StyleSheet.create({
   boutons: { gap: espaces.m },
+  interrupteurGeneral: { borderColor: couleurs.sarcelle[700] },
+  desactives: { borderColor: couleurs.bordure, backgroundColor: couleurs.gris[200] },
   section: {
     gap: espaces.m,
     backgroundColor: couleurs.blanc,
