@@ -8,6 +8,7 @@ export type JeuId =
   | 'funambule'
   | 'wagons'
   | 'paniers'
+  | 'dictee'
   | 'reponses';
 
 export interface DefinitionJeu {
@@ -99,6 +100,13 @@ export const JEUX: Record<JeuId, DefinitionJeu> = {
     consigne: 'Range le mot en couleur dans le bon panier.',
     modeles: ['nature-du-mot'],
     accepte: (ex) => ex.nature === 'texte' && ex.categories !== undefined,
+  },
+  dictee: {
+    id: 'dictee',
+    titre: 'La dictée de Capy',
+    consigne: 'Écoute le mot, écris-le, puis valide.',
+    modeles: ['dictee-mots', 'mots-outils'],
+    accepte: (ex) => ex.nature === 'texte' && ex.lecture !== undefined,
   },
   reponses: {
     id: 'reponses',

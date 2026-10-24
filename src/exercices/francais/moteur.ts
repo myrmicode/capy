@@ -18,6 +18,8 @@ export interface ContenuTexte {
   segments?: Segment[];
   /** Toutes les catégories possibles (jeu des paniers) : elles deviennent les choix, dans cet ordre. */
   categories?: string[];
+  /** Texte dit par Capy à la place de l'énoncé (dictée : le mot est dit, jamais écrit). */
+  lecture?: string;
   indice: string;
   explication: string;
 }
@@ -80,6 +82,7 @@ export function definirModeleTexte(def: DefinitionModeleTexte): ModeleTexte {
           choix: contenu.categories ?? alea.melanger([contenu.reponse, ...distracteurs.map((d) => d.valeur)]),
           ...(contenu.segments ? { segments: contenu.segments } : {}),
           ...(contenu.categories ? { categories: contenu.categories } : {}),
+          ...(contenu.lecture ? { lecture: contenu.lecture } : {}),
           indice: contenu.indice,
           explication: contenu.explication,
         };

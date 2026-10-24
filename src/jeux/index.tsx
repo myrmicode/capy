@@ -2,6 +2,7 @@ import type { ComponentType } from 'react';
 
 import { pourNombres, pourTextes } from './garde';
 import { JeuBonFil } from './JeuBonFil';
+import { JeuDictee } from './JeuDictee';
 import { JeuFunambule } from './JeuFunambule';
 import { JeuLucioles } from './JeuLucioles';
 import { JeuMarche } from './JeuMarche';
@@ -20,6 +21,7 @@ export const COMPOSANTS_JEUX: Record<JeuId, ComponentType<PropsJeu>> = {
   funambule: pourNombres(JeuFunambule),
   wagons: pourTextes(JeuWagons),
   paniers: pourTextes(JeuPaniers),
+  dictee: pourTextes(JeuDictee),
   reponses: JeuReponses,
 };
 

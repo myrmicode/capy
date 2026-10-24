@@ -155,6 +155,11 @@ export interface ExerciceTexte {
   segments?: Segment[];
   /** Catégories proposées (jeu des paniers), dans un ordre fixe. */
   categories?: string[];
+  /**
+   * Texte que Capy dit à voix haute à la place de l'énoncé. Pour une dictée, le
+   * mot est dit mais jamais affiché : l'énoncé montre la phrase avec un trou.
+   */
+  lecture?: string;
   indice: string;
   explication: string;
 }

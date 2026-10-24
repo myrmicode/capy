@@ -40,6 +40,7 @@ describe('thèmes proposés d’après la toile', () => {
         'familles-mots': trois,
         'sujet-verbe': deux,
         conjugaison: trois,
+        'ecrire-mots': trois,
       },
       '2026-09-21',
     );

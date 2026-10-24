@@ -5,11 +5,15 @@ import { StyleSheet, View } from 'react-native';
 import { CarteEnonce, TuileReponse, type EtatTuile } from '@/composants';
 import { espaces } from '@/theme';
 
+import { BoutonReecouter, useDicteeAuDemarrage } from './dicter';
 import type { PropsJeu } from './types';
 
 export function JeuReponses({ exercice, actif, onRepondre }: PropsJeu) {
   const [choisie, setChoisie] = useState<number | string | null>(null);
   const choix: readonly (number | string)[] = exercice.choix;
+  // Dictée en version « choisis le mot bien écrit » : Capy dit le mot.
+  const lecture = exercice.nature === 'texte' ? exercice.lecture : undefined;
+  useDicteeAuDemarrage(lecture);
 
   const etat = (valeur: number | string): EtatTuile => {
     if (valeur !== choisie) return actif ? 'normal' : 'desactive';
@@ -19,6 +23,7 @@ export function JeuReponses({ exercice, actif, onRepondre }: PropsJeu) {
   return (
     <View style={styles.jeu}>
       <CarteEnonce enonce={exercice.enonce} question={exercice.question} />
+      {lecture ? <BoutonReecouter lecture={lecture} /> : null}
       <View style={styles.grille}>
         {choix.map((valeur) => (
           <View key={valeur} style={typeof valeur === 'string' && valeur.length > 12 ? styles.ligneEntiere : styles.cellule}>

@@ -11,3 +11,10 @@ jest.mock('react-native-worklets', () => ({
   ...jest.requireActual('react-native-worklets'),
   getUIRuntimeHolder: () => ({}),
 }));
+
+// Son et voix : pas de module natif dans Jest.
+jest.mock('expo-audio', () => ({
+  createAudioPlayer: jest.fn(() => ({ play: jest.fn(), seekTo: jest.fn(), volume: 1 })),
+  setAudioModeAsync: jest.fn(() => Promise.resolve()),
+}));
+jest.mock('expo-speech', () => ({ speak: jest.fn(), stop: jest.fn() }));

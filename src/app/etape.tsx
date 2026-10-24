@@ -28,7 +28,7 @@ import { couleurs, espaces, formes, typo } from '@/theme';
 /** Jeux où l'on glisse le doigt : l'écran ne défile pas pendant la question. */
 const JEUX_A_GLISSER: readonly JeuId[] = ['marche', 'bonFil', 'funambule'];
 /** Jeux qui gardent leur état quand l'enfant réessaie (il ajuste au lieu de tout refaire). */
-const JEUX_QUI_GARDENT_LEUR_ETAT: readonly JeuId[] = ['marche', 'funambule'];
+const JEUX_QUI_GARDENT_LEUR_ETAT: readonly JeuId[] = ['marche', 'funambule', 'dictee'];
 
 /** Au-delà, on considère que l'enfant a fait une pause : le temps n'est pas compté. */
 const DUREE_MAX_SECONDES = 30 * 60;
@@ -138,9 +138,13 @@ export default function EcranEtape() {
   const { exercice } = question;
   const indice = jeu.indice ?? exercice.indice;
   // Dans « La question perdue », on lit les trois questions, jamais la bonne seule.
-  const aLire = exercice.nature === 'nombre' && exercice.questionsAuChoix && question.jeu === 'questionPerdue'
-    ? `${jeu.consigne} ${exercice.enonce} ${exercice.questionsAuChoix.join(' ')}`
-    : `${jeu.consigne} ${exercice.enonce} ${exercice.question}`;
+  // Dans une dictée, Capy dit le mot et sa phrase au lieu de lire la phrase à trou.
+  let aLire = `${jeu.consigne} ${exercice.enonce} ${exercice.question}`;
+  if (exercice.nature === 'nombre' && exercice.questionsAuChoix && question.jeu === 'questionPerdue') {
+    aLire = `${jeu.consigne} ${exercice.enonce} ${exercice.questionsAuChoix.join(' ')}`;
+  } else if (exercice.nature === 'texte' && exercice.lecture) {
+    aLire = `${jeu.consigne} ${exercice.lecture}`;
+  }
 
   let pied = null;
   if (etat.phase === 'bravo') {

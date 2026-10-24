@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { modeleParId, modeleTexteParId } from '@/exercices';
 
 import { JeuBonFil } from '../JeuBonFil';
+import { JeuDictee } from '../JeuDictee';
 import { JeuFunambule } from '../JeuFunambule';
 import { JeuLucioles } from '../JeuLucioles';
 import { JeuMarche } from '../JeuMarche';
@@ -165,5 +166,38 @@ describe('Attrape-lucioles avec des mots', () => {
     await render(<JeuLucioles exercice={ex} actif onRepondre={onRepondre} />);
     await fireEvent.press(screen.getByRole('button', { name: `Luciole ${ex.reponse}` }));
     expect(onRepondre).toHaveBeenLastCalledWith(true);
+  });
+});
+
+describe('La dictée de Capy', () => {
+  const dictee = () => modeleTexteParId('dictee-mots')!.generer('CE2', 5, { niveau: 1 });
+
+  it('accepte le mot bien écrit, accents ajoutés avec les touches', async () => {
+    const ex = dictee();
+    const onRepondre = jest.fn();
+    await render(<JeuDictee exercice={ex} actif onRepondre={onRepondre} />);
+    expect(screen.queryByText(new RegExp(`\b${ex.reponse}\b`))).toBeNull();
+    await fireEvent.changeText(screen.getByLabelText('Le mot que tu as écrit'), ex.reponse.toUpperCase());
+    await fireEvent.press(screen.getByRole('button', { name: 'Valider' }));
+    expect(onRepondre).toHaveBeenCalledWith(true);
+  });
+
+  it('donne un conseil quand le mot n’est pas encore bien écrit', async () => {
+    const onRepondre = jest.fn();
+    const ex = dictee();
+    await render(<JeuDictee exercice={ex} actif onRepondre={onRepondre} />);
+    await fireEvent.changeText(screen.getByLabelText('Le mot que tu as écrit'), ex.reponse.slice(0, -1));
+    await fireEvent.press(screen.getByRole('button', { name: 'Valider' }));
+    expect(onRepondre).toHaveBeenCalledWith(false);
+    expect(screen.getByText('Il manque une lettre.')).toBeTruthy();
+  });
+
+  it('ajoute une lettre accentuée à la suite de ce qui est écrit', async () => {
+    await render(<JeuDictee exercice={dictee()} actif onRepondre={jest.fn()} />);
+    await fireEvent.press(screen.getByLabelText('Ajouter é'));
+    expect(screen.getByLabelText('Le mot que tu as écrit').props.value).toBe('é');
+    await fireEvent.changeText(screen.getByLabelText('Le mot que tu as écrit'), 'mét');
+    await fireEvent.press(screen.getByLabelText('Ajouter é'));
+    expect(screen.getByLabelText('Le mot que tu as écrit').props.value).toBe('mété');
   });
 });

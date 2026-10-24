@@ -2,7 +2,9 @@ import { NIVEAUX } from '../../types';
 import { conjuguer, PERSONNES, TEMPS, VERBES_PREMIER_GROUPE } from '../conjugaison';
 import { MODELES_FRANCAIS } from '../index';
 import { ADJECTIFS, FAMILLES, NOMS, SYNONYMES } from '../lexique';
-import { phrase } from '../moteur';
+import { conseilSaisie, fautesTypiques, MOTS_DICTEE, MOTS_OUTILS, saisieJuste } from '../dictee';
+import { phraseATrou, TROU } from '../modeles/ce2/dictee';
+import { majuscule, phrase } from '../moteur';
 
 const TIRAGES = 10_000;
 const MOTS_INTERDITS = /\b(faux|fausse|note|score|nul|raté)\b/i;
@@ -171,5 +173,72 @@ describe('progression de la difficulté en français', () => {
     const avecEtreAvoir = (n: 1 | 2 | 3) => tirages('conjugaison', n).some((e) => /« (être|avoir) »/.test(e.question));
     expect(avecEtreAvoir(1)).toBe(false);
     expect(avecEtreAvoir(2)).toBe(true);
+  });
+});
+
+describe('dictée de mots', () => {
+  const tous = [...MOTS_DICTEE, ...MOTS_OUTILS];
+
+  it('a des phrases qui contiennent le mot une seule fois, jamais en tête', () => {
+    for (const m of tous) {
+      expect(phraseATrou(m)).not.toBe(m.phrase);
+      expect(phraseATrou(m).split(TROU)).toHaveLength(2);
+      expect(contientMot(phraseATrou(m), m.mot)).toBe(false);
+      expect(m.phrase).toMatch(/^\p{Lu}.*[.?]$/u);
+      expect(m.phrase.startsWith(majuscule(m.mot))).toBe(false);
+    }
+  });
+
+  it('n’a pas de mot en double et a des mots à chaque niveau', () => {
+    expect(new Set(tous.map((m) => m.mot)).size).toBe(tous.length);
+    for (const liste of [MOTS_DICTEE, MOTS_OUTILS]) {
+      for (const n of NIVEAUX) expect(liste.filter((m) => m.niveau === n).length).toBeGreaterThanOrEqual(10);
+    }
+  });
+
+  it('trouve au moins trois fautes typiques pour chaque mot', () => {
+    for (const m of tous) {
+      const fautes = fautesTypiques(m.mot);
+      expect(fautes.length).toBeGreaterThanOrEqual(3);
+      for (const f of fautes) expect(saisieJuste(f.valeur, m.mot)).toBe(false);
+    }
+  });
+
+  it('dit le mot sans jamais l’écrire dans l’énoncé', () => {
+    for (const id of ['dictee-mots', 'mots-outils']) {
+      const modele = MODELES_FRANCAIS.find((m) => m.id === id)!;
+      for (let graine = 0; graine < 2000; graine++) {
+        const ex = modele.generer('CE2', graine, { niveau: NIVEAUX[graine % 3] });
+        expect(contientMot(ex.enonce, ex.reponse)).toBe(false);
+        expect(contientMot(ex.lecture!, ex.reponse)).toBe(true);
+      }
+    }
+  });
+
+  it('propose surtout des mots du niveau demandé, jamais plus difficiles', () => {
+    const modele = MODELES_FRANCAIS.find((m) => m.id === 'dictee-mots')!;
+    const niveauDe = (mot: string) => MOTS_DICTEE.find((m) => m.mot === mot)!.niveau;
+    for (const n of NIVEAUX) {
+      const niveaux = Array.from({ length: 400 }, (_, g) => niveauDe(modele.generer('CE2', g, { niveau: n }).reponse));
+      expect(Math.max(...niveaux)).toBe(n);
+      expect(niveaux.filter((x) => x === n).length).toBeGreaterThan(niveaux.length / 2);
+    }
+  });
+
+  it('compare la saisie avec indulgence pour les majuscules et l’apostrophe, pas pour les accents', () => {
+    expect(saisieJuste(' Bateau ', 'bateau')).toBe(true);
+    expect(saisieJuste("aujourd'hui", 'aujourd’hui')).toBe(true);
+    expect(saisieJuste('velo', 'vélo')).toBe(false);
+  });
+
+  it('donne un conseil bienveillant et précis', () => {
+    expect(conseilSaisie('velo', 'vélo')).toMatch(/accents/);
+    expect(conseilSaisie('bato', 'bateau')).toMatch(/manque quelques lettres/);
+    expect(conseilSaisie('chatt', 'chat')).toMatch(/une lettre en trop/);
+    expect(conseilSaisie('pome', 'pomme')).toMatch(/manque une lettre/);
+    expect(conseilSaisie('jembe', 'jambe')).toMatch(/Une seule lettre/);
+    for (const [s, mot] of [['velo', 'vélo'], ['x', 'beaucoup'], ['abcdef', 'lit']]) {
+      expect(conseilSaisie(s, mot)).not.toMatch(MOTS_INTERDITS);
+    }
   });
 });

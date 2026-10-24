@@ -285,6 +285,21 @@ const CONJUGAISON_CE2: Theme = {
   ],
 };
 
+const DICTEE_CE2: Theme = {
+  id: 'ce2-dictee',
+  domaine: 'ecrire-mots',
+  classe: 'CE2',
+  titre: 'Écrire des mots',
+  unites: [
+    uniteFr('ce2-dic-u1', 'La dictée de Capy', [
+      ['Le mot bien écrit', ['dictee-mots'], ['reponses', 'dictee'], 5],
+      ['J’écris les mots', ['dictee-mots'], ['dictee', 'reponses'], 5],
+      ['Les petits mots', ['mots-outils'], ['dictee', 'reponses'], 5],
+      ['Révision', ['dictee-mots', 'mots-outils'], ['dictee', 'reponses'], 6],
+    ]),
+  ],
+};
+
 export const THEMES: readonly Theme[] = [
   RESOUDRE_PROBLEMES_CE2,
   CALCUL_MENTAL_CE2,
@@ -295,6 +310,7 @@ export const THEMES: readonly Theme[] = [
   FAMILLES_CE2,
   SUJET_VERBE_CE2,
   CONJUGAISON_CE2,
+  DICTEE_CE2,
 ];
 
 export function themesDe(classe: Classe): Theme[] {
