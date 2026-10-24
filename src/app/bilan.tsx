@@ -2,22 +2,19 @@ import { Redirect, router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { BulleCapy, Bouton, Ecran, Toile } from '@/composants';
-import { domainesDe, type Domaine } from '@/config/domaines';
+import { domainesDe, LIBELLES_MATIERES, MATIERES, type Domaine, type Matiere } from '@/config/domaines';
 import { themesDe } from '@/config/parcours';
 import { useProfilActif } from '@/store/profils';
-import { analyserToile } from '@/toile/niveaux';
+import { analyserToile, ficheSaisie, type ToileEnfant } from '@/toile/niveaux';
 import { couleurs, espaces, formes, typo } from '@/theme';
 
-/** Bilan court pour les parents, à partir de la toile de la fiche de l'école. */
+/** Bilan court pour les parents, à partir des toiles des fiches de l'école. */
 export default function Bilan() {
   const profil = useProfilActif();
   if (!profil) return <Redirect href="/" />;
-  if (!profil.toile) return <Redirect href="/toile/saisie" />;
-
-  const domaines = domainesDe(profil.classe);
-  const { forts, aConsolider, priorite } = analyserToile(profil.classe, profil.toile.actuelle);
-  const themePriorite = priorite && themesDe(profil.classe).find((t) => t.domaine === priorite.id);
-  const liste = (ds: Domaine[]) => ds.map((d) => d.libelle).join(', ');
+  const toile = profil.toile;
+  const matieres = MATIERES.filter((m) => ficheSaisie(toile, m));
+  if (!toile || matieres.length === 0) return <Redirect href="/toile" />;
 
   return (
     <Ecran pied={<Bouton titre="Lancer le parcours" onPress={() => router.replace('/enfant')} />}>
@@ -25,30 +22,68 @@ export default function Bilan() {
       <BulleCapy
         pose="conseils"
         tailleCapy={80}
-        texte="Voici ce que dit la toile. Chaque enfant avance à son rythme : on part de là, petit pas après petit pas."
+        texte="Voici ce que disent les toiles. Chaque enfant avance à son rythme : on part de là, petit pas après petit pas."
       />
-      <Toile domaines={domaines} couches={[{ niveaux: profil.toile.actuelle, style: 'actuelle' }]} />
+      {matieres.map((m) => (
+        <BilanMatiere key={m} matiere={m} classe={profil.classe} prenom={profil.prenom} toile={toile} />
+      ))}
+      {matieres.length < MATIERES.length ? (
+        <Bouton
+          titre={`Ajouter la fiche de ${LIBELLES_MATIERES[MATIERES.find((m) => !matieres.includes(m))!].toLowerCase()}`}
+          variante="secondaire"
+          onPress={() => router.push('/toile')}
+        />
+      ) : null}
+    </Ecran>
+  );
+}
+
+interface PropsBilanMatiere {
+  matiere: Matiere;
+  classe: Parameters<typeof domainesDe>[0];
+  prenom: string;
+  toile: ToileEnfant;
+}
+
+function BilanMatiere({ matiere, classe, prenom, toile }: PropsBilanMatiere) {
+  const domaines = domainesDe(classe, matiere);
+  const { forts, aConsolider, priorite } = analyserToile(classe, matiere, toile.actuelle);
+  const themePriorite = priorite && themesDe(classe).find((t) => t.domaine === priorite.id);
+  const liste = (ds: Domaine[]) => ds.map((d) => d.libelle).join(', ');
+  const horsAppli = [...forts, ...aConsolider].filter((d) => d.horsAppli && !forts.includes(d));
+
+  return (
+    <View style={styles.matiere}>
+      <Text style={typo.titre2}>{LIBELLES_MATIERES[matiere]}</Text>
+      <Toile domaines={domaines} couches={[{ niveaux: toile.actuelle, style: 'actuelle' }]} />
 
       <Carte titre="Ce qui va bien" fond={couleurs.menthe[100]} couleurTitre={couleurs.sarcelle[900]}>
         {forts.length > 0
           ? `${liste(forts)}. De belles bases sur lesquelles s’appuyer.`
-          : 'Aucun domaine n’est encore bien installé. C’est fréquent en début d’année, le parcours est là pour ça.'}
+          : 'Aucun axe n’est encore à +++. C’est fréquent en début d’année, le parcours est là pour ça.'}
       </Carte>
 
       {aConsolider.length > 0 ? (
         <Carte titre="À consolider" fond={couleurs.caramel[100]} couleurTitre={couleurs.brun[800]}>
-          {`${liste(aConsolider)}. Ces domaines seront travaillés au fil du parcours.`}
+          {`${liste(aConsolider)}. Ces compétences seront travaillées au fil du parcours.`}
         </Carte>
       ) : null}
 
       {priorite ? (
         <Carte titre="Priorité" fond={couleurs.brun[100]} couleurTitre={couleurs.brun[800]} accent>
           {themePriorite
-            ? `${priorite.libelle}. C’est par là que commence le parcours de ${profil.prenom}.`
-            : `${priorite.libelle}. Les exercices de ce domaine arrivent bientôt ; en attendant, le parcours commence par « Résoudre des problèmes ».`}
+            ? `${priorite.libelle}. C’est par là que commence le parcours de ${prenom}.`
+            : `${priorite.libelle}. Les exercices de cette compétence arrivent bientôt dans Capy.`}
         </Carte>
       ) : null}
-    </Ecran>
+
+      {horsAppli.length > 0 ? (
+        <Text style={typo.petit}>
+          {liste(horsAppli)} : Capy n’enregistre jamais la voix, cette compétence se travaille en lisant à voix haute
+          avec vous, quelques minutes par jour.
+        </Text>
+      ) : null}
+    </View>
   );
 }
 
@@ -70,6 +105,7 @@ function Carte({ titre, fond, couleurTitre, accent = false, children }: PropsCar
 }
 
 const styles = StyleSheet.create({
+  matiere: { gap: espaces.m, paddingTop: espaces.l, borderTopWidth: 2, borderTopColor: couleurs.bordure },
   carte: { borderRadius: formes.carte.rayon, padding: espaces.l, gap: espaces.xs },
   accent: { borderLeftWidth: 8, borderLeftColor: couleurs.brun[600] },
 });

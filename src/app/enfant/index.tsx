@@ -14,7 +14,7 @@ import {
   type Noeud,
 } from '@/parcours/progression';
 import { useProfilActif } from '@/store/profils';
-import { analyserToile, domainesParPriorite } from '@/toile/niveaux';
+import { domainesParPriorite, prioritesDe } from '@/toile/niveaux';
 import { couleurs, espaces, formes, typo } from '@/theme';
 
 /** Décalages horizontaux du chemin en zigzag, répétés. */
@@ -33,8 +33,9 @@ export default function Parcours() {
   const themes = themesParPriorite(profil.classe, profil.toile ? domainesParPriorite(profil.classe, profil.toile.actuelle) : []);
   const parDefaut = themes.find((t) => cheminDuTheme(t, p).some((n) => n.etat === 'enCours')) ?? themes[0];
   const theme = themes.find((t) => t.id === themeChoisiId) ?? parDefaut;
-  const prioriteId = profil.toile ? analyserToile(profil.classe, profil.toile.actuelle).priorite?.id : undefined;
-  const prioritaire = !!theme && prioriteId === theme.domaine;
+  // Un axe prioritaire par matière (français, mathématiques).
+  const priorites = prioritesDe(profil.classe, profil.toile);
+  const prioritaire = !!theme && priorites.has(theme.domaine);
   const aujourdhui = dateLocale(new Date());
   const serie = serieDeJours(p.jours, aujourdhui);
   const absence = joursDepuisDerniereActivite(p.jours, aujourdhui);
@@ -118,10 +119,10 @@ export default function Parcours() {
                 onPress={() => setThemeChoisiId(t.id)}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: choisi }}
-                accessibilityLabel={`${t.titre}${t.domaine === prioriteId ? ', priorité' : ''}`}
+                accessibilityLabel={`${t.titre}${priorites.has(t.domaine) ? ', priorité' : ''}`}
                 style={[styles.puceTheme, choisi && styles.puceChoisie]}
               >
-                {t.domaine === prioriteId ? <View style={styles.pointPriorite} /> : null}
+                {priorites.has(t.domaine) ? <View style={styles.pointPriorite} /> : null}
                 <Text style={[typo.texteGras, choisi && styles.texteBlanc]}>{t.titre}</Text>
               </Pressable>
             );

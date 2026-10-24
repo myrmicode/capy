@@ -4,10 +4,10 @@
 // le parent vérifie et corrige toujours avant de valider.
 import { z } from 'zod';
 
-import type { Domaine, DomaineId } from '@/config/domaines';
+import type { Domaine, DomaineId, Matiere } from '@/config/domaines';
 import { configServeur, type ConfigServeur } from '@/serveur/config';
 
-import { borner, type Niveaux } from './niveaux';
+import { symboleDe, valeurDe, type Niveaux } from './niveaux';
 
 /** En dessous de cette confiance, on bascule sur la saisie à la main. */
 export const SEUIL_CONFIANCE = 0.6;
@@ -22,14 +22,17 @@ export type ResultatAnalyse =
   | { ok: true; niveaux: Niveaux; confiance: number }
   | { ok: false; raison: 'indisponible' | 'reseau' | 'serveur' | 'illisible' | 'peu_sur' | 'quota' };
 
-/** Interprète la réponse du serveur : JSON validé, tous les domaines présents, confiance suffisante. */
+/**
+ * Interprète la réponse du serveur : JSON validé, tous les axes présents, confiance
+ * suffisante. Chaque niveau est ramené au symbole le plus proche (+, ++, +++).
+ */
 export function interpreterReponse(donnees: unknown, domaines: readonly Domaine[]): ResultatAnalyse {
   const lu = ReponseAnalyse.safeParse(donnees);
   if (!lu.success) return { ok: false, raison: 'illisible' };
 
   const niveaux: Niveaux = {};
   for (const { id, niveau } of lu.data.domaines) {
-    if (domaines.some((d) => d.id === id)) niveaux[id as DomaineId] = borner(Math.round(niveau * 10) / 10);
+    if (domaines.some((d) => d.id === id)) niveaux[id as DomaineId] = valeurDe(symboleDe(niveau));
   }
   if (domaines.some((d) => niveaux[d.id] === undefined)) return { ok: false, raison: 'illisible' };
   if (lu.data.confiance < SEUIL_CONFIANCE) return { ok: false, raison: 'peu_sur' };
@@ -39,6 +42,7 @@ export function interpreterReponse(donnees: unknown, domaines: readonly Domaine[
 export async function analyserPhoto(
   imageBase64: string,
   domaines: readonly Domaine[],
+  matiere: Matiere,
   appareil: string,
   config: ConfigServeur | null = configServeur(),
   envoyer: typeof fetch = fetch,
@@ -54,6 +58,7 @@ export async function analyserPhoto(
       body: JSON.stringify({
         image: imageBase64,
         typeImage: 'image/jpeg',
+        matiere,
         domaines: domaines.map(({ id, libelle }) => ({ id, libelle })),
       }),
       signal: annulation.signal,

@@ -3,9 +3,9 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { BulleCapy, Bouton, CarteConfiance, EditeurNiveaux, Ecran, Toile } from '@/composants';
-import { domainesDe } from '@/config/domaines';
+import { domainesDe, LIBELLES_MATIERES, MATIERES, type Matiere } from '@/config/domaines';
 import { useProfilActif, useProfils } from '@/store/profils';
-import { completerNiveaux, type Niveaux } from '@/toile/niveaux';
+import { completerNiveaux, ficheSaisie, type Niveaux } from '@/toile/niveaux';
 import { espaces, typo } from '@/theme';
 
 function lire(json: string | undefined): Niveaux | null {
@@ -17,8 +17,12 @@ function lire(json: string | undefined): Niveaux | null {
   }
 }
 
+function matiereDe(valeur: string | undefined): Matiere {
+  return (MATIERES as readonly string[]).includes(valeur ?? '') ? (valeur as Matiere) : 'mathematiques';
+}
+
 /**
- * Saisie des niveaux de la toile de la fiche de l'école. Deux usages :
+ * Saisie des niveaux de la toile d'une fiche de l'école (une matière). Deux usages :
  * - vérification après la photo : les niveaux lus sont pré-remplis et le parent
  *   corrige avant de valider (on ne fait jamais confiance aveuglément à l'IA) ;
  * - saisie à la main, toujours disponible, notamment si l'analyse échoue.
@@ -26,31 +30,33 @@ function lire(json: string | undefined): Niveaux | null {
 export default function SaisieToile() {
   const profil = useProfilActif();
   const enregistrerToile = useProfils((e) => e.enregistrerToile);
-  const { apres, source, lu, message } = useLocalSearchParams<{
-    apres?: string;
-    source?: string;
-    lu?: string;
-    message?: string;
-  }>();
-  const apresCreation = apres === 'creation';
-  const depuisPhoto = source === 'photo' && lire(lu) !== null;
+  const params = useLocalSearchParams<{ matiere?: string; apres?: string; source?: string; lu?: string; message?: string }>();
+  const matiere = matiereDe(params.matiere);
+  const depuisPhoto = params.source === 'photo' && lire(params.lu) !== null;
   const [niveaux, setNiveaux] = useState(() =>
-    profil ? completerNiveaux(profil.classe, lire(lu) ?? profil.toile?.septembre ?? {}) : null,
+    profil ? completerNiveaux(profil.classe, lire(params.lu) ?? profil.toile?.septembre ?? {}, matiere) : null,
   );
 
   if (!profil || !niveaux) return <Redirect href="/" />;
-  const domaines = domainesDe(profil.classe);
+  const domaines = domainesDe(profil.classe, matiere);
+  const nomMatiere = LIBELLES_MATIERES[matiere].toLowerCase();
 
   const valider = () => {
-    enregistrerToile(profil.id, niveaux);
-    router.replace('/bilan');
+    enregistrerToile(profil.id, matiere, niveaux);
+    const autre = MATIERES.find((m) => m !== matiere)!;
+    // L'autre fiche reste à saisir : on revient à la liste des fiches ; sinon, place au bilan.
+    if (ficheSaisie(useProfils.getState().profils.find((p) => p.id === profil.id)?.toile, autre)) {
+      router.replace('/bilan');
+    } else {
+      router.replace({ pathname: '/toile', params: { apres: params.apres } });
+    }
   };
 
   let bulle = (
     <BulleCapy
       pose="explorer"
       tailleCapy={80}
-      texte="Recopiez la position de chaque point de la toile de la fiche de l’école, de 0 (centre) à 10 (bord)."
+      texte="Pour chaque axe de la toile, recopiez le niveau indiqué sur la fiche : +, ++ ou +++."
     />
   );
   if (depuisPhoto) {
@@ -61,8 +67,8 @@ export default function SaisieToile() {
         texte="Voici ce que j’ai lu sur la photo. Comparez avec la fiche et corrigez si besoin avant de valider."
       />
     );
-  } else if (message) {
-    bulle = <BulleCapy pose="reflechi" tailleCapy={80} texte={message} />;
+  } else if (params.message) {
+    bulle = <BulleCapy pose="reflechi" tailleCapy={80} texte={params.message} />;
   }
 
   return (
@@ -73,21 +79,17 @@ export default function SaisieToile() {
           <Bouton
             titre="Prendre une photo"
             variante="secondaire"
-            onPress={() => router.replace({ pathname: '/toile/photo', params: { apres } })}
+            onPress={() => router.replace({ pathname: '/toile/photo', params: { matiere, apres: params.apres } })}
           />
-          <Bouton
-            titre={apresCreation ? 'Plus tard' : 'Annuler'}
-            variante="secondaire"
-            onPress={() => (apresCreation ? router.replace('/enfant') : router.back())}
-          />
+          <Bouton titre="Annuler" variante="secondaire" onPress={() => router.back()} />
         </View>
       }
     >
-      <Text style={typo.titre1}>{depuisPhoto ? 'Vérifiez la toile' : `La toile de ${profil.prenom}`}</Text>
+      <Text style={typo.titre1}>{depuisPhoto ? `Vérifiez la toile de ${nomMatiere}` : `Toile de ${nomMatiere}`}</Text>
       {bulle}
-      {profil.toile && !apresCreation ? (
+      {ficheSaisie(profil.toile, matiere) ? (
         <Text style={typo.petit}>
-          Cette nouvelle fiche remplacera la toile de référence. La progression dans le parcours est conservée.
+          Cette nouvelle fiche remplacera la toile de référence en {nomMatiere}. La progression est conservée.
         </Text>
       ) : null}
 

@@ -28,10 +28,11 @@ const TAILLE_MAX_BASE64 = 2_000_000;
 const Requete = z.object({
   image: z.string().min(100).max(TAILLE_MAX_BASE64),
   typeImage: z.enum(['image/jpeg', 'image/png']),
+  matiere: z.enum(['francais', 'mathematiques']),
   domaines: z
     .array(z.object({ id: z.string().regex(/^[a-z-]+$/).max(40), libelle: z.string().min(1).max(60) }))
     .min(3)
-    .max(10),
+    .max(15),
 });
 
 const Reponse = z.object({
@@ -39,13 +40,13 @@ const Reponse = z.object({
   confiance: z.number().min(0).max(1),
 });
 
-const SYSTEME = `Tu lis des graphiques radar (« toiles ») issus des fiches de résultats des évaluations nationales françaises de mathématiques (CP au CM2).
+const SYSTEME = `Tu lis des graphiques radar (« toiles ») issus des fiches de positionnement des évaluations nationales françaises « Repères » (CP au CM2). Chaque fiche porte une toile pour une matière (français ou mathématiques) ; chaque axe est une compétence, illustrée par un pictogramme et un libellé.
 
-Pour chaque axe demandé, estime le niveau du point de l'élève : 0 au centre, 1 sur le contour extérieur, en t'aidant des cercles ou polygones de graduation. Arrondis au dixième.
+Sur ces toiles, le niveau de chaque axe vaut +, ++ ou +++ : le point de l'élève se trouve sur l'un des trois anneaux (le premier près du centre, le troisième sur le contour). Pour chaque axe demandé, donne le niveau : 1/3 pour +, 2/3 pour ++, 1 pour +++.
 
-Associe chaque axe au domaine demandé dont le libellé correspond, même si l'intitulé imprimé diffère un peu. Si un axe demandé est introuvable, donne ta meilleure estimation et baisse la confiance.
+Associe chaque axe au libellé demandé qui lui correspond, même si l'intitulé imprimé diffère un peu. Si un axe demandé est introuvable ou n'a pas de point (élève absent), donne ta meilleure estimation et baisse la confiance.
 
-La confiance (0 à 1) reflète ta certitude globale : image floue, coupée, de travers ou autre chose qu'une toile → confiance basse (0 si ce n'est pas une toile).
+La confiance (0 à 1) reflète ta certitude globale : image floue, coupée, de travers, toile d'une autre matière ou autre chose qu'une toile → confiance basse (0 si ce n'est pas une toile).
 
 Ne recopie jamais de nom, de prénom, d'école ni aucune autre information personnelle visible : réponds uniquement avec les niveaux demandés.`;
 
@@ -118,7 +119,7 @@ export default {
               { type: 'image', source: { type: 'base64', media_type: requete.typeImage, data: requete.image } },
               {
                 type: 'text',
-                text: `Axes à lire (id : libellé) :\n${requete.domaines.map((d) => `- ${d.id} : ${d.libelle}`).join('\n')}`,
+                text: `Toile de ${requete.matiere === 'francais' ? 'français' : 'mathématiques'}. Axes à lire (id : libellé) :\n${requete.domaines.map((d) => `- ${d.id} : ${d.libelle}`).join('\n')}`,
               },
             ],
           },

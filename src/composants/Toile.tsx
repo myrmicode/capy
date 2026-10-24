@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, G, Line, Polygon, Text as TexteSvg, TSpan } from 'react-native-svg';
 
 import type { Domaine } from '@/config/domaines';
-import type { Niveaux } from '@/toile/niveaux';
+import { symboleDe, type Niveaux } from '@/toile/niveaux';
 import { couleurs, espaces, polices, typo } from '@/theme';
 
 export interface CoucheToile {
@@ -21,18 +21,25 @@ interface PropsToile {
 
 const MARGE_LIBELLES = 64;
 /** Place supplémentaire à gauche et à droite pour les libellés longs. */
-const MARGE_LATERALE = 48;
-const GRADUATIONS = [0.25, 0.5, 0.75, 1];
+const MARGE_LATERALE = 56;
+/** Les trois anneaux de la fiche : +, ++, +++. */
+const GRADUATIONS = [1 / 3, 2 / 3, 1];
 
-/** Coupe un libellé long en deux lignes, au plus près du milieu. */
-function lignes(libelle: string): string[] {
-  if (libelle.length <= 12 || !libelle.includes(' ')) return [libelle];
-  const milieu = libelle.length / 2;
-  let coupure = -1;
-  for (let i = 0; i < libelle.length; i++) {
-    if (libelle[i] === ' ' && (coupure < 0 || Math.abs(i - milieu) < Math.abs(coupure - milieu))) coupure = i;
+/** Coupe un libellé en lignes d'au plus LARGEUR_LIGNE caractères (mot à mot). */
+const LARGEUR_LIGNE = 15;
+export function lignes(libelle: string): string[] {
+  const resultat: string[] = [];
+  let ligne = '';
+  for (const mot of libelle.split(' ')) {
+    if (ligne && (ligne + ' ' + mot).length > LARGEUR_LIGNE) {
+      resultat.push(ligne);
+      ligne = mot;
+    } else {
+      ligne = ligne ? ligne + ' ' + mot : mot;
+    }
   }
-  return [libelle.slice(0, coupure), libelle.slice(coupure + 1)];
+  if (ligne) resultat.push(ligne);
+  return resultat;
 }
 
 /** La toile (graphique radar) des niveaux par domaine. */
@@ -58,7 +65,7 @@ export function Toile({ domaines, couches, taille = 320, legende = true }: Props
   const description = domaines
     .map((d) => {
       const v = actuelle?.niveaux[d.id] ?? couches[0]?.niveaux[d.id] ?? 0;
-      return `${d.libelle} : ${Math.round(v * 10)} sur 10`;
+      return `${d.libelle} : ${symboleDe(v).length} plus`;
     })
     .join(', ');
 
@@ -102,11 +109,12 @@ export function Toile({ domaines, couches, taille = 320, legende = true }: Props
           const x = centreX + (rayon + 12) * Math.cos(a);
           const y = centre + (rayon + 12) * Math.sin(a);
           const cos = Math.cos(a);
-          const ancre = cos > 0.3 ? 'start' : cos < -0.3 ? 'end' : 'middle';
+          // Seuls les axes presque verticaux ont un libellé centré : les autres s'écartent sur le côté.
+          const ancre = cos > 0.12 ? 'start' : cos < -0.12 ? 'end' : 'middle';
           const morceaux = lignes(d.libelle);
           const sin = Math.sin(a);
           // Au-dessus de la toile, le texte remonte ; en dessous, il descend.
-          const decalage = sin < -0.5 ? -(morceaux.length - 1) * 16 - 4 : sin > 0.5 ? 14 : 4 - ((morceaux.length - 1) * 16) / 2;
+          const decalage = sin < -0.5 ? -(morceaux.length - 1) * 14 - 4 : sin > 0.5 ? 14 : 4 - ((morceaux.length - 1) * 14) / 2;
           return (
             <TexteSvg
               key={d.id}
@@ -114,11 +122,11 @@ export function Toile({ domaines, couches, taille = 320, legende = true }: Props
               y={y + decalage}
               textAnchor={ancre}
               fontFamily={polices.nunitoGras}
-              fontSize={13}
+              fontSize={12}
               fill={couleurs.encre}
             >
               {morceaux.map((m, j) => (
-                <TSpan key={j} x={x} dy={j === 0 ? 0 : 16}>
+                <TSpan key={j} x={x} dy={j === 0 ? 0 : 14}>
                   {m}
                 </TSpan>
               ))}

@@ -40,29 +40,31 @@ describe('contrôle parental', () => {
 });
 
 describe('éditeur de niveaux', () => {
-  it('monte et baisse un niveau d’un dixième', async () => {
+  it('recopie le symbole de la fiche : +, ++ ou +++', async () => {
     const onChange = jest.fn();
-    const niveaux = completerNiveaux('CE2', { nombres: 0.5 });
-    await render(<EditeurNiveaux domaines={domainesDe('CE2')} niveaux={niveaux} onChange={onChange} />);
-    await fireEvent.press(screen.getByRole('button', { name: 'Monter Nombres' }));
-    expect(onChange).toHaveBeenLastCalledWith({ ...niveaux, nombres: 0.6 });
-    await fireEvent.press(screen.getByRole('button', { name: 'Baisser Nombres' }));
-    expect(onChange).toHaveBeenLastCalledWith({ ...niveaux, nombres: 0.4 });
+    const domaines = domainesDe('CE2', 'mathematiques');
+    const niveaux = completerNiveaux('CE2', {}, 'mathematiques');
+    await render(<EditeurNiveaux domaines={domaines} niveaux={niveaux} onChange={onChange} />);
+    expect(screen.getByRole('radio', { name: 'Poser et calculer : 2 plus' }).props.accessibilityState.checked).toBe(true);
+    await fireEvent.press(screen.getByRole('radio', { name: 'Poser et calculer : 3 plus' }));
+    expect(onChange).toHaveBeenLastCalledWith({ ...niveaux, 'poser-calculer': 1 });
+    await fireEvent.press(screen.getByRole('radio', { name: 'Poser et calculer : 1 plus' }));
+    expect(onChange).toHaveBeenLastCalledWith({ ...niveaux, 'poser-calculer': 0.33 });
   });
 });
 
 describe('toile', () => {
   it('décrit les niveaux du jour pour les lecteurs d’écran', async () => {
-    const niveaux = completerNiveaux('CE2', { 'resoudre-problemes': 0.3 });
-    await render(<Toile domaines={domainesDe('CE2')} couches={[{ niveaux, style: 'actuelle' }]} />);
-    expect(screen.getByLabelText(/Résoudre des problèmes : 3 sur 10/)).toBeTruthy();
+    const niveaux = completerNiveaux('CE2', { 'resoudre-problemes': 0.33 }, 'mathematiques');
+    await render(<Toile domaines={domainesDe('CE2', 'mathematiques')} couches={[{ niveaux, style: 'actuelle' }]} />);
+    expect(screen.getByLabelText(/Résoudre des problèmes : 1 plus/)).toBeTruthy();
   });
 
   it('affiche la légende septembre / aujourd’hui avec deux couches', async () => {
-    const niveaux = completerNiveaux('CE2', {});
+    const niveaux = completerNiveaux('CE2', {}, 'francais');
     await render(
       <Toile
-        domaines={domainesDe('CE2')}
+        domaines={domainesDe('CE2', 'francais')}
         couches={[
           { niveaux, style: 'septembre' },
           { niveaux, style: 'actuelle' },

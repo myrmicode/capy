@@ -3,21 +3,23 @@ import { domainesDe } from '@/config/domaines';
 import { analyserPhoto, interpreterReponse, SEUIL_CONFIANCE } from '../analyse';
 import { cadreDansLaVue, cadreVersPhoto } from '../cadrage';
 
-const domaines = domainesDe('CE2');
+const domaines = domainesDe('CE2', 'mathematiques');
 const complet = (confiance: number) => ({
-  domaines: domaines.map((d, i) => ({ id: d.id, niveau: 0.31 + i * 0.1 })),
+  domaines: domaines.map((d, i) => ({ id: d.id, niveau: [0.3, 0.7, 0.95][i % 3] })),
   confiance,
 });
 const APPAREIL = 'abcd1234-efgh5678-ijkl9012';
 const config = { url: 'https://exemple.supabase.co/', clePublique: 'sb_publishable_test' };
 
 describe('interprétation de la réponse', () => {
-  it('accepte une lecture complète et sûre, arrondie au dixième', () => {
+  it('accepte une lecture complète et sûre, ramenée aux symboles + / ++ / +++', () => {
     const r = interpreterReponse(complet(0.9), domaines);
     expect(r).toMatchObject({ ok: true, confiance: 0.9 });
     if (r.ok) {
-      expect(r.niveaux.nombres).toBe(0.3);
-      expect(r.niveaux.geometrie).toBe(0.8);
+      const [premier, deuxieme, troisieme] = domaines;
+      expect(r.niveaux[premier.id]).toBe(0.33);
+      expect(r.niveaux[deuxieme.id]).toBe(0.67);
+      expect(r.niveaux[troisieme.id]).toBe(1);
     }
   });
 
@@ -38,34 +40,35 @@ describe('interprétation de la réponse', () => {
 
   it('ignore un domaine inconnu', () => {
     const r = interpreterReponse({ ...complet(0.9), domaines: [...complet(0.9).domaines, { id: 'nom-ecole', niveau: 1 }] }, domaines);
-    expect(r.ok && Object.keys(r.niveaux)).toHaveLength(6);
+    expect(r.ok && Object.keys(r.niveaux)).toHaveLength(domaines.length);
   });
 });
 
 describe('appel au serveur', () => {
   it('n’envoie que l’image recadrée et les domaines, avec la clé publique', async () => {
     const envoyer = jest.fn(async () => new Response(JSON.stringify(complet(0.8)), { status: 200 }));
-    const r = await analyserPhoto('QUJD', domaines, APPAREIL, config, envoyer as unknown as typeof fetch);
+    const r = await analyserPhoto('QUJD', domaines, 'mathematiques', APPAREIL, config, envoyer as unknown as typeof fetch);
     expect(r.ok).toBe(true);
     const [url, options] = envoyer.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe('https://exemple.supabase.co/functions/v1/analyser-toile');
     expect((options.headers as Record<string, string>).apikey).toBe('sb_publishable_test');
     expect((options.headers as Record<string, string>)['x-capy-appareil']).toBe(APPAREIL);
     const corps = JSON.parse(options.body as string);
-    expect(Object.keys(corps).sort()).toEqual(['domaines', 'image', 'typeImage']);
-    expect(corps.domaines[0]).toEqual({ id: 'nombres', libelle: 'Nombres' });
+    expect(Object.keys(corps).sort()).toEqual(['domaines', 'image', 'matiere', 'typeImage']);
+    expect(corps.matiere).toBe('mathematiques');
+    expect(corps.domaines[0]).toEqual({ id: domaines[0].id, libelle: domaines[0].libelle });
   });
 
   it('se rabat sur la saisie à la main sans configuration, sans réseau ou en cas d’erreur', async () => {
-    expect(await analyserPhoto('QUJD', domaines, APPAREIL, null)).toEqual({ ok: false, raison: 'indisponible' });
+    expect(await analyserPhoto('QUJD', domaines, 'mathematiques', APPAREIL, null)).toEqual({ ok: false, raison: 'indisponible' });
     const enPanne = jest.fn(async () => {
       throw new Error('hors ligne');
     });
-    expect(await analyserPhoto('QUJD', domaines, APPAREIL, config, enPanne as unknown as typeof fetch)).toEqual({ ok: false, raison: 'reseau' });
+    expect(await analyserPhoto('QUJD', domaines, 'mathematiques', APPAREIL, config, enPanne as unknown as typeof fetch)).toEqual({ ok: false, raison: 'reseau' });
     const limite = jest.fn(async () => new Response('{}', { status: 429 }));
-    expect(await analyserPhoto('QUJD', domaines, APPAREIL, config, limite as unknown as typeof fetch)).toEqual({ ok: false, raison: 'quota' });
+    expect(await analyserPhoto('QUJD', domaines, 'mathematiques', APPAREIL, config, limite as unknown as typeof fetch)).toEqual({ ok: false, raison: 'quota' });
     const erreur = jest.fn(async () => new Response('{}', { status: 502 }));
-    expect(await analyserPhoto('QUJD', domaines, APPAREIL, config, erreur as unknown as typeof fetch)).toEqual({ ok: false, raison: 'serveur' });
+    expect(await analyserPhoto('QUJD', domaines, 'mathematiques', APPAREIL, config, erreur as unknown as typeof fetch)).toEqual({ ok: false, raison: 'serveur' });
   });
 });
 

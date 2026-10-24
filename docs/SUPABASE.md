@@ -109,3 +109,13 @@ npx supabase secrets set QUOTA_APPAREIL_JOUR=10 QUOTA_GLOBAL_JOUR=300
 
 L'appli envoie un identifiant d'installation tiré au hasard (sans lien avec l'enfant, le parent ou le téléphone).
 Les compteurs de plus de 7 jours sont effacés automatiquement.
+
+---
+
+# Deux toiles : français et mathématiques
+
+La fonction d'analyse sait maintenant lire les deux fiches (niveaux + / ++ / +++). Redéployez-la :
+
+```
+npx supabase functions deploy analyser-toile --use-api
+```

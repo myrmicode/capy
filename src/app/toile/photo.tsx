@@ -6,7 +6,7 @@ import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BulleCapy, Bouton, CarteConfiance } from '@/composants';
-import { domainesDe } from '@/config/domaines';
+import { domainesDe, LIBELLES_MATIERES, MATIERES, type Matiere } from '@/config/domaines';
 import { mascotte } from '@/mascotte';
 import { useProfilActif } from '@/store/profils';
 import { useReglages } from '@/store/reglages';
@@ -20,7 +20,8 @@ const VOILE = 'rgba(18, 64, 79, 0.45)';
 /** Photo de la toile : le parent cadre uniquement la toile, l'image est recadrée sur le téléphone. */
 export default function PhotoToile() {
   const profil = useProfilActif();
-  const { apres } = useLocalSearchParams<{ apres?: string }>();
+  const { apres, matiere: matiereParam } = useLocalSearchParams<{ apres?: string; matiere?: string }>();
+  const matiere: Matiere = (MATIERES as readonly string[]).includes(matiereParam ?? '') ? (matiereParam as Matiere) : 'mathematiques';
   const [permission, demanderPermission] = useCameraPermissions();
   const camera = useRef<CameraView>(null);
   const [vue, setVue] = useState<Taille | null>(null);
@@ -28,15 +29,18 @@ export default function PhotoToile() {
   const [analyseEnCours, setAnalyseEnCours] = useState(false);
 
   if (!profil) return <Redirect href="/" />;
-  const domaines = domainesDe(profil.classe);
+  const domaines = domainesDe(profil.classe, matiere);
   const cadre = vue ? cadreDansLaVue(vue) : null;
 
   const saisirALaMain = (message?: string) =>
-    router.replace({ pathname: '/toile/saisie', params: { apres, ...(message ? { message } : {}) } });
+    router.replace({ pathname: '/toile/saisie', params: { matiere, apres, ...(message ? { message } : {}) } });
 
   const conclure = (resultat: ResultatAnalyse) => {
     if (resultat.ok) {
-      router.replace({ pathname: '/toile/saisie', params: { apres, source: 'photo', lu: JSON.stringify(resultat.niveaux) } });
+      router.replace({
+        pathname: '/toile/saisie',
+        params: { matiere, apres, source: 'photo', lu: JSON.stringify(resultat.niveaux) },
+      });
     } else {
       saisirALaMain(messageEchec(resultat.raison));
     }
@@ -45,7 +49,7 @@ export default function PhotoToile() {
   const analyser = async (preparer: () => Promise<string>) => {
     setAnalyseEnCours(true);
     try {
-      conclure(await analyserPhoto(await preparer(), domaines, useReglages.getState().appareil));
+      conclure(await analyserPhoto(await preparer(), domaines, matiere, useReglages.getState().appareil));
     } catch {
       saisirALaMain(messageEchec('illisible'));
     }
@@ -91,8 +95,8 @@ export default function PhotoToile() {
   return (
     <SafeAreaView style={styles.fond}>
       <ScrollView contentContainerStyle={styles.contenu}>
-        <Text style={typo.titre1}>La toile de {profil.prenom}</Text>
-        <BulleCapy pose="explorer" tailleCapy={72} texte="Cadrez uniquement la toile dans le carré jaune, bien à plat et sans reflet." />
+        <Text style={typo.titre1}>Toile de {LIBELLES_MATIERES[matiere].toLowerCase()}</Text>
+        <BulleCapy pose="explorer" tailleCapy={72} texte={`Cadrez uniquement la toile de la fiche de ${LIBELLES_MATIERES[matiere].toLowerCase()}, bien à plat et sans reflet.`} />
 
         <View style={styles.zoneCamera} onLayout={(e) => setVue({ largeur: e.nativeEvent.layout.width, hauteur: e.nativeEvent.layout.height })}>
           {autorisee ? (
@@ -135,9 +139,7 @@ export default function PhotoToile() {
           {autorisee ? <Bouton titre="Prendre la photo" variante="jaune" desactive={!pret} onPress={photographier} /> : null}
           <Bouton titre="Importer une photo" variante="secondaire" onPress={importer} />
           <Bouton titre="Saisir à la main" variante="secondaire" onPress={() => saisirALaMain()} />
-          {apres === 'creation' ? (
-            <Bouton titre="Plus tard" variante="secondaire" onPress={() => router.replace('/enfant')} />
-          ) : null}
+          <Bouton titre="Retour" variante="secondaire" onPress={() => router.back()} />
         </View>
 
         <CarteConfiance

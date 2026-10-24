@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 
 import { BarreProgression, Bouton, ControleParental, Ecran, Toile } from '@/composants';
-import { domainesDe } from '@/config/domaines';
+import { domainesDe, LIBELLES_MATIERES, MATIERES } from '@/config/domaines';
 import { themesDe } from '@/config/parcours';
 import { dateEnFrancais, dureeEnFrancais } from '@/parents/format';
 import { dateLocale, serieDeJours, tempsDeLaSemaine } from '@/parcours/progression';
@@ -12,6 +12,7 @@ import { synchroniser } from '@/serveur/synchro';
 import { useCompte } from '@/store/compte';
 import { useProfilActif, useProfils } from '@/store/profils';
 import { useReglages } from '@/store/reglages';
+import { ficheSaisie } from '@/toile/niveaux';
 import { couleurs, espaces, formes, typo } from '@/theme';
 
 /** Espace parent, derrière le contrôle parental. Il se reverrouille dès qu'on le quitte. */
@@ -36,7 +37,6 @@ function ContenuParents() {
 
   const p = profil.progression;
   const aujourdhui = dateLocale(new Date());
-  const domaines = domainesDe(profil.classe);
   const etapesReussies = Object.keys(p.etapes).length;
   const serie = serieDeJours(p.jours, aujourdhui);
 
@@ -57,32 +57,35 @@ function ContenuParents() {
         </Text>
       </View>
 
-      <Section titre="La toile">
-        {profil.toile ? (
-          <>
+      <Section titre="Les toiles">
+        {MATIERES.filter((m) => ficheSaisie(profil.toile, m)).map((m) => (
+          <View key={m} style={styles.toile}>
+            <Text style={typo.texteGras}>{LIBELLES_MATIERES[m]}</Text>
             <Toile
-              domaines={domaines}
+              domaines={domainesDe(profil.classe, m)}
               couches={[
-                { niveaux: profil.toile.septembre, style: 'septembre' },
-                { niveaux: profil.toile.actuelle, style: 'actuelle' },
+                { niveaux: profil.toile!.septembre, style: 'septembre' },
+                { niveaux: profil.toile!.actuelle, style: 'actuelle' },
               ]}
             />
-            <Text style={[typo.petit, styles.centre]}>
-              Fiche de l’école saisie le {dateEnFrancais(profil.toile.saisieLe)}. La toile du jour évolue avec les
-              résultats aux exercices.
-            </Text>
+            <Text style={[typo.petit, styles.centre]}>Fiche saisie le {dateEnFrancais(profil.toile!.saisieLe[m]!)}.</Text>
+          </View>
+        ))}
+        {profil.toile ? (
+          <>
+            <Text style={[typo.petit, styles.centre]}>La toile du jour évolue avec les résultats aux exercices.</Text>
             <Bouton titre="Voir le bilan" variante="secondaire" onPress={() => router.push('/bilan')} />
           </>
         ) : (
           <Text style={typo.texte}>
-            Aucune fiche n’a encore été saisie. Recopiez la toile de la fiche de l’école pour que le parcours commence
-            par le bon domaine.
+            Aucune fiche n’a encore été saisie. Photographiez ou recopiez les toiles des fiches de l’école (français et
+            mathématiques) pour que le parcours commence par les bonnes compétences.
           </Text>
         )}
         <Bouton
-          titre={profil.toile ? 'Scanner une nouvelle fiche' : 'Scanner la toile de la fiche'}
+          titre="Les fiches de l’école"
           variante={profil.toile ? 'secondaire' : 'principal'}
-          onPress={() => router.push('/toile/photo')}
+          onPress={() => router.push('/toile')}
         />
       </Section>
 
@@ -230,6 +233,7 @@ function Statistique({ valeur, libelle }: { valeur: string; libelle: string }) {
 }
 
 const styles = StyleSheet.create({
+  toile: { gap: espaces.s, alignItems: 'center' },
   section: {
     gap: espaces.m,
     backgroundColor: couleurs.blanc,

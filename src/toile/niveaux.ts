@@ -1,20 +1,29 @@
-// Niveaux de la toile, par domaine, entre 0 et 1.
+// Niveaux des toiles, par axe, entre 0 et 1.
+//
+// La fiche de l'école note chaque axe + / ++ / +++. On les enregistre comme 1/3,
+// 2/3 et 1 (le contour de la toile). La toile du jour évolue ensuite par petites
+// touches avec les exercices, et on la relit avec les mêmes symboles.
 import type { Classe } from '@/config/classes';
-import { domainesDe, type Domaine, type DomaineId } from '@/config/domaines';
+import { domainesDe, MATIERES, type Domaine, type DomaineId, type Matiere } from '@/config/domaines';
 
 export type Niveaux = Partial<Record<DomaineId, number>>;
 
+export type Symbole = '+' | '++' | '+++';
+export const SYMBOLES: readonly Symbole[] = ['+', '++', '+++'];
+
+const VALEUR_SYMBOLE: Record<Symbole, number> = { '+': 1 / 3, '++': 2 / 3, '+++': 1 };
+
 export interface ToileEnfant {
-  /** Niveaux lus sur la fiche de l'école. Jamais modifiés ensuite : c'est la référence. */
+  /** Niveaux lus sur les fiches de l'école (les deux matières). Jamais modifiés ensuite : c'est la référence. */
   septembre: Niveaux;
   /** Niveaux d'aujourd'hui, qui évoluent avec les résultats aux exercices. */
   actuelle: Niveaux;
-  /** Date de saisie de la fiche (AAAA-MM-JJ). */
-  saisieLe: string;
+  /** Date de saisie de chaque fiche (AAAA-MM-JJ). */
+  saisieLe: Partial<Record<Matiere, string>>;
 }
 
 /**
- * Poids d'une étape terminée dans le niveau d'un domaine.
+ * Poids d'une étape terminée dans le niveau d'un axe.
  *
  * Le niveau suit une moyenne glissante simple (moyenne mobile exponentielle) :
  *   nouveau niveau = 80 % × ancien niveau + 20 % × réussite de l'étape
@@ -24,11 +33,25 @@ export interface ToileEnfant {
  */
 export const POIDS_ETAPE = 0.2;
 
-/** Niveau proposé par défaut dans la saisie à la main. */
-export const NIVEAU_PAR_DEFAUT = 0.5;
+/** Niveau proposé par défaut dans la saisie à la main (++). */
+export const NIVEAU_PAR_DEFAUT = VALEUR_SYMBOLE['++'];
 
 export function borner(niveau: number): number {
   return Math.round(Math.min(1, Math.max(0, niveau)) * 100) / 100;
+}
+
+export function valeurDe(symbole: Symbole): number {
+  return borner(VALEUR_SYMBOLE[symbole]);
+}
+
+/**
+ * Symbole correspondant à un niveau : on coupe à mi-chemin entre deux anneaux
+ * (+ sous 0,5 ; +++ à partir de 0,83).
+ */
+export function symboleDe(niveau: number): Symbole {
+  if (niveau < 0.5) return '+';
+  if (niveau < 0.83) return '++';
+  return '+++';
 }
 
 export function niveauApresEtape(ancien: number, reussiesPremierCoup: number, nombreQuestions: number): number {
@@ -36,16 +59,35 @@ export function niveauApresEtape(ancien: number, reussiesPremierCoup: number, no
   return borner((1 - POIDS_ETAPE) * ancien + POIDS_ETAPE * reussite);
 }
 
-/** Toile complète pour une classe : chaque domaine de la configuration a un niveau. */
-export function completerNiveaux(classe: Classe, niveaux: Niveaux): Record<DomaineId, number> {
+/** Niveaux complets pour une classe (et une matière) : chaque axe de la configuration a une valeur. */
+export function completerNiveaux(classe: Classe, niveaux: Niveaux, matiere?: Matiere): Record<DomaineId, number> {
   const complets = {} as Record<DomaineId, number>;
-  for (const d of domainesDe(classe)) complets[d.id] = borner(niveaux[d.id] ?? NIVEAU_PAR_DEFAUT);
+  for (const d of domainesDe(classe, matiere)) complets[d.id] = borner(niveaux[d.id] ?? NIVEAU_PAR_DEFAUT);
   return complets;
 }
 
-export function nouvelleToile(classe: Classe, niveaux: Niveaux, saisieLe: string): ToileEnfant {
-  const complets = completerNiveaux(classe, niveaux);
-  return { septembre: { ...complets }, actuelle: { ...complets }, saisieLe };
+/** Une matière a-t-elle été saisie ? */
+export function ficheSaisie(toile: ToileEnfant | undefined, matiere: Matiere): boolean {
+  return toile?.saisieLe[matiere] !== undefined;
+}
+
+/**
+ * Enregistre la fiche d'une matière : ses niveaux deviennent la référence de
+ * septembre et la toile du jour pour cette matière. L'autre matière ne bouge pas.
+ */
+export function appliquerFiche(
+  toile: ToileEnfant | undefined,
+  classe: Classe,
+  matiere: Matiere,
+  niveaux: Niveaux,
+  jour: string,
+): ToileEnfant {
+  const fiche = completerNiveaux(classe, niveaux, matiere);
+  return {
+    septembre: { ...toile?.septembre, ...fiche },
+    actuelle: { ...toile?.actuelle, ...fiche },
+    saisieLe: { ...toile?.saisieLe, [matiere]: jour },
+  };
 }
 
 export function toileApresEtape(
@@ -54,7 +96,8 @@ export function toileApresEtape(
   reussiesPremierCoup: number,
   nombreQuestions: number,
 ): ToileEnfant {
-  const ancien = toile.actuelle[domaine] ?? toile.septembre[domaine] ?? NIVEAU_PAR_DEFAUT;
+  const ancien = toile.actuelle[domaine] ?? toile.septembre[domaine];
+  if (ancien === undefined) return toile; // Fiche de cette matière pas encore saisie.
   return {
     ...toile,
     actuelle: { ...toile.actuelle, [domaine]: niveauApresEtape(ancien, reussiesPremierCoup, nombreQuestions) },
@@ -63,34 +106,65 @@ export function toileApresEtape(
 
 // --- Bilan pour les parents ---
 
-/** À partir de ce niveau, un domaine figure dans « Ce qui va bien ». */
-export const SEUIL_SOLIDE = 0.7;
-
 export interface Bilan {
+  /** +++ : ce qui va bien. */
   forts: Domaine[];
+  /** ++ (et les autres + que la priorité). */
   aConsolider: Domaine[];
-  /** Domaine le plus fragile, par lequel commence le parcours. */
+  /** L'axe le plus fragile de la matière, par lequel commence le parcours. */
   priorite: Domaine | null;
 }
 
-export function analyserToile(classe: Classe, niveaux: Niveaux): Bilan {
-  const domaines = domainesDe(classe);
-  const niveau = (d: Domaine) => niveaux[d.id] ?? NIVEAU_PAR_DEFAUT;
-  const fragiles = domaines.filter((d) => niveau(d) < SEUIL_SOLIDE);
-  // En cas d'égalité, on garde l'ordre de la fiche.
-  const priorite = fragiles.reduce<Domaine | null>((min, d) => (min === null || niveau(d) < niveau(min) ? d : min), null);
+export function analyserToile(classe: Classe, matiere: Matiere, niveaux: Niveaux): Bilan {
+  const domaines = domainesDe(classe, matiere).filter((d) => niveaux[d.id] !== undefined);
+  const niveau = (d: Domaine) => niveaux[d.id]!;
+  const fragiles = domaines.filter((d) => symboleDe(niveau(d)) !== '+++');
+  // La priorité porte sur un axe que l'appli sait travailler ; en cas d'égalité, l'ordre de la fiche.
+  const priorite = fragiles
+    .filter((d) => !d.horsAppli)
+    .reduce<Domaine | null>((min, d) => (min === null || niveau(d) < niveau(min) ? d : min), null);
   return {
-    forts: domaines.filter((d) => niveau(d) >= SEUIL_SOLIDE),
+    forts: domaines.filter((d) => symboleDe(niveau(d)) === '+++'),
     aConsolider: fragiles.filter((d) => d !== priorite),
     priorite,
   };
 }
 
-/** Domaines du plus fragile au plus solide, pour ordonner les thèmes du parcours. */
+/** Axes prioritaires de chaque matière saisie. */
+export function prioritesDe(classe: Classe, toile: ToileEnfant | undefined): Set<DomaineId> {
+  const ids = new Set<DomaineId>();
+  if (!toile) return ids;
+  for (const matiere of MATIERES) {
+    if (!ficheSaisie(toile, matiere)) continue;
+    const p = analyserToile(classe, matiere, toile.actuelle).priorite;
+    if (p) ids.add(p.id);
+  }
+  return ids;
+}
+
+/** Axes du plus fragile au plus solide (toutes matières), pour ordonner les thèmes du parcours. */
 export function domainesParPriorite(classe: Classe, niveaux: Niveaux | undefined): DomaineId[] {
   const domaines = domainesDe(classe);
   if (!niveaux) return domaines.map((d) => d.id);
   return [...domaines]
     .sort((a, b) => (niveaux[a.id] ?? NIVEAU_PAR_DEFAUT) - (niveaux[b.id] ?? NIVEAU_PAR_DEFAUT))
     .map((d) => d.id);
+}
+
+/**
+ * Remet au format actuel une toile enregistrée avant la prise en compte des deux
+ * matières : on garde les axes qui existent toujours pour la classe, et la date
+ * de saisie devient celle de la fiche de mathématiques.
+ */
+export function migrerToile(ancienne: unknown, classe: Classe): ToileEnfant | undefined {
+  if (!ancienne || typeof ancienne !== 'object') return undefined;
+  const t = ancienne as { septembre?: Niveaux; actuelle?: Niveaux; saisieLe?: unknown };
+  const ids = new Set(domainesDe(classe).map((d) => d.id));
+  const garder = (n: Niveaux | undefined): Niveaux =>
+    Object.fromEntries(Object.entries(n ?? {}).filter(([id]) => ids.has(id as DomaineId)));
+  const saisieLe =
+    typeof t.saisieLe === 'string' ? { mathematiques: t.saisieLe } : ((t.saisieLe ?? {}) as ToileEnfant['saisieLe']);
+  const septembre = garder(t.septembre);
+  if (Object.keys(septembre).length === 0) return undefined;
+  return { septembre, actuelle: { ...septembre, ...garder(t.actuelle) }, saisieLe };
 }

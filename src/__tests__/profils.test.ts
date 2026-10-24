@@ -36,14 +36,14 @@ describe('profils enfants', () => {
   it('fait évoluer la toile du jour après une étape, sans toucher à celle de septembre', () => {
     const { ajouterProfil, enregistrerToile, enregistrerEtape } = useProfils.getState();
     const lou = ajouterProfil('Lou', 'CE2');
-    enregistrerToile(lou.id, { 'resoudre-problemes': 0.3, nombres: 0.8 }, new Date(2026, 8, 20));
+    enregistrerToile(lou.id, 'mathematiques', { 'resoudre-problemes': 0.33, denombrer: 1 }, new Date(2026, 8, 20));
     const resultat = { domaine: 'resoudre-problemes' as const, reussiesPremierCoup: 5, nombreQuestions: 5, dureeSecondes: 60 };
     enregistrerEtape(lou.id, 'ce2-rp-1', resultat);
     const toile = useProfils.getState().profils[0].toile!;
-    expect(toile.saisieLe).toBe('2026-09-20');
-    expect(toile.septembre['resoudre-problemes']).toBe(0.3);
-    expect(toile.actuelle['resoudre-problemes']).toBe(0.44);
-    expect(toile.actuelle.nombres).toBe(0.8);
+    expect(toile.saisieLe).toEqual({ mathematiques: '2026-09-20' });
+    expect(toile.septembre['resoudre-problemes']).toBe(0.33);
+    expect(toile.actuelle['resoudre-problemes']).toBe(0.46);
+    expect(toile.actuelle.denombrer).toBe(1);
   });
 
   it('ajoute une progression vide aux profils enregistrés avant la phase 4', async () => {
@@ -55,11 +55,25 @@ describe('profils enfants', () => {
 
   it('ajoute une date de modification aux profils enregistrés avant la phase 7, sans rien perdre', async () => {
     const migrer = useProfils.persist.getOptions().migrate!;
-    const toile = { septembre: { nombres: 0.4 }, actuelle: { nombres: 0.5 }, saisieLe: '2026-09-20' };
+    // Toile au format d'avant les deux matières : « nombres » n'est plus un axe de CE2.
+    const toile = {
+      septembre: { nombres: 0.4, 'resoudre-problemes': 0.3 },
+      actuelle: { nombres: 0.5, 'resoudre-problemes': 0.4 },
+      saisieLe: '2026-09-20',
+    };
     const progression = { etapes: { 'ce2-rp-1': { etoiles: 2, fois: 1 } }, coffresOuverts: [], jours: ['2026-10-24'], tempsParJour: {} };
     const ancien = { profils: [{ id: 'a', prenom: 'Lou', classe: 'CE2', progression, toile }], profilActifId: 'a' };
     const migre = (await migrer(ancien, 2)) as { profils: Record<string, unknown>[]; suppressionsEnAttente: string[] };
-    expect(migre.profils[0]).toMatchObject({ id: 'a', prenom: 'Lou', progression, toile });
+    expect(migre.profils[0]).toMatchObject({
+      id: 'a',
+      prenom: 'Lou',
+      progression,
+      toile: {
+        septembre: { 'resoudre-problemes': 0.3 },
+        actuelle: { 'resoudre-problemes': 0.4 },
+        saisieLe: { mathematiques: '2026-09-20' },
+      },
+    });
     expect(typeof migre.profils[0].modifieLe).toBe('string');
     expect(migre.suppressionsEnAttente).toEqual([]);
   });

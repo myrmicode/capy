@@ -3,16 +3,16 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import type { Classe } from '@/config/classes';
-import type { DomaineId } from '@/config/domaines';
+import type { DomaineId, Matiere } from '@/config/domaines';
 import * as progression from '@/parcours/progression';
 import type { ProgressionEnfant } from '@/parcours/progression';
-import { nouvelleToile, toileApresEtape, type Niveaux, type ToileEnfant } from '@/toile/niveaux';
+import { appliquerFiche, migrerToile, toileApresEtape, type Niveaux, type ToileEnfant } from '@/toile/niveaux';
 
 /**
  * Profil d'un enfant. Règle non négociable : on ne stocke que le prénom ou
  * surnom, la classe, les niveaux de la toile et la progression. Jamais de nom
  * de famille, d'école, de date de naissance, de photo ni de voix.
- * La toile est absente tant que le parent n'a pas saisi la fiche de l'école.
+ * La toile est absente tant que le parent n'a saisi aucune fiche de l'école.
  */
 export interface ProfilEnfant {
   id: string;
@@ -41,8 +41,8 @@ interface EtatProfils {
     resultat: { domaine: DomaineId; reussiesPremierCoup: number; nombreQuestions: number; dureeSecondes: number },
     maintenant?: Date,
   ) => void;
-  /** Enregistre une nouvelle fiche de l'école : elle devient la toile de référence. */
-  enregistrerToile: (id: string, niveaux: Niveaux, maintenant?: Date) => void;
+  /** Enregistre la fiche d'une matière : elle devient la référence de cette matière. */
+  enregistrerToile: (id: string, matiere: Matiere, niveaux: Niveaux, maintenant?: Date) => void;
   ouvrirCoffre: (id: string, coffreId: string) => void;
   /** Résultat d'une synchronisation : nouvelle liste de profils, suppressions envoyées au serveur. */
   appliquerSynchro: (profils: ProfilEnfant[], suppressionsTraitees: string[]) => void;
@@ -109,8 +109,12 @@ export const useProfils = create<EtatProfils>()(
             }),
             maintenant,
           ),
-        enregistrerToile: (id, niveaux, maintenant = new Date()) =>
-          modifier(id, (p, m) => ({ toile: nouvelleToile(p.classe, niveaux, progression.dateLocale(m)) }), maintenant),
+        enregistrerToile: (id, matiere, niveaux, maintenant = new Date()) =>
+          modifier(
+            id,
+            (p, m) => ({ toile: appliquerFiche(p.toile, p.classe, matiere, niveaux, progression.dateLocale(m)) }),
+            maintenant,
+          ),
         ouvrirCoffre: (id, coffreId) =>
           modifier(id, (p) => ({ progression: progression.ouvrirCoffre(p.progression, coffreId) })),
         appliquerSynchro: (profils, suppressionsTraitees) =>
@@ -128,7 +132,7 @@ export const useProfils = create<EtatProfils>()(
     },
     {
       name: 'capy-profils',
-      version: 3,
+      version: 4,
       storage: createJSONStorage(() => AsyncStorage),
       partialize: ({ profils, profilActifId, suppressionsEnAttente }) => ({ profils, profilActifId, suppressionsEnAttente }),
       migrate: (ancien, version) => {
@@ -138,6 +142,8 @@ export const useProfils = create<EtatProfils>()(
         if (version < 2) profils = profils.map((p) => ({ ...p, progression: progression.progressionVide() }));
         // Version 2 (phases 4 à 6) : pas encore de date de modification.
         if (version < 3) profils = profils.map((p) => ({ ...p, modifieLe: p.modifieLe ?? new Date().toISOString() }));
+        // Version 3 (jusqu'à la phase 8) : une seule toile, aux axes provisoires.
+        if (version < 4) profils = profils.map((p) => ({ ...p, toile: p.classe ? migrerToile(p.toile, p.classe) : undefined }));
         return { ...etat, profils: profils as ProfilEnfant[], suppressionsEnAttente: [] };
       },
     },

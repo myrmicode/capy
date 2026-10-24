@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { CLASSES } from '@/config/classes';
 import { useCompte } from '@/store/compte';
 import { useProfils } from '@/store/profils';
+import { migrerToile } from '@/toile/niveaux';
 
 import { planifierSynchro, type ProfilDistant } from './fusion';
 import { supabase } from './supabase';
@@ -23,13 +24,8 @@ const Ligne = z.object({
     jours: z.array(z.string()),
     tempsParJour: z.record(z.string(), z.number()),
   }),
-  toile: z
-    .object({
-      septembre: z.record(z.string(), z.number()),
-      actuelle: z.record(z.string(), z.number()),
-      saisieLe: z.string(),
-    })
-    .nullable(),
+  // Vérifiée et remise au format actuel par migrerToile (anciennes toiles comprises).
+  toile: z.unknown().nullable(),
   modifie_le: z.string(),
 });
 
@@ -39,7 +35,7 @@ function versProfil(ligne: z.infer<typeof Ligne>): ProfilDistant {
     prenom: ligne.prenom,
     classe: ligne.classe,
     progression: ligne.progression,
-    toile: ligne.toile ?? undefined,
+    toile: migrerToile(ligne.toile, ligne.classe),
     modifieLe: new Date(ligne.modifie_le).toISOString(),
   };
 }
