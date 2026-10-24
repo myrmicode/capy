@@ -41,6 +41,8 @@ describe('thèmes proposés d’après la toile', () => {
         'sujet-verbe': deux,
         conjugaison: trois,
         'ecrire-mots': trois,
+        'comprendre-phrases-lues': trois,
+        'comprendre-texte-lu': trois,
       },
       '2026-09-21',
     );

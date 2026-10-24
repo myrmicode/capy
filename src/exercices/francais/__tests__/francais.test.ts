@@ -242,3 +242,69 @@ describe('dictée de mots', () => {
     }
   });
 });
+
+describe('compréhension en lecture', () => {
+  const modele = (id: string) => MODELES_FRANCAIS.find((m) => m.id === id)!;
+  const tirages = (id: string, niveau: 1 | 2 | 3, n = 600) =>
+    Array.from({ length: n }, (_, g) => modele(id).generer('CE2', g, { niveau }));
+
+  it('laisse l’enfant lire seul : « Écouter » ne lira pas le texte', () => {
+    for (const id of ['qui-fait-quoi', 'meme-sens', 'questions-texte', 'preuve-texte']) {
+      expect(tirages(id, 2, 50).every((e) => e.lectureAutonome)).toBe(true);
+    }
+  });
+
+  it('« La bonne phrase » : la réponse est une des phrases, toutes différentes, dans l’ordre du texte', () => {
+    for (const id of ['meme-sens', 'preuve-texte']) {
+      for (const n of NIVEAUX) {
+        for (const e of tirages(id, n, 300)) {
+          expect(e.phrases).toContain(e.reponse);
+          expect(new Set(e.phrases).size).toBe(e.phrases!.length);
+          expect(e.phrases!.join(' ')).toBe(e.enonce);
+        }
+      }
+    }
+  });
+
+  it('phrases : passif et « c’est… que » n’arrivent qu’aux niveaux ++ et +++', () => {
+    const passif = (n: 1 | 2 | 3) => tirages('qui-fait-quoi', n).some((e) => / est \S+ par /.test(e.enonce));
+    const cliveeObjet = (n: 1 | 2 | 3) => tirages('qui-fait-quoi', n).some((e) => /^C’est .+ que /.test(e.enonce));
+    expect(passif(1)).toBe(false);
+    expect(passif(2)).toBe(true);
+    expect(cliveeObjet(2)).toBe(false);
+    expect(cliveeObjet(3)).toBe(true);
+  });
+
+  it('phrases : à la voix passive, celui qui agit est après « par »', () => {
+    for (const e of tirages('qui-fait-quoi', 2, 2000)) {
+      const m = /^(L[ea] \S+) est (\S+) par (l[ea] \S+)\.$/.exec(e.enonce);
+      if (!m) continue;
+      const [, patient, , agent] = m;
+      if (/par l’autre/.test(e.question) && e.question.startsWith('Qui est')) expect(e.reponse).toBe(patient.toLowerCase());
+      else expect(e.reponse).toBe(agent);
+    }
+  });
+
+  it('phrases : « avant de » et « après avoir » demandent l’action faite en premier', () => {
+    for (const e of tirages('qui-fait-quoi', 3, 2000)) {
+      const avant = /^Avant de \S+, l[ea] \S+ (\S+)\.$/.exec(e.enonce);
+      if (avant) expect(e.reponse.split(' ')[1]).toBe(avant[1]);
+    }
+  });
+
+  it('textes : il faut déduire seulement au niveau +++', () => {
+    const deduites = (n: 1 | 2 | 3) => tirages('questions-texte', n).filter((e) => e.explication.includes('ne le dit pas')).length;
+    expect(deduites(1)).toBe(0);
+    expect(deduites(2)).toBe(0);
+    expect(deduites(3)).toBeGreaterThan(100);
+  });
+
+  it('textes : une réponse écrite se retrouve dans le texte', () => {
+    for (const n of [1, 2] as const) {
+      for (const e of tirages('questions-texte', n)) {
+        const sansPronom = e.reponse.replace(/^(ils|elles|pour) /, '');
+        expect(e.enonce.toLowerCase()).toContain(sansPronom.toLowerCase());
+      }
+    }
+  });
+});

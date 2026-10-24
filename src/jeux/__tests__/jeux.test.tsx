@@ -11,6 +11,7 @@ import { JeuLucioles } from '../JeuLucioles';
 import { JeuMarche } from '../JeuMarche';
 import { JeuQuestionPerdue } from '../JeuQuestionPerdue';
 import { JeuPaniers } from '../JeuPaniers';
+import { JeuPassage } from '../JeuPassage';
 import { JeuReponses } from '../JeuReponses';
 import { JeuWagons } from '../JeuWagons';
 
@@ -199,5 +200,25 @@ describe('La dictée de Capy', () => {
     await fireEvent.changeText(screen.getByLabelText('Le mot que tu as écrit'), 'mét');
     await fireEvent.press(screen.getByLabelText('Ajouter é'));
     expect(screen.getByLabelText('Le mot que tu as écrit').props.value).toBe('mété');
+  });
+});
+
+describe('La bonne phrase', () => {
+  const ex = () => modeleTexteParId('preuve-texte')!.generer('CE2', 3, { niveau: 2 });
+
+  it('accepte la phrase qui répond à la consigne', async () => {
+    const e = ex();
+    const onRepondre = jest.fn();
+    await render(<JeuPassage exercice={e} actif onRepondre={onRepondre} />);
+    await fireEvent.press(screen.getByRole('button', { name: e.reponse }));
+    expect(onRepondre).toHaveBeenCalledWith(true);
+  });
+
+  it('signale une autre phrase sans la juger', async () => {
+    const e = ex();
+    const onRepondre = jest.fn();
+    await render(<JeuPassage exercice={e} actif onRepondre={onRepondre} />);
+    await fireEvent.press(screen.getByRole('button', { name: e.phrases!.find((p) => p !== e.reponse)! }));
+    expect(onRepondre).toHaveBeenCalledWith(false);
   });
 });

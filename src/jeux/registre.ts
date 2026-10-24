@@ -9,6 +9,7 @@ export type JeuId =
   | 'wagons'
   | 'paniers'
   | 'dictee'
+  | 'passage'
   | 'reponses';
 
 export interface DefinitionJeu {
@@ -108,11 +109,20 @@ export const JEUX: Record<JeuId, DefinitionJeu> = {
     modeles: ['dictee-mots', 'mots-outils'],
     accepte: (ex) => ex.nature === 'texte' && ex.lecture !== undefined,
   },
+  passage: {
+    id: 'passage',
+    titre: 'La bonne phrase',
+    consigne: 'Lis bien chaque phrase, puis touche la bonne.',
+    modeles: ['meme-sens', 'preuve-texte'],
+    accepte: (ex) => ex.nature === 'texte' && ex.phrases !== undefined && ex.phrases.includes(ex.reponse),
+  },
   reponses: {
     id: 'reponses',
     titre: 'La bonne réponse',
     consigne: 'Choisis la bonne réponse.',
     // Placer un nombre n'a de sens qu'avec le fil : la réponse est dans la question.
-    accepte: (ex) => !(MODELES_PLACER as readonly string[]).includes(ex.modeleId),
+    // Les phrases à toucher n'ont de sens que dans « La bonne phrase ».
+    accepte: (ex) =>
+      !(MODELES_PLACER as readonly string[]).includes(ex.modeleId) && !(ex.nature === 'texte' && ex.phrases !== undefined),
   },
 };

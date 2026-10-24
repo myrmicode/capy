@@ -144,6 +144,9 @@ export default function EcranEtape() {
     aLire = `${jeu.consigne} ${exercice.enonce} ${exercice.questionsAuChoix.join(' ')}`;
   } else if (exercice.nature === 'texte' && exercice.lecture) {
     aLire = `${jeu.consigne} ${exercice.lecture}`;
+  } else if (exercice.nature === 'texte' && exercice.lectureAutonome) {
+    // Compréhension en lecture : l'enfant lit le texte lui-même, Capy ne lit que la consigne.
+    aLire = `${jeu.consigne} ${exercice.question}`;
   }
 
   let pied = null;

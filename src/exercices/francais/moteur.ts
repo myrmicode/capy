@@ -20,6 +20,10 @@ export interface ContenuTexte {
   categories?: string[];
   /** Texte dit par Capy à la place de l'énoncé (dictée : le mot est dit, jamais écrit). */
   lecture?: string;
+  /** Texte découpé en phrases à toucher ; la réponse est l'une d'elles. */
+  phrases?: string[];
+  /** L'enfant lit seul : « Écouter » ne lit pas le texte. */
+  lectureAutonome?: boolean;
   indice: string;
   explication: string;
 }
@@ -83,6 +87,8 @@ export function definirModeleTexte(def: DefinitionModeleTexte): ModeleTexte {
           ...(contenu.segments ? { segments: contenu.segments } : {}),
           ...(contenu.categories ? { categories: contenu.categories } : {}),
           ...(contenu.lecture ? { lecture: contenu.lecture } : {}),
+          ...(contenu.phrases ? { phrases: contenu.phrases } : {}),
+          ...(contenu.lectureAutonome ? { lectureAutonome: true } : {}),
           indice: contenu.indice,
           explication: contenu.explication,
         };

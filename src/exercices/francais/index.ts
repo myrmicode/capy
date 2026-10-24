@@ -4,6 +4,8 @@ import { accordAdjectif } from './modeles/ce2/accordAdjectif';
 import { conjugaison, conjugaisonFutur, conjugaisonImparfait, conjugaisonPresent } from './modeles/ce2/conjugaison';
 import { dicteeMots, motsOutils } from './modeles/ce2/dictee';
 import { intrus, memeFamille } from './modeles/ce2/familles';
+import { memeSens, quiFaitQuoi } from './modeles/ce2/phrasesLues';
+import { preuveTexte, questionsTexte } from './modeles/ce2/texteLu';
 import { natureDuMot, trouverLeMot } from './modeles/ce2/natureMots';
 import { sujetEtVerbe } from './modeles/ce2/sujetVerbe';
 import { synonymes } from './modeles/ce2/synonymes';
@@ -23,4 +25,8 @@ export const MODELES_FRANCAIS: readonly ModeleTexte[] = [
   conjugaison,
   dicteeMots,
   motsOutils,
+  quiFaitQuoi,
+  memeSens,
+  questionsTexte,
+  preuveTexte,
 ];

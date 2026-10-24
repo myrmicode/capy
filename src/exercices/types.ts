@@ -160,6 +160,13 @@ export interface ExerciceTexte {
    * mot est dit mais jamais affiché : l'énoncé montre la phrase avec un trou.
    */
   lecture?: string;
+  /** Texte découpé en phrases que l'enfant peut toucher (jeu « La bonne phrase »). */
+  phrases?: string[];
+  /**
+   * L'enfant lit seul : c'est la compétence travaillée. « Écouter » ne lit alors
+   * que la consigne et la question, jamais le texte.
+   */
+  lectureAutonome?: boolean;
   indice: string;
   explication: string;
 }

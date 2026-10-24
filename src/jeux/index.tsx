@@ -7,6 +7,7 @@ import { JeuFunambule } from './JeuFunambule';
 import { JeuLucioles } from './JeuLucioles';
 import { JeuMarche } from './JeuMarche';
 import { JeuPaniers } from './JeuPaniers';
+import { JeuPassage } from './JeuPassage';
 import { JeuQuestionPerdue } from './JeuQuestionPerdue';
 import { JeuReponses } from './JeuReponses';
 import { JeuWagons } from './JeuWagons';
@@ -22,6 +23,7 @@ export const COMPOSANTS_JEUX: Record<JeuId, ComponentType<PropsJeu>> = {
   wagons: pourTextes(JeuWagons),
   paniers: pourTextes(JeuPaniers),
   dictee: pourTextes(JeuDictee),
+  passage: pourTextes(JeuPassage),
   reponses: JeuReponses,
 };
 

@@ -300,6 +300,36 @@ const DICTEE_CE2: Theme = {
   ],
 };
 
+const PHRASES_LUES_CE2: Theme = {
+  id: 'ce2-phrases-lues',
+  domaine: 'comprendre-phrases-lues',
+  classe: 'CE2',
+  titre: 'Comprendre des phrases',
+  unites: [
+    uniteFr('ce2-phr-u1', 'Les phrases de Capy', [
+      ['Qui fait quoi ?', ['qui-fait-quoi', 'meme-sens'], ['reponses', 'passage'], 5],
+      ['La phrase qui dit pareil', ['meme-sens', 'qui-fait-quoi'], ['passage', 'reponses'], 5],
+      ['Phrases pièges', ['qui-fait-quoi', 'meme-sens'], ['reponses', 'passage'], 6],
+      ['Révision', ['qui-fait-quoi', 'meme-sens'], ['reponses', 'passage'], 7],
+    ]),
+  ],
+};
+
+const TEXTE_LU_CE2: Theme = {
+  id: 'ce2-texte-lu',
+  domaine: 'comprendre-texte-lu',
+  classe: 'CE2',
+  titre: 'Comprendre un texte',
+  unites: [
+    uniteFr('ce2-txt-u1', 'Les histoires de Capy', [
+      ['Petites histoires', ['questions-texte', 'preuve-texte'], ['reponses', 'passage'], 4],
+      ['La phrase qui le dit', ['preuve-texte', 'questions-texte'], ['passage', 'reponses'], 4],
+      ['Histoires à lire', ['questions-texte', 'preuve-texte'], ['reponses', 'passage'], 5],
+      ['Révision', ['questions-texte', 'preuve-texte'], ['reponses', 'passage'], 5],
+    ]),
+  ],
+};
+
 export const THEMES: readonly Theme[] = [
   RESOUDRE_PROBLEMES_CE2,
   CALCUL_MENTAL_CE2,
@@ -311,6 +341,8 @@ export const THEMES: readonly Theme[] = [
   SUJET_VERBE_CE2,
   CONJUGAISON_CE2,
   DICTEE_CE2,
+  PHRASES_LUES_CE2,
+  TEXTE_LU_CE2,
 ];
 
 export function themesDe(classe: Classe): Theme[] {
