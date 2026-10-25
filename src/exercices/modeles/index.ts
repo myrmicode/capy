@@ -9,9 +9,11 @@ import { ajouterDizaines } from './ce2/ajouterDizaines';
 import { complementCent } from './ce2/complementCent';
 import { deuxEtapes } from './ce2/deuxEtapes';
 import { doubles } from './ce2/doubles';
+import { duree } from './ce2/duree';
 import { ecart } from './ce2/ecart';
 import { groupements } from './ce2/groupements';
 import { lireGrandsPas, lirePetitsPas, placerGrandsPas, placerPetitsPas } from './ce2/ligneGraduee';
+import { payer, rendreMonnaie } from './ce2/monnaie';
 import { partage } from './ce2/partage';
 import { retrait } from './ce2/retrait';
 import { tables } from './ce2/tables';
@@ -25,6 +27,9 @@ export const MODELES: readonly ModeleExercice[] = [
   ecart,
   partage,
   deuxEtapes,
+  payer,
+  rendreMonnaie,
+  duree,
   // Calcul mental
   tables,
   doubles,

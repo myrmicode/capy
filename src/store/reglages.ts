@@ -12,24 +12,37 @@ function nouvelIdentifiant(): string {
 interface Reglages {
   /** Son doux après une bonne réponse. */
   sons: boolean;
+  /** Après 19 h, couleurs plus douces et message du soir. */
+  ambianceSoir: boolean;
   /** Sert uniquement à limiter le nombre d'analyses de photo par appareil. */
   appareil: string;
   activerSons: (actif: boolean) => void;
+  activerAmbianceSoir: (actif: boolean) => void;
 }
 
 export const useReglages = create<Reglages>()(
   persist(
     (set) => ({
       sons: true,
+      ambianceSoir: true,
       appareil: nouvelIdentifiant(),
       activerSons: (sons) => set({ sons }),
+      activerAmbianceSoir: (ambianceSoir) => set({ ambianceSoir }),
     }),
     {
       name: 'capy-reglages',
-      version: 2,
+      version: 3,
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: ({ sons, appareil }) => ({ sons, appareil }),
-      migrate: (ancien) => ({ ...(ancien as object), appareil: nouvelIdentifiant() }),
+      partialize: ({ sons, ambianceSoir, appareil }) => ({ sons, ambianceSoir, appareil }),
+      migrate: (ancien, version) => {
+        const etat = ancien as Partial<Reglages>;
+        // Version 1 : pas encore d'identifiant d'appareil. Version 2 : pas d'ambiance du soir.
+        return {
+          ...etat,
+          appareil: version < 2 || !etat.appareil ? nouvelIdentifiant() : etat.appareil,
+          ambianceSoir: etat.ambianceSoir ?? true,
+        };
+      },
       // Enregistre tout de suite l'identifiant tiré au premier lancement.
       onRehydrateStorage: () => (etat) => {
         if (etat) useReglages.setState({ appareil: etat.appareil });

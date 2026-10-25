@@ -1,6 +1,6 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { adapterExercice, DOMAINES_SANS_TABLE, nombreDeQuestions } from '@/accessibilite/adaptation';
 import { avecReglagesEnfant, useThemeEnfant } from '@/accessibilite/contexte';
@@ -11,6 +11,7 @@ import {
   BarreProgression,
   BulleCapy,
   Bouton,
+  CapyAnime,
   Ecran,
   IconeAmpoule,
   IconeCroix,
@@ -24,22 +25,34 @@ import { MOTS_EXPLIQUES } from '@/contenu/motsExpliques';
 import type { ExerciceQuelconque } from '@/exercices';
 import { COMPOSANTS_JEUX, JEUX, type JeuId } from '@/jeux';
 import { consigneDe, type DefinitionJeu } from '@/jeux/registre';
-import { arreterLecture, feliciter, lireAVoixHaute } from '@/jeux/retours';
-import { mascotte } from '@/mascotte';
+import { arreterLecture, celebrer, feliciter, lireAVoixHaute } from '@/jeux/retours';
+import { PHRASES_CAPY, phraseDe } from '@/contenu/phrasesCapy';
+import { aideApresErreur, ESSAIS_AVANT_CHOIX_REDUITS } from '@/parcours/aide';
 import { avancement, derouler, etatInitial, pauseDue, resteEnMots } from '@/parcours/deroulement';
 import { genererEtape } from '@/parcours/etape';
 import { niveauPourDomaine } from '@/parcours/niveau';
-import { etoilesPour, graineDePartie } from '@/parcours/progression';
+import { dateLocale, defiFait, etoilesPour, graineDePartie } from '@/parcours/progression';
+import { revisionsDues } from '@/parcours/revision';
+import { genererDefi, QUESTIONS_DEFI } from '@/parcours/defi';
 import { serieEntrainement, themeEnEntrainement, themeEstPropose } from '@/parcours/selection';
+import { themesSurprise } from '@/parcours/surprise';
 import { useProfilActif, useProfils } from '@/store/profils';
 import { couleurs, espaces, formes } from '@/theme';
 
 /** Jeux où l'on glisse le doigt : l'écran ne défile pas pendant la question. */
 const JEUX_A_GLISSER: readonly JeuId[] = ['marche', 'bonFil', 'funambule'];
 /** Jeux qui gardent leur état quand l'enfant réessaie (il ajuste au lieu de tout refaire). */
-const JEUX_QUI_GARDENT_LEUR_ETAT: readonly JeuId[] = ['marche', 'funambule', 'dictee'];
+const JEUX_QUI_GARDENT_LEUR_ETAT: readonly JeuId[] = ['marche', 'funambule', 'dictee', 'ordre', 'caisse', 'horloge'];
 /** Jeux où les aides visuelles de calcul n'ont pas de sens (le fil gradué est déjà une aide). */
-const JEUX_SANS_AIDE_NOMBRES: readonly JeuId[] = ['funambule'];
+const JEUX_SANS_AIDE_NOMBRES: readonly JeuId[] = ['funambule', 'horloge'];
+
+/** Jeux où Capy peut enlever des réponses après plusieurs essais (voir parcours/aide.ts). */
+const JEUX_A_CHOIX_REDUCTIBLES: readonly JeuId[] = ['reponses', 'lucioles', 'questionPerdue'];
+
+/** Nombre de réponses que montre le mini-jeu. */
+function nombreDePropositions(ex: ExerciceQuelconque, jeu: JeuId): number {
+  return jeu === 'questionPerdue' && ex.nature === 'nombre' ? (ex.questionsAuChoix?.length ?? 0) : ex.choix.length;
+}
 
 /** Au-delà, on considère que l'enfant a fait une pause : le temps n'est pas compté. */
 const DUREE_MAX_SECONDES = 30 * 60;
@@ -63,9 +76,19 @@ function EcranEtape() {
   const profil = useProfilActif();
   const enregistrerEtape = useProfils((e) => e.enregistrerEtape);
   const enregistrerEntrainement = useProfils((e) => e.enregistrerEntrainement);
-  // Une étape du parcours, ou une série d'entraînement libre sur un thème déjà à +++.
-  const { etape: idEtape, entrainement: idTheme } = useLocalSearchParams<{ etape?: string; entrainement?: string }>();
+  const noterRevisions = useProfils((e) => e.noterRevisions);
+  const enregistrerDefi = useProfils((e) => e.enregistrerDefi);
+  // Une étape du parcours, une série d'entraînement libre sur un thème déjà à +++, le défi du jour,
+  // ou une série « thème surprise » proposée après un coffre (enregistrée comme un entraînement).
+  const {
+    etape: idEtape,
+    entrainement: idTheme,
+    defi,
+    surprise,
+  } = useLocalSearchParams<{ etape?: string; entrainement?: string; defi?: string; surprise?: string }>();
   const enEntrainement = idTheme !== undefined;
+  const enDefi = defi !== undefined;
+  const enSurprise = enEntrainement && surprise !== undefined;
   const trouvee = useMemo(() => {
     if (idTheme === undefined) return trouverEtape(idEtape ?? '');
     const theme = THEMES.find((t) => t.id === idTheme);
@@ -87,10 +110,29 @@ function EcranEtape() {
   // Niveau des exercices : celui de l'enfant sur cette compétence, recalculé à chaque partie.
   const [niveauEtape, setNiveauEtape] = useState(() => (domaine ? niveauPourDomaine(profil?.toile, domaine) : 1));
   const graine = profil ? graineDePartie(profil.id, etapeId, foisAuDepart + partie) : 0;
+  // Petit rappel d'une question difficile d'un jour précédent, figé pour toute la partie.
+  const revisionDuJour = () =>
+    domaine ? revisionsDues(profil?.progression.aRevoir, domaine, dateLocale(new Date()))[0] : undefined;
+  const [revision, setRevision] = useState(revisionDuJour);
   const classe = profil?.classe;
   const nbQuestions = trouvee ? nombreDeQuestions(trouvee.etape.nombreQuestions, reglages) : 0;
 
-  const questions = useMemo(
+  // Le défi du jour dépend de la progression : il est figé pour toute la partie.
+  const defiDuJour = (n: number) =>
+    profil
+      ? genererDefi({
+          classe: profil.classe,
+          toile: profil.toile,
+          progression: profil.progression,
+          profilId: profil.id,
+          jour: dateLocale(new Date()),
+          partie: n + (defiFait(profil.progression, dateLocale(new Date())) ? 1 : 0),
+          nombreQuestions: nombreDeQuestions(QUESTIONS_DEFI, reglages),
+        })
+      : [];
+  const [questionsDefi, setQuestionsDefi] = useState(() => (enDefi ? defiDuJour(0) : []));
+
+  const questionsEtape = useMemo(
     () =>
       classe && trouvee
         ? genererEtape({
@@ -100,10 +142,12 @@ function EcranEtape() {
             ...trouvee.etape,
             nombreQuestions: nbQuestions,
             niveau: niveauEtape,
+            revision,
           })
         : [],
-    [classe, trouvee, graine, niveauEtape, nbQuestions],
+    [classe, trouvee, graine, niveauEtape, nbQuestions, revision],
   );
+  const questions = enDefi ? questionsDefi : questionsEtape;
   const [etat, envoyer] = useReducer(derouler, questions.length, etatInitial);
   // Numéro de la question dont l'indice est ouvert : il se referme tout seul à la question suivante.
   const [indiceOuvert, setIndiceOuvert] = useState<number | null>(null);
@@ -122,9 +166,20 @@ function EcranEtape() {
 
   const question = questions[etat.index];
   const jeu: DefinitionJeu | undefined = question ? JEUX[question.jeu] : undefined;
+  // Après plusieurs essais, Capy peut ne garder que deux réponses.
+  const peutReduire = useMemo(() => {
+    if (!question || !JEUX_A_CHOIX_REDUCTIBLES.includes(question.jeu)) return false;
+    const tous = adapterExercice(question.exercice, reglages, question.jeu);
+    const deux = adapterExercice(question.exercice, { ...reglages, nombreChoix: 2 }, question.jeu);
+    return nombreDePropositions(deux, question.jeu) < nombreDePropositions(tous, question.jeu);
+  }, [question, reglages]);
+  const choixReduits = peutReduire && etat.essaisRates >= ESSAIS_AVANT_CHOIX_REDUITS;
   const exercice = useMemo(
-    () => (question ? adapterExercice(question.exercice, reglages, question.jeu) : undefined),
-    [question, reglages],
+    () =>
+      question
+        ? adapterExercice(question.exercice, choixReduits ? { ...reglages, nombreChoix: 2 } : reglages, question.jeu)
+        : undefined,
+    [question, reglages, choixReduits],
   );
   const consigne = jeu ? consigneDe(jeu, reglages) : '';
   const enConsigne = reglages.uneChoseALaFois && consigneVue !== etat.index && etat.phase === 'question';
@@ -132,22 +187,58 @@ function EcranEtape() {
 
   useEffect(() => {
     if (etat.phase === 'bravo') feliciter({ silencieux: theme.animationsReduites });
+    if (etat.phase === 'terminee') celebrer('fin', { silencieux: theme.animationsReduites });
   }, [etat.phase, theme.animationsReduites]);
 
   // Le résultat est enregistré une seule fois par partie.
   const partieEnregistree = useRef(-1);
   useEffect(() => {
-    if (etat.phase !== 'terminee' || !profil || !domaine || partieEnregistree.current === partie) return;
+    if (etat.phase !== 'terminee' || !profil || partieEnregistree.current === partie) return;
+    if (!domaine && !enDefi) return;
     partieEnregistree.current = partie;
+    const dureeSecondes = Math.min(DUREE_MAX_SECONDES, (Date.now() - debut) / 1000);
+    noterRevisions(
+      profil.id,
+      questions.map((q, i) => ({
+        modeleId: q.exercice.modeleId,
+        jeu: q.jeu,
+        domaine: q.exercice.domaine,
+        niveau: q.exercice.niveau,
+        rate: etat.aRevoir.includes(i),
+        revision: q.revision === true,
+      })),
+    );
+    if (enDefi || !domaine) {
+      enregistrerDefi(profil.id, {
+        reussiesPremierCoup: etat.reussiesPremierCoup,
+        nombreQuestions: etat.nombreQuestions,
+        dureeSecondes,
+      });
+      return;
+    }
     const resultat = {
       domaine,
       reussiesPremierCoup: etat.reussiesPremierCoup,
       nombreQuestions: etat.nombreQuestions,
-      dureeSecondes: Math.min(DUREE_MAX_SECONDES, (Date.now() - debut) / 1000),
+      dureeSecondes,
     };
     if (idTheme !== undefined) enregistrerEntrainement(profil.id, idTheme, resultat);
     else enregistrerEtape(profil.id, etapeId, resultat);
-  }, [etat, profil, partie, etapeId, idTheme, debut, domaine, enregistrerEtape, enregistrerEntrainement]);
+  }, [
+    etat,
+    profil,
+    partie,
+    etapeId,
+    idTheme,
+    debut,
+    domaine,
+    enDefi,
+    questions,
+    enregistrerDefi,
+    enregistrerEtape,
+    enregistrerEntrainement,
+    noterRevisions,
+  ]);
 
   // On coupe la voix en changeant de question ou en quittant l'étape. Avec la
   // lecture automatique, Capy lit ensuite la nouvelle question.
@@ -181,13 +272,16 @@ function EcranEtape() {
   if (!profil) return <Redirect href="/" />;
   // Aucun exercice sans le résultat de la toile : seuls les thèmes proposés s'ouvrent.
   const ouvert = trouvee
-    ? enEntrainement
-      ? themeEnEntrainement(profil.classe, profil.toile, trouvee.theme.id)
-      : themeEstPropose(profil.classe, profil.toile, trouvee.theme.id)
+    ? enSurprise
+      ? themesSurprise(profil.classe, profil.toile).some((t) => t.id === trouvee.theme.id)
+      : enEntrainement
+        ? themeEnEntrainement(profil.classe, profil.toile, trouvee.theme.id)
+        : themeEstPropose(profil.classe, profil.toile, trouvee.theme.id)
     : true;
   if (!ouvert) return <Redirect href="/enfant" />;
 
   if (questions.length === 0 || !jeu || !exercice || !question) {
+    if (etat.phase !== 'terminee' && enDefi) return <Redirect href="/enfant" />;
     if (etat.phase !== 'terminee') {
       return (
         <Ecran pied={<Bouton titre="Retour" variante="secondaire" onPress={() => router.back()} />}>
@@ -204,7 +298,9 @@ function EcranEtape() {
     const etoiles = etoilesPour(etat.reussiesPremierCoup, etat.nombreQuestions);
     const rejouer = () => {
       setPartie((n) => n + 1);
+      if (enDefi) setQuestionsDefi(defiDuJour(partie + 1));
       if (domaine) setNiveauEtape(niveauPourDomaine(profil.toile, domaine));
+      setRevision(revisionDuJour());
       setDebut(Date.now());
       envoyer({ type: 'recommencer' });
     };
@@ -213,13 +309,25 @@ function EcranEtape() {
         pied={
           <View style={styles.boutonsFin}>
             <Bouton titre="Retour au parcours" onPress={() => router.back()} />
-            <Bouton titre={enEntrainement ? 'Une autre série' : 'Rejouer l’étape'} variante="secondaire" onPress={rejouer} />
+            <Bouton
+              titre={enDefi ? 'Un autre défi' : enEntrainement ? 'Une autre série' : 'Rejouer l’étape'}
+              variante="secondaire"
+              onPress={rejouer}
+            />
           </View>
         }
       >
         <View style={styles.fin}>
-          <Image source={mascotte.bravo} style={styles.capyFin} resizeMode="contain" accessible={false} />
-          <Text style={[typo.titre1, styles.centre]}>{enEntrainement ? 'Série terminée !' : 'Étape terminée !'}</Text>
+          <CapyAnime pose="bravo" taille={200} />
+          <Text style={[typo.titre1, styles.centre]}>
+            {enDefi
+              ? 'Défi du jour réussi !'
+              : enSurprise
+                ? 'Surprise réussie !'
+                : enEntrainement
+                  ? 'Série terminée !'
+                  : 'Étape terminée !'}
+          </Text>
           <View
             style={styles.etoiles}
             accessible
@@ -230,12 +338,16 @@ function EcranEtape() {
             ))}
           </View>
           {theme.manuscritVisible ? (
-            <Text style={[typo.manuscrit, styles.centre]}>Petit pas après petit pas…</Text>
+            <Text style={[typo.manuscrit, styles.centre]}>{phraseDe(PHRASES_CAPY.finEtape, graine + partie)}</Text>
           ) : null}
           <Text style={[typo.enonce, styles.centre]}>
-            {enEntrainement
-              ? `Bravo ${profil.prenom}, tes étoiles s’ajoutent à ton trésor. Tu peux faire une autre série quand tu veux.`
-              : `Bravo ${profil.prenom}, tu as fini « ${trouvee!.etape.titre} ».`}
+            {enDefi
+              ? `Bravo ${profil.prenom} ! Reviens demain : Capy te prépare un nouveau défi.`
+              : enSurprise
+                ? `Bravo ${profil.prenom}, tu as découvert « ${trouvee!.theme.titre} ». Tu le retrouveras dans le carnet de Capy.`
+                : enEntrainement
+                  ? `Bravo ${profil.prenom}, tes étoiles s’ajoutent à ton trésor. Tu peux faire une autre série quand tu veux.`
+                  : `Bravo ${profil.prenom}, tu as fini « ${trouvee!.etape.titre} ».`}
           </Text>
         </View>
       </Ecran>
@@ -278,9 +390,26 @@ function EcranEtape() {
 
   let pied = null;
   if (etat.phase === 'bravo') {
-    pied = <PanneauRetour type="bravo" explication={ex.explication} onContinuer={continuer} />;
+    pied = (
+      <PanneauRetour
+        type="bravo"
+        titre={phraseDe(PHRASES_CAPY.bravo, graine + etat.index)}
+        explication={ex.explication}
+        onContinuer={continuer}
+      />
+    );
   } else if (etat.phase === 'presque') {
-    pied = <PanneauRetour type="presque" indice={indice} onContinuer={() => envoyer({ type: 'reessayer' })} />;
+    const aide = aideApresErreur(etat.essaisRates, { indice, explication: ex.explication, peutReduire });
+    pied = (
+      <PanneauRetour
+        type="presque"
+        titre={phraseDe(PHRASES_CAPY.presque, graine + etat.index + etat.essaisRates)}
+        indice={aide.indice}
+        choixReduits={aide.choixReduits}
+        methode={aide.methode}
+        onContinuer={() => envoyer({ type: 'reessayer' })}
+      />
+    );
   }
 
   const entete = (
@@ -318,8 +447,9 @@ function EcranEtape() {
     );
   }
 
-  const montrerTable =
-    reglages.tableConsultable && ex.nature === 'nombre' && !!domaine && !DOMAINES_SANS_TABLE.includes(domaine);
+  const montrerTable = reglages.tableConsultable && ex.nature === 'nombre' && !DOMAINES_SANS_TABLE.includes(ex.domaine);
+  // Dans le défi du jour, chaque question a sa compétence, donc son niveau.
+  const niveauDeReference = enDefi ? niveauPourDomaine(profil.toile, ex.domaine) : niveauEtape;
   const nombresAide =
     reglages.aidesVisuelles && ex.nature === 'nombre' && !JEUX_SANS_AIDE_NOMBRES.includes(q.jeu)
       ? Object.values(ex.donnees)
@@ -338,7 +468,12 @@ function EcranEtape() {
         {/* Le titre a sa propre ligne : en très grand texte, il ne se coupe jamais au milieu d'un mot. */}
         <Text style={typo.titre3}>{definition.titre}</Text>
         <View style={styles.outils}>
-          {ex.niveau > niveauEtape ? (
+          {q.revision ? (
+            <View style={styles.rappel} accessible accessibilityLabel="Petit rappel">
+              <Text style={[typo.petit, styles.texteRappel]}>Petit rappel</Text>
+            </View>
+          ) : null}
+          {ex.niveau > niveauDeReference ? (
             <View style={styles.defi} accessible accessibilityLabel="Question défi">
               <Text style={[typo.petit, styles.texteDefi]}>Question défi</Text>
             </View>
@@ -406,10 +541,16 @@ const styles = StyleSheet.create({
     paddingVertical: espaces.xs,
   },
   texteDefi: { color: couleurs.jaune.texte },
+  rappel: {
+    backgroundColor: couleurs.menthe[100],
+    borderRadius: formes.pilule,
+    paddingHorizontal: espaces.m,
+    paddingVertical: espaces.xs,
+  },
+  texteRappel: { color: couleurs.sarcelle[900] },
   ligneBarre: { flexDirection: 'row' },
   flex: { flex: 1 },
   fin: { alignItems: 'center', gap: espaces.m, paddingTop: espaces.xxl },
-  capyFin: { width: 200, height: 200 },
   centre: { textAlign: 'center' },
   boutonsFin: { gap: espaces.m },
   etoiles: { flexDirection: 'row', gap: espaces.s },

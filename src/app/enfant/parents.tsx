@@ -9,7 +9,9 @@ import { BarreProgression, Bouton, ControleParental, Ecran, Toile } from '@/comp
 import { domainesDe, LIBELLES_MATIERES, MATIERES } from '@/config/domaines';
 import { niveauPourDomaine } from '@/parcours/niveau';
 import { themesProposes } from '@/parcours/selection';
+import { CONSEILS_PARENTS } from '@/contenu/conseilsParents';
 import { dateEnFrancais, dureeEnFrancais } from '@/parents/format';
+import { resumeSemaine } from '@/parents/semaine';
 import { deverrouillerParents, parentsDeverrouilles } from '@/parents/verrou';
 import { dateLocale, serieDeJours, tempsDeLaSemaine } from '@/parcours/progression';
 import { seDeconnecter, supprimerCompte } from '@/serveur/compte';
@@ -52,7 +54,7 @@ function ContenuParents() {
   const { typo } = useThemeEnfant();
   const profil = useProfilActif();
   const supprimerProfil = useProfils((e) => e.supprimerProfil);
-  const { sons, activerSons } = useReglages();
+  const { sons, activerSons, ambianceSoir, activerAmbianceSoir } = useReglages();
   const [confirmerSuppression, setConfirmerSuppression] = useState(false);
   const connecte = useCompte((e) => e.email !== null);
   if (!profil) return null;
@@ -62,6 +64,13 @@ function ContenuParents() {
   const aujourdhui = dateLocale(new Date());
   const etapesReussies = Object.keys(p.etapes).length;
   const serie = serieDeJours(p.jours, aujourdhui);
+  // Idées sans écran : les compétences les plus fragiles d'abord (les trois premiers thèmes proposés).
+  const idees = themesProposes(profil.classe, profil.toile)
+    .flatMap((theme) => {
+      const conseil = CONSEILS_PARENTS[theme.domaine];
+      return conseil ? [{ theme, conseil }] : [];
+    })
+    .slice(0, 3);
 
   const supprimer = () => {
     supprimerProfil(profil.id);
@@ -114,6 +123,14 @@ function ContenuParents() {
         />
       </Section>
 
+      <Section titre="Cette semaine">
+        {resumeSemaine(profil).map((phrase) => (
+          <Text key={phrase} style={typo.texte}>
+            {phrase}
+          </Text>
+        ))}
+      </Section>
+
       <Section titre="En bref">
         <View style={styles.stats}>
           <Statistique
@@ -158,6 +175,20 @@ function ContenuParents() {
         ) : null}
       </Section>
 
+      {idees.length > 0 ? (
+        <Section titre="Idées de jeux sans écran">
+          <Text style={typo.petit}>
+            Pour les compétences qui comptent le plus en ce moment, quelques minutes suffisent.
+          </Text>
+          {idees.map(({ theme, conseil }) => (
+            <View key={theme.id} style={styles.theme}>
+              <Text style={typo.texteGras}>{theme.titre}</Text>
+              <Text style={typo.texte}>{conseil}</Text>
+            </View>
+          ))}
+        </Section>
+      ) : null}
+
       <Section titre="Réglages de lecture et de jeu">
         {optionsLecture.length === 0 ? (
           <Text style={typo.texte}>
@@ -167,8 +198,8 @@ function ContenuParents() {
         ) : (
           <>
             <Text style={typo.texte}>
-              {optionsLecture.length} réglage{optionsLecture.length > 1 ? 's' : ''} activé{optionsLecture.length > 1 ? 's' : ''} pour{' '}
-              {profil.prenom} :
+              {optionsLecture.length} réglage{optionsLecture.length > 1 ? 's' : ''} activé
+              {optionsLecture.length > 1 ? 's' : ''} pour {profil.prenom} :
             </Text>
             <View style={styles.puces}>
               {optionsLecture.map((o) => (
@@ -193,7 +224,7 @@ function ContenuParents() {
 
       <Section titre="Réglages">
         <View style={styles.reglage}>
-          <Text style={[typo.texte, styles.flex]}>Son doux après une bonne réponse</Text>
+          <Text style={[typo.texte, styles.flex]}>Sons doux (bonne réponse, fin d’étape, coffre)</Text>
           <Switch
             value={sons}
             onValueChange={activerSons}
@@ -202,7 +233,20 @@ function ContenuParents() {
               false: couleurs.gris[300],
             }}
             thumbColor={couleurs.blanc}
-            accessibilityLabel="Son doux après une bonne réponse"
+            accessibilityLabel="Sons doux : bonne réponse, fin d’étape, coffre"
+          />
+        </View>
+        <View style={styles.reglage}>
+          <Text style={[typo.texte, styles.flex]}>Ambiance du soir après 19 h (couleurs plus douces)</Text>
+          <Switch
+            value={ambianceSoir}
+            onValueChange={activerAmbianceSoir}
+            trackColor={{
+              true: couleurs.sarcelle[700],
+              false: couleurs.gris[300],
+            }}
+            thumbColor={couleurs.blanc}
+            accessibilityLabel="Ambiance du soir après 19 heures"
           />
         </View>
       </Section>

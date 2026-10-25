@@ -2,6 +2,7 @@
 // Fonctions pures, testées : aucune donnée n'est perdue quand deux appareils
 // ont avancé chacun de leur côté.
 import type { ProgressionEnfant } from '@/parcours/progression';
+import { fusionnerRevisions } from '@/parcours/revision';
 import type { ProfilEnfant } from '@/store/profils';
 
 /** Profil tel qu'enregistré sur le serveur (sans les métadonnées propres à l'appareil). */
@@ -20,7 +21,9 @@ export function fusionnerProgression(a: ProgressionEnfant, b: ProgressionEnfant)
   const entrainement = { ...a.entrainement };
   for (const [theme, r] of Object.entries(b.entrainement ?? {})) {
     const autre = entrainement[theme];
-    entrainement[theme] = autre ? { etoiles: Math.max(autre.etoiles, r.etoiles), series: Math.max(autre.series, r.series) } : r;
+    entrainement[theme] = autre
+      ? { etoiles: Math.max(autre.etoiles, r.etoiles), series: Math.max(autre.series, r.series) }
+      : r;
   }
   return {
     etapes,
@@ -28,7 +31,19 @@ export function fusionnerProgression(a: ProgressionEnfant, b: ProgressionEnfant)
     jours: [...new Set([...a.jours, ...b.jours])].sort(),
     tempsParJour,
     entrainement,
+    ...(a.tenue || b.tenue ? { tenue: a.tenue ?? b.tenue } : {}),
+    ...(a.defis || b.defis ? { defis: fusionnerMeilleur(a.defis, b.defis) } : {}),
+    ...(a.histoires || b.histoires ? { histoires: fusionnerMeilleur(a.histoires, b.histoires) } : {}),
+    // Absent des deux côtés (anciens profils), il le reste : sinon le profil semblerait modifié.
+    ...(a.aRevoir || b.aRevoir ? { aRevoir: fusionnerRevisions(a.aRevoir, b.aRevoir) } : {}),
   };
+}
+
+/** Pour chaque clé (jour du défi, histoire), la meilleure valeur des deux appareils. */
+function fusionnerMeilleur(a: Record<string, number> = {}, b: Record<string, number> = {}): Record<string, number> {
+  const fusion = { ...a };
+  for (const [cle, e] of Object.entries(b)) fusion[cle] = Math.max(fusion[cle] ?? 0, e);
+  return fusion;
 }
 
 /** Le prénom, la classe, la toile et les réglages viennent de la modification la plus récente ; la progression est réunie. */

@@ -10,12 +10,15 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { avecReglagesEnfant, useThemeEnfant } from '@/accessibilite/contexte';
-import { Bouton, Ecran, IconeCoffre, IconeEtoile } from '@/composants';
+import { Bouton, CapyHabille, Ecran, IconeCoffre, IconeEtoile } from '@/composants';
 import { trouverCoffre } from '@/config/parcours';
-import { feliciter } from '@/jeux/retours';
+import { celebrer } from '@/jeux/retours';
 import { mascotte } from '@/mascotte';
+import * as progression from '@/parcours/progression';
 import { cheminDuTheme, ETOILES_COFFRE } from '@/parcours/progression';
+import { nouvelObjet, tenueValide, type ObjetCapy } from '@/collection/objets';
 import { themeEstPropose } from '@/parcours/selection';
+import { themeSurprise } from '@/parcours/surprise';
 import { useProfilActif, useProfils } from '@/store/profils';
 import { couleurs, espaces, formes } from '@/theme';
 
@@ -24,6 +27,9 @@ function Coffre() {
   const { typo, animationsReduites } = useThemeEnfant();
   const profil = useProfilActif();
   const ouvrirCoffre = useProfils((e) => e.ouvrirCoffre);
+  const porterObjet = useProfils((e) => e.porterObjet);
+  // Le trésor trouvé dans ce coffre : Capy le porte tout de suite.
+  const [tresor, setTresor] = useState<ObjetCapy | null>(null);
   const { id = '' } = useLocalSearchParams<{ id?: string }>();
   const trouve = trouverCoffre(id);
   const [ouvertIci, setOuvertIci] = useState(false);
@@ -40,6 +46,8 @@ function Coffre() {
   if (!noeud || noeud.etat === 'verrouillee') return <Redirect href="/enfant" />;
 
   const dejaOuvert = noeud.etat === 'reussie' && !ouvertIci;
+  // Une unité finie : Capy propose une petite série d'un autre thème, pour découvrir.
+  const surprise = themeSurprise(profil.classe, profil.toile, profil.progression, id, trouve.theme.id);
   const ouvert = noeud.etat === 'reussie';
 
   const ouvrir = () => {
@@ -56,27 +64,51 @@ function Coffre() {
       echelle.set(withSequence(withTiming(1.25, { duration: 260 }), withSpring(1)));
     }
     setOuvertIci(true);
+    const objet = nouvelObjet(profil.progression, progression.ouvrirCoffre(profil.progression, id));
     ouvrirCoffre(profil.id, id);
-    feliciter({ silencieux: animationsReduites });
+    if (objet) {
+      porterObjet(profil.id, objet.emplacement, objet.id);
+      setTresor(objet);
+    }
+    celebrer('coffre', { silencieux: animationsReduites });
   };
 
   return (
     <Ecran
       pied={
         ouvert ? (
-          <Bouton titre="Retour au parcours" onPress={() => router.back()} />
+          <View style={styles.boutons}>
+            {surprise && ouvertIci ? (
+              <Bouton
+                titre={`Thème surprise : ${surprise.titre}`}
+                variante="jaune"
+                onPress={() =>
+                  router.replace({ pathname: '/etape', params: { entrainement: surprise.id, surprise: '1' } })
+                }
+              />
+            ) : null}
+            <Bouton
+              titre="Retour au parcours"
+              variante={surprise && ouvertIci ? 'secondaire' : 'principal'}
+              onPress={() => router.back()}
+            />
+          </View>
         ) : (
           <Bouton titre="Ouvrir le coffre" variante="jaune" onPress={ouvrir} />
         )
       }
     >
       <View style={styles.centre}>
-        <Image
-          source={ouvert ? mascotte.fier : mascotte.surpris}
-          style={styles.capy}
-          resizeMode="contain"
-          accessible={false}
-        />
+        {tresor ? (
+          <CapyHabille tenue={tenueValide(profil.progression.tenue, profil.progression)} taille={160} />
+        ) : (
+          <Image
+            source={ouvert ? mascotte.fier : mascotte.surpris}
+            style={styles.capy}
+            resizeMode="contain"
+            accessible={false}
+          />
+        )}
         <Text style={[typo.titre1, styles.texteCentre]}>
           {ouvert ? 'Le coffre est ouvert !' : `Le coffre de l’unité « ${trouve.unite.titre} »`}
         </Text>
@@ -94,7 +126,8 @@ function Coffre() {
           {dejaOuvert
             ? 'Tu as déjà ouvert ce coffre. Tu peux rejouer les étapes de l’unité quand tu veux.'
             : ouvert
-              ? `Tu as terminé toute l’unité. Voici ${ETOILES_COFFRE} étoiles en cadeau !`
+              ? `Tu as terminé toute l’unité. Voici ${ETOILES_COFFRE} étoiles en cadeau !` +
+                (tresor ? ` Et un trésor pour Capy : ${tresor.nom}. Regarde comme il est beau !` : '')
               : 'Tu as réussi toutes les étapes de l’unité. Qu’y a-t-il dedans ?'}
         </Text>
       </View>
@@ -122,6 +155,7 @@ const styles = StyleSheet.create({
     borderColor: couleurs.jaune[600],
   },
   gain: { flexDirection: 'row', gap: espaces.s },
+  boutons: { gap: espaces.m },
 });
 
 export default avecReglagesEnfant(Coffre);

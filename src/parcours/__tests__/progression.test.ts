@@ -22,9 +22,9 @@ const jour = (texte: string) => new Date(`${texte}T10:00:00`);
 describe('thème « Résoudre des problèmes » CE2', () => {
   const etapes = theme.unites.flatMap((u) => u.etapes);
 
-  it('compte 10 étapes aux identifiants uniques, avec un coffre par unité', () => {
-    expect(etapes).toHaveLength(10);
-    expect(new Set(etapes.map((e) => e.id)).size).toBe(10);
+  it('compte 14 étapes aux identifiants uniques, avec un coffre par unité', () => {
+    expect(etapes).toHaveLength(14);
+    expect(new Set(etapes.map((e) => e.id)).size).toBe(14);
     expect(new Set(theme.unites.map((u) => u.coffre)).size).toBe(theme.unites.length);
   });
 
@@ -119,7 +119,7 @@ describe('jours et temps', () => {
 describe('chemin du parcours', () => {
   it('met en cours la première étape au départ et verrouille le reste', () => {
     const chemin = cheminDuTheme(theme, progressionVide());
-    expect(chemin).toHaveLength(12);
+    expect(chemin).toHaveLength(17);
     expect(chemin[0]).toMatchObject({ type: 'etape', numero: 1, etat: 'enCours' });
     expect(chemin.slice(1).every((n) => n.etat === 'verrouillee')).toBe(true);
     expect(chemin[5]).toMatchObject({ type: 'coffre', id: 'ce2-rp-u1-coffre' });

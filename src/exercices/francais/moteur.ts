@@ -32,6 +32,8 @@ export interface ContenuTexte {
   phrases?: string[];
   /** L'enfant lit seul : « Écouter » ne lit pas le texte. */
   lectureAutonome?: boolean;
+  /** Mots mélangés à remettre dans l'ordre. */
+  motsEnDesordre?: string[];
   indice: string;
   explication: string;
   /**
@@ -103,6 +105,7 @@ export function definirModeleTexte(def: DefinitionModeleTexte): ModeleTexte {
           ...(contenu.lecture ? { lecture: contenu.lecture } : {}),
           ...(contenu.phrases ? { phrases: contenu.phrases } : {}),
           ...(contenu.lectureAutonome ? { lectureAutonome: true } : {}),
+          ...(contenu.motsEnDesordre ? { motsEnDesordre: contenu.motsEnDesordre } : {}),
           indice: contenu.indice,
           explication: contenu.explication,
           facile: {

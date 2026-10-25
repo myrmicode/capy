@@ -9,9 +9,13 @@ const Jimp = require('jimp-compact');
 const SOURCE = 'assets/capy-source/planche-capy.png';
 const DOSSIER = 'assets/capy';
 
-/** Nom du fichier → [x, y, largeur, hauteur] dans la planche, et transparence ou non. */
+/**
+ * Nom du fichier → [x, y, largeur, hauteur] dans la planche, transparence ou non,
+ * et colonnes à effacer à droite (un bout du dessin voisin). La largeur de capy
+ * reste 380 : les objets de composants/CapyHabille.tsx sont placés dans ce repère.
+ */
 const DECOUPES = {
-  capy: [330, 20, 380, 385, true],
+  capy: [330, 20, 380, 385, true, 12],
   heureux: [32, 465, 108, 130, true],
   surpris: [135, 465, 110, 130, true],
   'clin-oeil': [245, 465, 110, 130, true],
@@ -66,9 +70,10 @@ function rendreFondTransparent(img) {
 
 (async () => {
   const planche = await Jimp.read(SOURCE);
-  for (const [nom, [x, y, l, h, transparent]] of Object.entries(DECOUPES)) {
+  for (const [nom, [x, y, l, h, transparent, effacerDroite = 0]] of Object.entries(DECOUPES)) {
     const img = planche.clone().crop(x, y, l, h);
     if (transparent) rendreFondTransparent(img);
+    for (let i = 0; i < l * h; i++) if (i % l >= l - effacerDroite) img.bitmap.data[i * 4 + 3] = 0;
     await img.writeAsync(`${DOSSIER}/${nom}.png`);
   }
   // Icône de l'appli, de l'écran de démarrage et du site : carrée, 1024 px.

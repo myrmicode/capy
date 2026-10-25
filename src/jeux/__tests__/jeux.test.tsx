@@ -5,10 +5,13 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { modeleParId, modeleTexteParId } from '@/exercices';
 
 import { JeuBonFil } from '../JeuBonFil';
+import { JeuCaisse } from '../JeuCaisse';
 import { JeuDictee } from '../JeuDictee';
 import { JeuFunambule } from '../JeuFunambule';
+import { JeuHorloge } from '../JeuHorloge';
 import { JeuLucioles } from '../JeuLucioles';
 import { JeuMarche } from '../JeuMarche';
+import { JeuOrdre } from '../JeuOrdre';
 import { JeuQuestionPerdue } from '../JeuQuestionPerdue';
 import { JeuPaniers } from '../JeuPaniers';
 import { JeuPassage } from '../JeuPassage';
@@ -220,5 +223,60 @@ describe('La bonne phrase', () => {
     await render(<JeuPassage exercice={e} actif onRepondre={onRepondre} />);
     await fireEvent.press(screen.getByRole('button', { name: e.phrases!.find((p) => p !== e.reponse)! }));
     expect(onRepondre).toHaveBeenCalledWith(false);
+  });
+});
+
+describe('La phrase en désordre', () => {
+  it('reconstruit la phrase mot à mot, et permet de retirer un mot', async () => {
+    const ex = modeleTexteParId('phrase-en-ordre')!.generer('CE2', 3);
+    const onRepondre = jest.fn();
+    await render(<JeuOrdre exercice={ex} actif onRepondre={onRepondre} />);
+    const mots = ex.reponse.split(' ');
+    // Un mot placé par erreur, puis retiré.
+    await fireEvent.press(screen.getByRole('button', { name: `Placer « ${mots[1]} »` }));
+    await fireEvent.press(screen.getByRole('button', { name: `Retirer « ${mots[1]} »` }));
+    for (const m of mots) await fireEvent.press(screen.getByRole('button', { name: `Placer « ${m} »` }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Valider' }));
+    expect(onRepondre).toHaveBeenLastCalledWith(true);
+  });
+
+  it('signale un autre ordre', async () => {
+    const ex = modeleTexteParId('phrase-en-ordre')!.generer('CE2', 3);
+    const onRepondre = jest.fn();
+    await render(<JeuOrdre exercice={ex} actif onRepondre={onRepondre} />);
+    for (const m of ex.motsEnDesordre!) await fireEvent.press(screen.getByRole('button', { name: `Placer « ${m} »` }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Valider' }));
+    expect(onRepondre).toHaveBeenLastCalledWith(false);
+  });
+});
+
+describe('La caisse', () => {
+  it('fait la somme avec des pièces et des billets', async () => {
+    const ex = modeleParId('rendre-monnaie')!.generer('CE2', 4, { niveau: 1 });
+    const onRepondre = jest.fn();
+    await render(<JeuCaisse exercice={ex} actif onRepondre={onRepondre} />);
+    // Une pièce de 2 € posée puis retirée.
+    await fireEvent.press(screen.getByRole('button', { name: 'Poser une pièce de 2 €' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Retirer 2 €' }));
+    for (let i = 0; i < ex.reponse; i++)
+      await fireEvent.press(screen.getByRole('button', { name: 'Poser une pièce de 1 €' }));
+    expect(screen.getByText(`Sur le plateau : ${ex.reponse} €`)).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Valider' }));
+    expect(onRepondre).toHaveBeenLastCalledWith(true);
+  });
+});
+
+describe('L’horloge', () => {
+  it('part de l’heure de début et avance jusqu’à l’heure de fin', async () => {
+    const ex = modeleParId('duree')!.generer('CE2', 8, { niveau: 2 });
+    const onRepondre = jest.fn();
+    await render(<JeuHorloge exercice={ex} actif onRepondre={onRepondre} />);
+    expect(screen.getByLabelText(`L’horloge indique ${ex.donnees.debut} heures.`)).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Valider' }));
+    expect(onRepondre).toHaveBeenLastCalledWith(false);
+    for (let i = 0; i < ex.donnees.duree; i++)
+      await fireEvent.press(screen.getByRole('button', { name: 'Avancer d’une heure' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Valider' }));
+    expect(onRepondre).toHaveBeenLastCalledWith(true);
   });
 });

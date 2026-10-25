@@ -11,12 +11,15 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { avecReglagesEnfant, useThemeEnfant } from '@/accessibilite/contexte';
+import { estLeSoir } from '@/accessibilite/theme';
 import {
   BulleCapy,
   Bouton,
   ChoixTheme,
+  DecorParcours,
   Ecran,
   EtapeParcours,
+  IconeCoche,
   IconeEtoile,
   IconeFlamme,
   IconeGrille,
@@ -26,11 +29,15 @@ import {
 import { TEXTE_EMPILE } from '@/composants/CarteTheme';
 import { domaineDe, LIBELLES_MATIERES, MATIERES, type Matiere } from '@/config/domaines';
 import type { Theme } from '@/config/parcours';
+import { HISTOIRES } from '@/contenu/histoires';
+import { graineDuJour, PHRASES_CAPY, phraseDe } from '@/contenu/phrasesCapy';
 import type { PoseCapy } from '@/mascotte';
+import { QUESTIONS_DEFI } from '@/parcours/defi';
 import {
   avancementDuTheme,
   cheminDuTheme,
   dateLocale,
+  defiFait,
   joursDepuisDerniereActivite,
   serieDeJours,
   totalEtoiles,
@@ -39,6 +46,7 @@ import {
 import { themesEntrainement, themesProposes } from '@/parcours/selection';
 import { verrouillerParents } from '@/parents/verrou';
 import { useProfilActif } from '@/store/profils';
+import { useReglages } from '@/store/reglages';
 import { ficheSaisie, prioritesDe } from '@/toile/niveaux';
 import { couleurs, couleursMatieres, espaces, formes, type CouleursMatiere } from '@/theme';
 
@@ -52,6 +60,7 @@ const LARGEUR_FICHE = 360;
 function Parcours() {
   const profil = useProfilActif();
   const { typo } = useThemeEnfant();
+  const ambianceSoir = useReglages((e) => e.ambianceSoir);
   // Revenu sur son parcours, l'enfant ne retrouve jamais l'espace parent ouvert.
   useFocusEffect(useCallback(() => verrouillerParents(), []));
   const [themeChoisiId, setThemeChoisiId] = useState<string | null>(null);
@@ -71,6 +80,7 @@ function Parcours() {
   const priorites = prioritesDe(profil.classe, profil.toile);
   const matiereDuTheme = (t: Theme): Matiere => domaineDe(profil.classe, t.domaine)?.matiere ?? 'mathematiques';
   const aujourdhui = dateLocale(new Date());
+  const soir = ambianceSoir && estLeSoir(new Date());
   const serie = serieDeJours(p.jours, aujourdhui);
   const absence = joursDepuisDerniereActivite(p.jours, aujourdhui);
   // Ce qui est déjà à +++ sur la fiche se rejoue en entraînement libre.
@@ -152,8 +162,14 @@ function Parcours() {
   } else if (serie >= 2) {
     pose = 'clinOeil';
     message = `${serie} jours d’affilée, bravo ! Prochaine étape : « ${enCours.titre} »`;
+  } else if (absence !== null && absence >= 1) {
+    pose = 'clinOeil';
+    message = `${phraseDe(PHRASES_CAPY.retour, graineDuJour(aujourdhui))} Prochaine étape : « ${enCours.titre} »`;
+  } else if (soir) {
+    pose = 'ralentir';
+    message = `Bonsoir ! Une petite étape avant de dormir ? Prochaine étape : « ${enCours.titre} »`;
   } else {
-    message = `On y va ? Prochaine étape : « ${enCours.titre} »`;
+    message = `${phraseDe(PHRASES_CAPY.prochaine, graineDuJour(aujourdhui))} Prochaine étape : « ${enCours.titre} »`;
   }
 
   const ouvrir = (n: Noeud) => {
@@ -171,6 +187,9 @@ function Parcours() {
   return (
     <Ecran>
       {entete}
+
+      <CarteDefi fait={defiFait(p, aujourdhui)} etoiles={p.defis?.[aujourdhui] ?? 0} />
+      <CarteHistoires lues={Object.keys(p.histoires ?? {}).length} />
 
       <View style={[styles.bandeau, { backgroundColor: c.face, borderBottomColor: c.relief }]}>
         <View style={styles.bandeauHaut}>
@@ -238,6 +257,10 @@ function Parcours() {
               const ouvert = noeudOuvertId === n.id;
               return (
                 <View key={n.id} style={styles.noeud}>
+                  {/* Un décor sur deux, du côté libre quand l'étape s'écarte du centre. */}
+                  {decalage !== 0 && i % 2 === 1 ? (
+                    <DecorParcours matiere={matiere} rang={u * 7 + i} cote={decalage > 0 ? 'gauche' : 'droite'} />
+                  ) : null}
                   <View style={[styles.noeud, { transform: [{ translateX: decalage }] }]}>
                     {n.etat === 'enCours' && !ouvert ? (
                       <BulleCommencer texte={n.type === 'coffre' ? 'Ouvrir' : 'Commencer'} couleur={c.face} />
@@ -394,6 +417,69 @@ function FicheNoeud({ noeud, position, nombre, couleursMatiere: c, decalage, onO
   );
 }
 
+/** Le défi du jour : 3 questions, pour les jours où l'on a peu de temps. */
+function CarteDefi({ fait, etoiles }: { fait: boolean; etoiles: number }) {
+  const { typo, ecart } = useThemeEnfant();
+  const titre = fait ? 'Défi du jour réussi' : 'Défi du jour';
+  const detail = fait
+    ? `${etoiles} étoile${etoiles > 1 ? 's' : ''} gagnée${etoiles > 1 ? 's' : ''}. Reviens demain, ou rejoue-le !`
+    : `${QUESTIONS_DEFI} questions pour bien commencer.`;
+  return (
+    <SurfaceEnRelief
+      onPress={() => router.push({ pathname: '/etape', params: { defi: '1' } })}
+      accessibilityRole="button"
+      accessibilityLabel={`${titre}. ${detail}`}
+      couleurFace={fait ? couleurs.menthe[100] : couleurs.jaune[400]}
+      couleurRelief={fait ? couleurs.sarcelle[400] : couleurs.jaune[600]}
+      relief={4}
+      rayon={formes.carte.rayon}
+      styleFace={[styles.defiFace, { padding: ecart('m'), gap: ecart('m') }]}
+    >
+      <View style={styles.defiIcone}>
+        {fait ? (
+          <IconeCoche taille={28} couleur={couleurs.sarcelle[700]} />
+        ) : (
+          <IconeEtoile taille={28} couleur={couleurs.jaune.texte} />
+        )}
+      </View>
+      <View style={styles.flex}>
+        <Text style={[typo.titre3, { color: fait ? couleurs.sarcelle[900] : couleurs.jaune.texte }]}>{titre}</Text>
+        <Text style={[typo.petit, { color: fait ? couleurs.sarcelle[900] : couleurs.jaune.texte }]}>{detail}</Text>
+      </View>
+    </SurfaceEnRelief>
+  );
+}
+
+/** Les histoires de Capy, à lire pour le plaisir (et pour comprendre un texte). */
+function CarteHistoires({ lues }: { lues: number }) {
+  const { typo, ecart } = useThemeEnfant();
+  const reste = HISTOIRES.length - lues;
+  const detail =
+    reste > 0
+      ? `${reste} histoire${reste > 1 ? 's' : ''} à lire, avec 3 questions.`
+      : 'Tu as lu toutes les histoires. Relis ta préférée !';
+  return (
+    <SurfaceEnRelief
+      onPress={() => router.push('/histoires')}
+      accessibilityRole="button"
+      accessibilityLabel={`Les histoires de Capy. ${detail}`}
+      couleurFace={couleurs.caramel[100]}
+      couleurRelief={couleurs.caramel[500]}
+      relief={4}
+      rayon={formes.carte.rayon}
+      styleFace={[styles.defiFace, { padding: ecart('m'), gap: ecart('m') }]}
+    >
+      <View style={styles.defiIcone}>
+        <TuileTheme domaine="comprendre-texte-lu" couleurs={couleursMatieres.francais} taille={40} />
+      </View>
+      <View style={styles.flex}>
+        <Text style={[typo.titre3, { color: couleurs.brun[800] }]}>Les histoires de Capy</Text>
+        <Text style={[typo.petit, { color: couleurs.brun[800] }]}>{detail}</Text>
+      </View>
+    </SurfaceEnRelief>
+  );
+}
+
 interface PropsCompteur {
   icone: React.ReactNode;
   texte: string;
@@ -415,6 +501,15 @@ function Compteur({ icone, texte, libelle, fond, couleur }: PropsCompteur) {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   centre: { textAlign: 'center' },
+  defiFace: { flexDirection: 'row', alignItems: 'center' },
+  defiIcone: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: couleurs.blanc,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   entete: { flexDirection: 'row', alignItems: 'center', gap: espaces.s },
   lien: { color: couleurs.sarcelle[700], paddingVertical: 4 },
   compteur: {

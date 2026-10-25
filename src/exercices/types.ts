@@ -176,6 +176,8 @@ export interface ExerciceTexte {
   lecture?: string;
   /** Texte découpé en phrases que l'enfant peut toucher (jeu « La bonne phrase »). */
   phrases?: string[];
+  /** Mots mélangés à remettre dans l'ordre (jeu « La phrase en désordre ») ; la réponse est la phrase. */
+  motsEnDesordre?: string[];
   /**
    * L'enfant lit seul : c'est la compétence travaillée. « Écouter » ne lit alors
    * que la consigne et la question, jamais le texte.

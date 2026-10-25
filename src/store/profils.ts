@@ -3,10 +3,12 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { lireReglages, type ReglagesEnfant } from '@/accessibilite/reglages';
+import { tenueValide, type Emplacement, type ObjetId } from '@/collection/objets';
 import type { Classe } from '@/config/classes';
 import type { DomaineId, Matiere } from '@/config/domaines';
 import * as progression from '@/parcours/progression';
 import type { ProgressionEnfant } from '@/parcours/progression';
+import { noterRevisions, type QuestionRevisee } from '@/parcours/revision';
 import { appliquerFiche, migrerToile, toileApresEtape, type Niveaux, type ToileEnfant } from '@/toile/niveaux';
 
 /**
@@ -58,6 +60,23 @@ interface EtatProfils {
   /** Enregistre la fiche d'une matière : elle devient la référence de cette matière. */
   enregistrerToile: (id: string, matiere: Matiere, niveaux: Niveaux, maintenant?: Date) => void;
   ouvrirCoffre: (id: string, coffreId: string) => void;
+  /** Histoire lue et questions faites : étoiles, jour et temps. */
+  enregistrerHistoire: (
+    id: string,
+    histoireId: string,
+    resultat: { reussiesPremierCoup: number; nombreQuestions: number; dureeSecondes: number },
+    maintenant?: Date,
+  ) => void;
+  /** Fait porter un objet gagné à Capy, ou l'enlève (null). */
+  porterObjet: (id: string, emplacement: Emplacement, objet: ObjetId | null) => void;
+  /** Défi du jour terminé : étoiles, jour et temps. La toile ne bouge pas : 3 questions ne disent pas grand-chose. */
+  enregistrerDefi: (
+    id: string,
+    resultat: { reussiesPremierCoup: number; nombreQuestions: number; dureeSecondes: number },
+    maintenant?: Date,
+  ) => void;
+  /** Questions d'une étape terminée : celles qui ont demandé plusieurs essais reviendront plus tard. */
+  noterRevisions: (id: string, questions: readonly QuestionRevisee[], maintenant?: Date) => void;
   modifierReglages: (id: string, reglages: ReglagesEnfant) => void;
   /** Résultat d'une synchronisation : nouvelle liste de profils, suppressions envoyées au serveur. */
   appliquerSynchro: (profils: ProfilEnfant[], suppressionsTraitees: string[]) => void;
@@ -151,6 +170,53 @@ export const useProfils = create<EtatProfils>()(
             (p, m) => ({ toile: appliquerFiche(p.toile, p.classe, matiere, niveaux, progression.dateLocale(m)) }),
             maintenant,
           ),
+        noterRevisions: (id, questions, maintenant = new Date()) =>
+          modifier(
+            id,
+            (p, m) => ({
+              progression: {
+                ...p.progression,
+                aRevoir: noterRevisions(p.progression.aRevoir, questions, progression.dateLocale(m)),
+              },
+            }),
+            maintenant,
+          ),
+        enregistrerDefi: (id, r, maintenant = new Date()) =>
+          modifier(
+            id,
+            (p, m) => ({
+              progression: progression.enregistrerDefi(
+                p.progression,
+                r.reussiesPremierCoup,
+                r.nombreQuestions,
+                r.dureeSecondes,
+                m,
+              ),
+            }),
+            maintenant,
+          ),
+        enregistrerHistoire: (id, histoireId, r, maintenant = new Date()) =>
+          modifier(
+            id,
+            (p, m) => ({
+              progression: progression.enregistrerHistoire(
+                p.progression,
+                histoireId,
+                r.reussiesPremierCoup,
+                r.nombreQuestions,
+                r.dureeSecondes,
+                m,
+              ),
+            }),
+            maintenant,
+          ),
+        porterObjet: (id, emplacement, objet) =>
+          modifier(id, (p) => ({
+            progression: {
+              ...p.progression,
+              tenue: tenueValide({ ...p.progression.tenue, [emplacement]: objet ?? undefined }, p.progression),
+            },
+          })),
         ouvrirCoffre: (id, coffreId) =>
           modifier(id, (p) => ({ progression: progression.ouvrirCoffre(p.progression, coffreId) })),
         modifierReglages: (id, reglages) => modifier(id, () => ({ reglages: lireReglages(reglages) })),

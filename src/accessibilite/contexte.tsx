@@ -6,9 +6,10 @@ import { useWindowDimensions } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 
 import { useProfilActif } from '@/store/profils';
+import { useReglages } from '@/store/reglages';
 
 import { lireReglages, REGLAGES_PAR_DEFAUT, type ReglagesEnfant } from './reglages';
-import { deriverTheme, echelleAppareil, type ThemeEnfant } from './theme';
+import { deriverTheme, echelleAppareil, estLeSoir, type ThemeEnfant } from './theme';
 
 const ContexteTheme = createContext<ThemeEnfant | null>(null);
 /** Thèmes par défaut, un par agrandissement d'appareil (téléphone, tablette). */
@@ -40,11 +41,13 @@ export function FournisseurReglages({ reglages, children }: PropsFournisseur) {
   const reductionSysteme = useReducedMotion();
   const agrandissement = useAgrandissement();
   const actifs = reglages ?? lireReglages(profil?.reglages);
+  // Ambiance du soir (réglage de l'appareil), relue à chaque affichage d'écran.
+  const soir = useReglages((e) => e.ambianceSoir) && estLeSoir(new Date());
   // Clé stable : on ne recalcule le thème que si un réglage change.
   const cle = JSON.stringify(actifs);
   const theme = useMemo(
-    () => deriverTheme(JSON.parse(cle) as ReglagesEnfant, reductionSysteme, agrandissement),
-    [cle, reductionSysteme, agrandissement],
+    () => deriverTheme(JSON.parse(cle) as ReglagesEnfant, reductionSysteme, agrandissement, soir),
+    [cle, reductionSysteme, agrandissement, soir],
   );
   return <ContexteTheme.Provider value={theme}>{children}</ContexteTheme.Provider>;
 }

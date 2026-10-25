@@ -1,8 +1,10 @@
-import { Image, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { TexteAccessible } from '@/accessibilite/TexteAccessible';
-import { mascotte, type PoseCapy } from '@/mascotte';
+import type { PoseCapy } from '@/mascotte';
 import { couleurs, espaces, formes } from '@/theme';
+
+import { CapyAnime } from './CapyAnime';
 
 interface PropsBulleCapy {
   pose: PoseCapy;
@@ -15,7 +17,7 @@ interface PropsBulleCapy {
   coloration?: boolean;
 }
 
-/** Capy qui parle dans une bulle blanche ; le coin tourné vers Capy est arrondi à 6 px. */
+/** Capy qui parle dans une bulle blanche ; le coin tourné vers Capy est arrondi à 6 px. Il bouge un peu selon sa pose. */
 export function BulleCapy({ pose, texte, cote = 'gauche', tailleCapy = 96, coloration = false }: PropsBulleCapy) {
   const coin =
     cote === 'gauche'
@@ -23,13 +25,7 @@ export function BulleCapy({ pose, texte, cote = 'gauche', tailleCapy = 96, color
       : { borderBottomRightRadius: formes.bulle.coinVersCapy };
   return (
     <View style={[styles.ligne, cote === 'droite' && styles.inverse]}>
-      <Image
-        source={mascotte[pose]}
-        style={{ width: tailleCapy, height: tailleCapy }}
-        resizeMode="contain"
-        accessibilityIgnoresInvertColors
-        accessible={false}
-      />
+      <CapyAnime pose={pose} taille={tailleCapy} />
       <View style={[styles.bulle, coin]}>
         <TexteAccessible texte={texte} variante="enonce" coloration={coloration} />
       </View>

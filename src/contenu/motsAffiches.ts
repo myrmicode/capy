@@ -2,6 +2,7 @@
 // des exercices (versions standard et FALC), choix, consignes des jeux.
 // Sert au test qui vérifie que la banque de syllabes couvre tout le contenu.
 import { motsDe } from '@/accessibilite/syllabes';
+import { HISTOIRES, textesDHistoire } from '@/contenu/histoires';
 import { MODELES_FRANCAIS } from '@/exercices/francais';
 import { MODELES } from '@/exercices/modeles';
 import { NIVEAUX, type ExerciceQuelconque } from '@/exercices/types';
@@ -9,9 +10,19 @@ import { JEUX } from '@/jeux/registre';
 
 /** Les textes colorables d'un exercice. */
 export function textesColorables(ex: ExerciceQuelconque): string[] {
-  const textes = [ex.enonce, ex.question, ex.indice, ex.explication, ex.facile.enonce, ex.facile.question, ex.facile.indice, ex.facile.explication];
+  const textes = [
+    ex.enonce,
+    ex.question,
+    ex.indice,
+    ex.explication,
+    ex.facile.enonce,
+    ex.facile.question,
+    ex.facile.indice,
+    ex.facile.explication,
+  ];
   // Les propositions de la dictée restent sans couleur : griser les lettres muettes donnerait l'orthographe.
-  if (ex.nature === 'texte') textes.push(...(ex.lecture ? [] : ex.choix), ...(ex.phrases ?? []), ...(ex.segments ?? []).map((s) => s.texte));
+  if (ex.nature === 'texte')
+    textes.push(...(ex.lecture ? [] : ex.choix), ...(ex.phrases ?? []), ...(ex.segments ?? []).map((s) => s.texte));
   else textes.push(...(ex.questionsAuChoix ?? []));
   return textes;
 }
@@ -35,5 +46,6 @@ export function motsDuContenu(tirages: number): Set<string> {
     }
   }
   textesDesJeux().forEach(ajouter);
+  HISTOIRES.flatMap(textesDHistoire).forEach(ajouter);
   return mots;
 }

@@ -59,6 +59,15 @@ export const COULEURS_FOND: Record<Fond, string> = {
   bleu: '#e8f1f5',
 };
 
+/** Fond du soir (après 19 h) : plus chaud et un peu moins lumineux, pour ne pas éblouir. */
+export const FOND_SOIR = '#ece3d3';
+
+/** Le soir commence à 19 h et dure jusqu'au matin (6 h). */
+export function estLeSoir(d: Date): boolean {
+  const h = d.getHours();
+  return h >= 19 || h < 6;
+}
+
 export const ECHELLES_TEXTE = {
   normale: 1,
   grande: 1.25,
@@ -134,8 +143,18 @@ function adapter(style: TextStyle, r: ReglagesEnfant, agrandissement: number): T
  * @param agrandissement Agrandissement propre à l'appareil (voir `echelleAppareil`) :
  * sur tablette, le texte et les espaces grandissent un peu pour rester confortables.
  */
-export function deriverTheme(r: ReglagesEnfant, reductionSysteme = false, agrandissement = 1): ThemeEnfant {
-  const fonds = [COULEURS_FOND[r.fond], ...FONDS_DU_TEXTE];
+/**
+ * @param soir Ambiance du soir : le fond par défaut devient plus doux. Un fond
+ * choisi dans les réglages de l'enfant (crème, bleu) est toujours respecté.
+ */
+export function deriverTheme(
+  r: ReglagesEnfant,
+  reductionSysteme = false,
+  agrandissement = 1,
+  soir = false,
+): ThemeEnfant {
+  const fondEcran = soir && r.fond === 'defaut' ? FOND_SOIR : COULEURS_FOND[r.fond];
+  const fonds = [fondEcran, ...FONDS_DU_TEXTE];
   const typoAdaptee = Object.fromEntries(
     (Object.keys(typo) as VarianteTexte[]).map((k) => [k, adapter(typo[k], r, agrandissement)]),
   ) as Record<VarianteTexte, TextStyle>;
@@ -144,7 +163,7 @@ export function deriverTheme(r: ReglagesEnfant, reductionSysteme = false, agrand
     reglages: r,
     typo: typoAdaptee,
     espaceMots: r.espacements,
-    fond: COULEURS_FOND[r.fond],
+    fond: fondEcran,
     couleursSyllabes: COULEURS_SYLLABES[r.couleursSyllabes].map((c) => couleurLisible(c, fonds)) as [string, string],
     couleurMuette: couleurLisible(COULEUR_MUETTE, fonds),
     cible: r.grandesCibles ? CIBLE_AGRANDIE : formes.cibleTactile,

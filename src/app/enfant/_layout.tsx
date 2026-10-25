@@ -1,11 +1,11 @@
 import { Redirect } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 
-import { IconeChemin, IconeParents, IconeToile } from '@/composants';
+import { IconeChemin, IconeCoffre, IconeParents, IconeToile } from '@/composants';
 import { useProfilActif } from '@/store/profils';
 import { couleurs, polices } from '@/theme';
 
-/** Espace de l'enfant : barre de navigation Parcours, Ma toile, Parents. */
+/** Espace de l'enfant : barre de navigation Parcours, Trésors, Ma toile, Parents. */
 export default function LayoutEnfant() {
   const profil = useProfilActif();
   if (!profil) return <Redirect href="/" />;
@@ -30,6 +30,10 @@ export default function LayoutEnfant() {
       <Tabs.Screen
         name="index"
         options={{ title: 'Parcours', tabBarIcon: ({ color }) => <IconeChemin taille={28} couleur={String(color)} /> }}
+      />
+      <Tabs.Screen
+        name="tresors"
+        options={{ title: 'Trésors', tabBarIcon: ({ color }) => <IconeCoffre taille={28} couleur={String(color)} /> }}
       />
       <Tabs.Screen
         name="toile"

@@ -10,7 +10,10 @@ export type JeuId =
   | 'paniers'
   | 'dictee'
   | 'passage'
-  | 'reponses';
+  | 'reponses'
+  | 'ordre'
+  | 'caisse'
+  | 'horloge';
 
 export interface DefinitionJeu {
   id: JeuId;
@@ -36,6 +39,8 @@ export interface DefinitionJeu {
 export const OPERATIONS_BON_FIL = ['+', '−', '×'] as const;
 
 const MODELES_PLACER = ['placer-petits-pas', 'placer-grands-pas'] as const;
+/** Au-delà, trop de pièces à poser une par une. */
+const SOMME_CAISSE_MAX = 100;
 /** Longueur maximale d'un mot porté par une luciole. */
 const MOT_LUCIOLE_MAX = 12;
 
@@ -134,6 +139,32 @@ export const JEUX: Record<JeuId, DefinitionJeu> = {
     modeles: ['meme-sens', 'preuve-texte'],
     accepte: (ex) => ex.nature === 'texte' && ex.phrases !== undefined && ex.phrases.includes(ex.reponse),
   },
+  ordre: {
+    id: 'ordre',
+    titre: 'La phrase en désordre',
+    consigne: 'Touche les mots dans l’ordre pour faire une phrase, puis valide.',
+    consigneFacile: 'Touche les mots dans l’ordre. Puis valide.',
+    modeles: ['phrase-en-ordre'],
+    accepte: (ex) => ex.nature === 'texte' && ex.motsEnDesordre !== undefined,
+  },
+  caisse: {
+    id: 'caisse',
+    titre: 'La caisse',
+    consigne: 'Pose les pièces et les billets pour faire la somme, puis valide.',
+    consigneFacile: 'Pose les pièces et les billets. Puis valide.',
+    indice: 'Commence par les plus gros billets, puis complète avec les pièces.',
+    indiceFacile: 'Pose d’abord les gros billets. Puis les pièces.',
+    modeles: ['payer', 'rendre-monnaie'],
+    accepte: (ex) => ex.nature === 'nombre' && ex.reponse <= SOMME_CAISSE_MAX,
+  },
+  horloge: {
+    id: 'horloge',
+    titre: 'L’horloge',
+    consigne: 'Avance l’aiguille jusqu’à la bonne heure, puis valide.',
+    consigneFacile: 'Avance l’aiguille. Puis valide.',
+    modeles: ['duree'],
+    accepte: (ex) => ex.nature === 'nombre' && ex.reponse >= 1 && ex.reponse <= 12,
+  },
   reponses: {
     id: 'reponses',
     titre: 'La bonne réponse',
@@ -143,7 +174,9 @@ export const JEUX: Record<JeuId, DefinitionJeu> = {
     // Les phrases à toucher n'ont de sens que dans « La bonne phrase ».
     accepte: (ex) =>
       !(MODELES_PLACER as readonly string[]).includes(ex.modeleId) &&
-      !(ex.nature === 'texte' && ex.phrases !== undefined),
+      !(ex.nature === 'texte' && ex.phrases !== undefined) &&
+      // Une phrase à remettre en ordre se construit mot à mot, jamais en choisissant parmi des phrases cassées.
+      !(ex.nature === 'texte' && ex.motsEnDesordre !== undefined),
   },
 };
 

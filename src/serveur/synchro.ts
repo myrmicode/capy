@@ -4,7 +4,10 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
 import { lireReglages } from '@/accessibilite/reglages';
+import { OBJETS, type ObjetId } from '@/collection/objets';
 import { CLASSES } from '@/config/classes';
+import type { DomaineId } from '@/config/domaines';
+import { JEUX, type JeuId } from '@/jeux/registre';
 import { useCompte } from '@/store/compte';
 import { useProfils } from '@/store/profils';
 import { migrerToile } from '@/toile/niveaux';
@@ -13,6 +16,7 @@ import { planifierSynchro, type ProfilDistant } from './fusion';
 import { supabase } from './supabase';
 
 const TABLE = 'profils_enfants';
+const IDS_OBJETS = OBJETS.map((o) => o.id) as [ObjetId, ...ObjetId[]];
 
 /** Une ligne de la table, telle que renvoyée par le serveur. */
 const Ligne = z.object({
@@ -25,6 +29,28 @@ const Ligne = z.object({
     jours: z.array(z.string()),
     tempsParJour: z.record(z.string(), z.number()),
     entrainement: z.record(z.string(), z.object({ etoiles: z.number(), series: z.number() })).optional(),
+    defis: z.record(z.string(), z.number()).optional(),
+    histoires: z.record(z.string(), z.number()).optional(),
+    tenue: z
+      .object({
+        tete: z.enum(IDS_OBJETS).optional(),
+        yeux: z.enum(IDS_OBJETS).optional(),
+        cou: z.enum(IDS_OBJETS).optional(),
+      })
+      .optional(),
+    aRevoir: z
+      .record(
+        z.string(),
+        z.object({
+          modeleId: z.string(),
+          jeu: z.enum(Object.keys(JEUX) as [JeuId, ...JeuId[]]),
+          domaine: z.string() as z.ZodType<DomaineId>,
+          niveau: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+          revoirLe: z.string(),
+          palier: z.number(),
+        }),
+      )
+      .optional(),
   }),
   // Vérifiée et remise au format actuel par migrerToile (anciennes toiles comprises).
   toile: z.unknown().nullable(),

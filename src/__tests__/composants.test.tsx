@@ -42,4 +42,17 @@ describe('PanneauRetour', () => {
     expect(screen.getByText('Bravo !')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Continuer' })).toBeTruthy();
   });
+
+  it('après plusieurs essais : annonce le choix réduit, puis montre la méthode', async () => {
+    const { rerender } = await render(
+      <PanneauRetour type="presque" indice="Relis l’histoire." choixReduits onContinuer={() => {}} />,
+    );
+    expect(screen.getByText('Capy a enlevé des réponses pour t’aider.')).toBeTruthy();
+    await rerender(
+      <PanneauRetour type="presque" indice="Relis l’histoire." methode="4 × 6 = 24" onContinuer={() => {}} />,
+    );
+    expect(screen.getByText('Regarde comment on fait :')).toBeTruthy();
+    expect(screen.getByText('4 × 6 = 24')).toBeTruthy();
+    expect(screen.queryByText('Relis l’histoire.')).toBeNull();
+  });
 });

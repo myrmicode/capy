@@ -125,6 +125,43 @@ const RESOUDRE_PROBLEMES_CE2: Theme = {
         },
       ],
     },
+    // Ajoutée après les autres : la progression des enfants qui ont déjà commencé ne bouge pas.
+    {
+      id: 'ce2-rp-u3',
+      titre: 'À la boutique',
+      objectif: 'Payer, rendre la monnaie, compter les heures.',
+      coffre: 'ce2-rp-u3-coffre',
+      etapes: [
+        {
+          id: 'ce2-rp-u3-1',
+          titre: 'Payer ses achats',
+          modeles: ['payer'],
+          jeux: ['caisse', 'reponses'],
+          nombreQuestions: 5,
+        },
+        {
+          id: 'ce2-rp-u3-2',
+          titre: 'Rendre la monnaie',
+          modeles: ['rendre-monnaie'],
+          jeux: ['caisse', 'bonFil', 'reponses'],
+          nombreQuestions: 5,
+        },
+        {
+          id: 'ce2-rp-u3-3',
+          titre: 'L’heure qui passe',
+          modeles: ['duree'],
+          jeux: ['horloge', 'reponses'],
+          nombreQuestions: 5,
+        },
+        {
+          id: 'ce2-rp-u3-4',
+          titre: 'Révision',
+          modeles: ['payer', 'rendre-monnaie', 'duree'],
+          jeux: ['caisse', 'horloge', 'questionPerdue'],
+          nombreQuestions: 6,
+        },
+      ],
+    },
   ],
 };
 
@@ -333,6 +370,12 @@ const SUJET_VERBE_CE2: Theme = {
       ['Trouve le sujet', ['sujet-et-verbe'], ['wagons', 'reponses'], 5],
       ['Phrases à l’envers', ['sujet-et-verbe'], ['wagons', 'reponses'], 6],
       ['Révision', ['sujet-et-verbe'], ['wagons', 'reponses'], 7],
+    ]),
+    // Ajoutée après les autres : la progression des enfants qui ont déjà commencé ne bouge pas.
+    uniteFr('ce2-sv-u2', 'Les phrases en désordre', 'Remettre les mots dans l’ordre.', [
+      ['Petites phrases', ['phrase-en-ordre', 'sujet-et-verbe'], ['ordre', 'wagons'], 5],
+      ['Phrases plus longues', ['phrase-en-ordre', 'sujet-et-verbe'], ['ordre', 'wagons'], 6],
+      ['Révision', ['phrase-en-ordre', 'sujet-et-verbe'], ['ordre', 'wagons'], 6],
     ]),
   ],
 };

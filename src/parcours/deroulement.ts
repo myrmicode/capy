@@ -12,13 +12,15 @@ export interface EtatDeroulement {
   essaisRates: number;
   /** Questions réussies du premier coup (servira aux étoiles et à la toile). */
   reussiesPremierCoup: number;
+  /** Numéros des questions qui ont demandé plusieurs essais : elles reviendront plus tard, sous une autre forme. */
+  aRevoir: number[];
 }
 
 export type ActionDeroulement =
   { type: 'repondre'; juste: boolean } | { type: 'reessayer' } | { type: 'continuer' } | { type: 'recommencer' };
 
 export function etatInitial(nombreQuestions: number): EtatDeroulement {
-  return { nombreQuestions, index: 0, phase: 'question', essaisRates: 0, reussiesPremierCoup: 0 };
+  return { nombreQuestions, index: 0, phase: 'question', essaisRates: 0, reussiesPremierCoup: 0, aRevoir: [] };
 }
 
 export function derouler(etat: EtatDeroulement, action: ActionDeroulement): EtatDeroulement {
@@ -32,7 +34,12 @@ export function derouler(etat: EtatDeroulement, action: ActionDeroulement): Etat
           reussiesPremierCoup: etat.reussiesPremierCoup + (etat.essaisRates === 0 ? 1 : 0),
         };
       }
-      return { ...etat, phase: 'presque', essaisRates: etat.essaisRates + 1 };
+      return {
+        ...etat,
+        phase: 'presque',
+        essaisRates: etat.essaisRates + 1,
+        aRevoir: etat.essaisRates === 0 ? [...etat.aRevoir, etat.index] : etat.aRevoir,
+      };
     case 'reessayer':
       return etat.phase === 'presque' ? { ...etat, phase: 'question' } : etat;
     case 'continuer': {

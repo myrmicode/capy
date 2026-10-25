@@ -1,4 +1,7 @@
 export { BulleCapy } from './BulleCapy';
+export { ANIMATION_DE_LA_POSE, CapyAnime, type AnimationCapy } from './CapyAnime';
+export { CapyHabille, DessinObjet, TuileObjet } from './CapyHabille';
+export { DecorParcours } from './DecorParcours';
 export { Bouton, type VarianteBouton } from './Bouton';
 export { CarteConfiance } from './CarteConfiance';
 export { Ecran } from './Ecran';

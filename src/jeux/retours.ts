@@ -74,17 +74,41 @@ export function useMotLu(texte: string): number | null {
   return useLecture((etat) => positionDans(etat, texte));
 }
 
-let lecteur: AudioPlayer | null = null;
+/** Les bruitages, tous doux et courts (voir scripts/generer-son-bravo.js et scripts/generer-sons.js). */
+const SONS = {
+  bravo: require('../../assets/sons/bravo.wav'),
+  /** Fin d'étape, de défi ou d'histoire. */
+  fin: require('../../assets/sons/fin.wav'),
+  /** Coffre ouvert. */
+  coffre: require('../../assets/sons/coffre.wav'),
+} as const;
+export type Son = keyof typeof SONS;
 
-function lecteurBravo(): AudioPlayer {
-  if (!lecteur) {
+const lecteurs: Partial<Record<Son, AudioPlayer>> = {};
+
+function lecteur(son: Son): AudioPlayer {
+  let l = lecteurs[son];
+  if (!l) {
     // Sur iPhone, l'interrupteur « silencieux » coupe le son. Sur Android, c'est
     // le volume « multimédia » qui s'applique.
     setAudioModeAsync({ playsInSilentMode: false }).catch(() => {});
-    lecteur = createAudioPlayer(require('../../assets/sons/bravo.wav'));
-    lecteur.volume = 0.6;
+    l = createAudioPlayer(SONS[son]);
+    l.volume = 0.6;
+    lecteurs[son] = l;
   }
-  return lecteur;
+  return l;
+}
+
+/** Joue un bruitage si le réglage « son » est actif (jamais en mode calme). */
+export function jouerSon(son: Son, options: { silencieux?: boolean } = {}) {
+  if (options.silencieux || !useReglages.getState().sons) return;
+  try {
+    const l = lecteur(son);
+    l.seekTo(0);
+    l.play();
+  } catch {
+    // Pas de son disponible : l'animation suffit.
+  }
 }
 
 /**
@@ -96,12 +120,15 @@ export function feliciter(options: { silencieux?: boolean } = {}) {
   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
     // Appareil sans vibreur : rien à faire.
   });
-  if (options.silencieux || !useReglages.getState().sons) return;
+  jouerSon('bravo', options);
+}
+
+/** Fin d'une étape, d'un défi, d'une histoire, ou coffre ouvert : vibration et petit air. */
+export function celebrer(son: 'fin' | 'coffre', options: { silencieux?: boolean } = {}) {
   try {
-    const l = lecteurBravo();
-    l.seekTo(0);
-    l.play();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
   } catch {
-    // Pas de son disponible : la vibration et l'animation suffisent.
+    // Appareil sans vibreur : rien à faire.
   }
+  jouerSon(son, options);
 }

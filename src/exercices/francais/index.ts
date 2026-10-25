@@ -7,6 +7,7 @@ import { intrus, memeFamille } from './modeles/ce2/familles';
 import { memeSens, quiFaitQuoi } from './modeles/ce2/phrasesLues';
 import { preuveTexte, questionsTexte } from './modeles/ce2/texteLu';
 import { natureDuMot, trouverLeMot } from './modeles/ce2/natureMots';
+import { phraseEnOrdre } from './modeles/ce2/phraseEnOrdre';
 import { sujetEtVerbe } from './modeles/ce2/sujetVerbe';
 import { synonymes } from './modeles/ce2/synonymes';
 
@@ -16,6 +17,7 @@ export const MODELES_FRANCAIS: readonly ModeleTexte[] = [
   natureDuMot,
   trouverLeMot,
   sujetEtVerbe,
+  phraseEnOrdre,
   synonymes,
   memeFamille,
   intrus,

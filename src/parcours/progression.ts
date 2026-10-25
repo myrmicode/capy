@@ -3,6 +3,10 @@
 import type { Theme } from '@/config/parcours';
 import { graineDepuisTexte } from '@/exercices';
 
+import type { Tenue } from '@/collection/objets';
+
+import type { ARevoir } from './revision';
+
 export interface ResultatEtape {
   /** Meilleur résultat obtenu, de 1 à 3 étoiles. */
   etoiles: number;
@@ -26,6 +30,14 @@ export interface ProgressionEnfant {
   tempsParJour: Record<string, number>;
   /** Entraînement libre, par thème (compétences déjà à +++ sur la fiche). Absent sur les anciens profils. */
   entrainement?: Record<string, ResultatEntrainement>;
+  /** Révisions espacées, par modèle et mini-jeu (voir revision.ts). Absent sur les anciens profils. */
+  aRevoir?: Record<string, ARevoir>;
+  /** Défis du jour terminés : étoiles (la meilleure) par jour AAAA-MM-JJ. Absent sur les anciens profils. */
+  defis?: Record<string, number>;
+  /** Histoires de Capy lues : étoiles (la meilleure lecture) par histoire. Absent sur les anciens profils. */
+  histoires?: Record<string, number>;
+  /** Ce que Capy porte (voir collection/objets.ts). Absent sur les anciens profils. */
+  tenue?: Tenue;
 }
 
 /** Étoiles gagnées en ouvrant un coffre. */
@@ -121,6 +133,56 @@ export function etoilesEntrainement(p: ProgressionEnfant): number {
   return Object.values(p.entrainement ?? {}).reduce((somme, r) => somme + r.etoiles, 0);
 }
 
+/**
+ * Défi du jour terminé : la meilleure partie du jour donne ses étoiles, et le
+ * jour et le temps comptent comme pour une étape.
+ */
+export function enregistrerDefi(
+  p: ProgressionEnfant,
+  reussiesPremierCoup: number,
+  nombreQuestions: number,
+  dureeSecondes: number,
+  maintenant: Date,
+): ProgressionEnfant {
+  const jour = dateLocale(maintenant);
+  const cle = `defi:${jour}`;
+  const avec = enregistrerEtape(p, cle, reussiesPremierCoup, nombreQuestions, dureeSecondes, maintenant);
+  const { [cle]: _fictive, ...etapes } = avec.etapes;
+  const etoiles = Math.max(p.defis?.[jour] ?? 0, etoilesPour(reussiesPremierCoup, nombreQuestions));
+  return { ...avec, etapes, defis: { ...p.defis, [jour]: etoiles } };
+}
+
+/**
+ * Histoire lue et ses questions faites : la meilleure lecture donne ses
+ * étoiles, et le jour et le temps comptent comme pour une étape.
+ */
+export function enregistrerHistoire(
+  p: ProgressionEnfant,
+  histoireId: string,
+  reussiesPremierCoup: number,
+  nombreQuestions: number,
+  dureeSecondes: number,
+  maintenant: Date,
+): ProgressionEnfant {
+  const cle = `histoire:${histoireId}`;
+  const avec = enregistrerEtape(p, cle, reussiesPremierCoup, nombreQuestions, dureeSecondes, maintenant);
+  const { [cle]: _fictive, ...etapes } = avec.etapes;
+  const etoiles = Math.max(p.histoires?.[histoireId] ?? 0, etoilesPour(reussiesPremierCoup, nombreQuestions));
+  return { ...avec, etapes, histoires: { ...p.histoires, [histoireId]: etoiles } };
+}
+
+export function defiFait(p: ProgressionEnfant, jour: string): boolean {
+  return (p.defis?.[jour] ?? 0) > 0;
+}
+
+function etoilesDefis(p: ProgressionEnfant): number {
+  return Object.values(p.defis ?? {}).reduce((somme, e) => somme + e, 0);
+}
+
+function etoilesHistoires(p: ProgressionEnfant): number {
+  return Object.values(p.histoires ?? {}).reduce((somme, e) => somme + e, 0);
+}
+
 export function ouvrirCoffre(p: ProgressionEnfant, coffreId: string): ProgressionEnfant {
   if (p.coffresOuverts.includes(coffreId)) return p;
   return { ...p, coffresOuverts: [...p.coffresOuverts, coffreId] };
@@ -128,7 +190,9 @@ export function ouvrirCoffre(p: ProgressionEnfant, coffreId: string): Progressio
 
 export function totalEtoiles(p: ProgressionEnfant): number {
   const etapes = Object.values(p.etapes).reduce((somme, r) => somme + r.etoiles, 0);
-  return etapes + p.coffresOuverts.length * ETOILES_COFFRE + etoilesEntrainement(p);
+  return (
+    etapes + p.coffresOuverts.length * ETOILES_COFFRE + etoilesEntrainement(p) + etoilesDefis(p) + etoilesHistoires(p)
+  );
 }
 
 /** Jours d'affilée jusqu'à aujourd'hui (ou hier, si l'enfant n'a pas encore joué aujourd'hui). */
@@ -160,7 +224,8 @@ export function tempsDeLaSemaine(p: ProgressionEnfant, aujourdhui: string): numb
     .reduce((somme, [, s]) => somme + s, 0);
 }
 
-function decaler(jour: string, nombre: number): string {
+/** Le jour (AAAA-MM-JJ) décalé d'un nombre de jours, en avant ou en arrière. */
+export function decaler(jour: string, nombre: number): string {
   const [y, m, d] = jour.split('-').map(Number);
   return dateLocale(new Date(y, m - 1, d + nombre));
 }
