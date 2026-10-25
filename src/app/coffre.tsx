@@ -72,7 +72,7 @@ function Coffre() {
     >
       <View style={styles.centre}>
         <Image
-          source={ouvert ? mascotte.defis : mascotte.surpris}
+          source={ouvert ? mascotte.fier : mascotte.surpris}
           style={styles.capy}
           resizeMode="contain"
           accessible={false}

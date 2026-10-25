@@ -11,7 +11,7 @@ import { couleurs, espaces, formes } from '@/theme';
 /** Proportions du cadre du bandeau (plus haut que l'image, qui est donc recadrée). */
 const RATIO_CADRE = RATIO_PAYSAGE / 2.2;
 /** Position horizontale de Capy dans l'image (de 0 à 1) : le cadrage reste centré sur lui. */
-const CENTRE_CAPY = 0.48;
+const CENTRE_CAPY = 0.6;
 
 /** Accueil : choix de l'enfant qui joue. */
 export default function Accueil() {
@@ -131,7 +131,13 @@ function Paysage() {
       {largeur > 0 ? (
         <Image
           source={mascotte.paysage}
-          style={{ position: 'absolute', top: 0, height: hauteur, width: largeurImage, left: largeur / 2 - CENTRE_CAPY * largeurImage }}
+          style={{
+            position: 'absolute',
+            top: 0,
+            height: hauteur,
+            width: largeurImage,
+            left: largeur / 2 - CENTRE_CAPY * largeurImage,
+          }}
           accessible={false}
         />
       ) : null}

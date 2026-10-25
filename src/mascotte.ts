@@ -1,6 +1,7 @@
-// Images de Capy. C'est le seul fichier qui connaît leurs chemins :
-// pour remplacer les versions de travail par les PNG définitifs, il suffit
-// de remplacer les fichiers dans assets/capy/ (ou de modifier les chemins ici).
+// Images de Capy. C'est le seul fichier qui connaît leurs chemins. Elles sont
+// découpées dans la planche assets/capy-source/planche-capy.png par
+// scripts/decouper-capy.js (fond transparent) : pour changer une image, modifier
+// la planche ou le cadrage dans ce script, puis le relancer.
 import type { ImageSourcePropType } from 'react-native';
 
 export const mascotte = {
@@ -17,7 +18,8 @@ export const mascotte = {
   bravo: require('../assets/capy/bravo.png'),
   /** Nouveau thème, coffre de fin d'unité. */
   surpris: require('../assets/capy/surpris.png'),
-  defis: require('../assets/capy/defis.png'),
+  /** Coffre ouvert. */
+  fier: require('../assets/capy/fier.png'),
   /** Série de jours, encouragement. */
   clinOeil: require('../assets/capy/clin-oeil.png'),
   /** Écran du parcours. */
@@ -39,4 +41,4 @@ export const mascotte = {
 export type PoseCapy = keyof typeof mascotte;
 
 /** Rapport largeur / hauteur du bandeau, pour l'afficher sans le déformer. */
-export const RATIO_PAYSAGE = 1254 / 154;
+export const RATIO_PAYSAGE = 905 / 172;
