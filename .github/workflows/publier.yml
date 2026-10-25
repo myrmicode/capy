@@ -1,0 +1,97 @@
+# Publie Capy à chaque envoi sur main (ou à la demande, onglet Actions) :
+# 1. vérifie le code (typage, lint, tests) ;
+# 2. construit l'APK Android, signée toujours avec la même clé (une nouvelle
+#    version s'installe par-dessus l'ancienne, sans perdre les profils) ;
+# 3. construit le site installable ;
+# 4. publie le tout sur le dépôt public myrmicode/capy-app (GitHub Pages) :
+#    https://myrmicode.github.io/capy-app/ (l'appli)
+#    https://myrmicode.github.io/capy-app/telecharger.html (installer l'APK)
+# Le code, lui, reste dans ce dépôt privé.
+name: Publier
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: publier
+  cancel-in-progress: true
+
+env:
+  CAPY_BASE_URL: /capy-app
+  CAPY_VERSION_CODE: ${{ github.run_number }}
+  # Facultatifs : sans eux, le compte parent et la lecture des fiches par Claude sont simplement désactivés.
+  EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+  EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test -- --ci
+
+  apk:
+    needs: verifier
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - run: npm ci
+      # Les dossiers natifs sont générés ici, jamais versionnés (Continuous Native Generation).
+      - run: npx expo prebuild --platform android --no-install
+      - name: Clé de signature stable
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/debug.keystore
+      - name: Construire l'APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+      - run: cp android/app/build/outputs/apk/release/app-release.apk capy.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: capy.apk
+          retention-days: 7
+
+  publier:
+    needs: apk
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx expo export --platform web
+      - run: node scripts/preparer-web.mjs "${{ github.run_number }}-${{ github.sha }}"
+      - uses: actions/download-artifact@v4
+        with:
+          name: apk
+          path: dist
+      - name: Envoyer sur myrmicode/capy-app
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          deploy_key: ${{ secrets.CAPY_APP_DEPLOY_KEY }}
+          external_repository: myrmicode/capy-app
+          publish_branch: main
+          publish_dir: dist
+          # Un seul commit gardé : l'APK ne s'accumule pas dans l'historique.
+          force_orphan: true
+          enable_jekyll: false
+          commit_message: Capy ${{ github.run_number }}

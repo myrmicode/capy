@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Installer Capy</title>
+    <link rel="icon" href="icone-192.png" />
+    <style>
+      :root {
+        --encre: #12404f;
+        --douce: #3f6776;
+        --sarcelle: #1f7a6d;
+        --sarcelle-fonce: #1b5c5a;
+        --fond: #faf9f5;
+        --bordure: #ede8dc;
+        --creme: #f4e5c5;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--fond);
+        color: var(--encre);
+        font: 17px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      }
+      main { max-width: 640px; margin: 0 auto; padding: 32px 16px 48px; }
+      header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+      header img { width: 72px; height: 72px; border-radius: 18px; }
+      h1 { font-size: 28px; margin: 0; }
+      h2 { font-size: 21px; margin: 0 0 8px; }
+      p { margin: 0 0 12px; }
+      .carte {
+        background: #fff;
+        border: 2px solid var(--bordure);
+        border-radius: 24px;
+        padding: 20px;
+        margin-bottom: 16px;
+      }
+      ol { margin: 0 0 12px; padding-left: 22px; }
+      li { margin-bottom: 6px; }
+      .bouton {
+        display: inline-block;
+        background: var(--sarcelle);
+        color: #fff;
+        text-decoration: none;
+        font-weight: 700;
+        padding: 14px 24px;
+        border-radius: 999px;
+        border-bottom: 4px solid var(--sarcelle-fonce);
+      }
+      .discret { color: var(--douce); font-size: 15px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <img src="icone-192.png" alt="" />
+        <div>
+          <h1>Installer Capy</h1>
+          <p class="discret">Pour les parents. Aucune publicité, aucun traceur.</p>
+        </div>
+      </header>
+
+      <section class="carte">
+        <h2>Sur la tablette : l’application</h2>
+        <p>La version complète, avec l’appareil photo pour la fiche de l’école et la voix de Capy.</p>
+        <p><a class="bouton" href="capy.apk" download>Télécharger Capy (APK)</a></p>
+        <ol>
+          <li>Touchez le bouton ci-dessus depuis la tablette, dans Chrome.</li>
+          <li>Ouvrez le fichier téléchargé. Android demande d’autoriser l’installation depuis Chrome : acceptez.</li>
+          <li>Touchez « Installer ».</li>
+        </ol>
+        <p class="discret">
+          Pour une nouvelle version, refaites la même chose : elle remplace l’ancienne, les profils et les progrès
+          sont gardés.
+        </p>
+      </section>
+
+      <section class="carte">
+        <h2>Ou bien : le site installable</h2>
+        <p>Plus léger, toujours à jour, sur tablette comme sur ordinateur.</p>
+        <p><a class="bouton" href="./">Ouvrir Capy</a></p>
+        <ol>
+          <li>Ouvrez Capy dans Chrome.</li>
+          <li>Menu ⋮, puis « Ajouter à l’écran d’accueil » (ou « Installer l’application »).</li>
+        </ol>
+        <p class="discret">
+          Les profils restent dans le navigateur de l’appareil : ils ne passent pas d’une version à l’autre.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
