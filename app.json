@@ -14,8 +14,8 @@
       "package": "com.myrmicode.capy",
       "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#faf9f5",
-        "foregroundImage": "./assets/capy/icone-appli-carree.png"
+        "backgroundColor": "#7ce1bf",
+        "foregroundImage": "./assets/capy/icone-adaptative.png"
       },
       "predictiveBackGestureEnabled": false,
       "blockedPermissions": [

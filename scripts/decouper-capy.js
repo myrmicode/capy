@@ -74,6 +74,11 @@ function rendreFondTransparent(img) {
   // Icône de l'appli, de l'écran de démarrage et du site : carrée, 1024 px.
   const icone = await Jimp.read(`${DOSSIER}/icone-appli.png`);
   await icone.clone().resize(1024, 1024, Jimp.RESIZE_BICUBIC).writeAsync(`${DOSSIER}/icone-appli-carree.png`);
+  // Icône adaptative Android : le lanceur n'affiche que le centre (66 %) de l'image ;
+  // la tuile est donc réduite au milieu, sur fond menthe (backgroundColor dans app.json).
+  const adaptative = new Jimp(1024, 1024, 0x00000000);
+  adaptative.composite(icone.clone().resize(720, 720, Jimp.RESIZE_BICUBIC), 152, 152);
+  await adaptative.writeAsync(`${DOSSIER}/icone-adaptative.png`);
   // Icônes du site installable (assets/web) ; la « maskable » garde le dessin dans la zone sûre, sur fond crème.
   for (const t of [192, 512])
     await icone.clone().resize(t, t, Jimp.RESIZE_BICUBIC).writeAsync(`assets/web/icone-${t}.png`);
