@@ -64,6 +64,27 @@ export const couleurs = {
 } as const;
 
 /**
+ * Couleur de chaque matière, comme la couleur d'une unité sur Duolingo : bandeau
+ * du thème, tuile du thème, étape en cours. Texte blanc sur `face`, encre sur `clair`.
+ */
+export const couleursMatieres = {
+  francais: {
+    face: couleurs.brun[600],
+    relief: couleurs.brun[800],
+    clair: couleurs.brun[100],
+    anneau: couleurs.caramel[500],
+  },
+  mathematiques: {
+    face: couleurs.sarcelle[700],
+    relief: couleurs.sarcelle[900],
+    clair: couleurs.menthe[100],
+    anneau: couleurs.sarcelle[400],
+  },
+} as const;
+
+export type CouleursMatiere = (typeof couleursMatieres)[keyof typeof couleursMatieres];
+
+/**
  * Paires texte / fond autorisées. Le test `theme.test.ts` vérifie qu'elles
  * respectent toutes le contraste minimal de 4,5:1.
  */

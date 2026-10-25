@@ -14,3 +14,6 @@ export { ControleParental } from './ControleParental';
 export { EditeurNiveaux } from './EditeurNiveaux';
 export { AideNombres } from './AideNombres';
 export { TableConsultable } from './TableConsultable';
+export { TuileTheme } from './IconeTheme';
+export { CarteTheme } from './CarteTheme';
+export { ChoixTheme } from './ChoixTheme';

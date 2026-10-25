@@ -73,8 +73,10 @@ export function enregistrerEtape(
   const etoiles = Math.max(avant?.etoiles ?? 0, etoilesPour(reussiesPremierCoup, nombreQuestions));
   const jours = p.jours.includes(jour) ? p.jours : [...p.jours, jour].sort().slice(-JOURS_CONSERVES);
   const tempsParJour = Object.fromEntries(
-    Object.entries({ ...p.tempsParJour, [jour]: (p.tempsParJour[jour] ?? 0) + Math.max(0, Math.round(dureeSecondes)) })
-      .filter(([j]) => joursEntre(j, jour) < JOURS_TEMPS_CONSERVES),
+    Object.entries({
+      ...p.tempsParJour,
+      [jour]: (p.tempsParJour[jour] ?? 0) + Math.max(0, Math.round(dureeSecondes)),
+    }).filter(([j]) => joursEntre(j, jour) < JOURS_TEMPS_CONSERVES),
   );
   return {
     ...p,
@@ -208,6 +210,12 @@ export function cheminDuTheme(theme: Theme, p: ProgressionEnfant): Noeud[] {
     });
   }
   return noeuds;
+}
+
+/** Avancement d'un thème : nœuds franchis (étapes et coffres) sur le total. */
+export function avancementDuTheme(theme: Theme, p: ProgressionEnfant): { faits: number; total: number } {
+  const chemin = cheminDuTheme(theme, p);
+  return { faits: chemin.filter((n) => n.etat === 'reussie').length, total: chemin.length };
 }
 
 /** Graine d'une partie : nouvelle à chaque fois qu'on rejoue, mais reproductible. */

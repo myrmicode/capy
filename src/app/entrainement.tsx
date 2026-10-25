@@ -5,12 +5,12 @@ import { Redirect, router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { avecReglagesEnfant, useThemeEnfant } from '@/accessibilite/contexte';
-import { BulleCapy, Bouton, Ecran, IconeEtoile } from '@/composants';
+import { BulleCapy, Bouton, CarteTheme, Ecran, IconeEtoile } from '@/composants';
 import { domaineDe, LIBELLES_MATIERES, MATIERES } from '@/config/domaines';
 import { nombreDeQuestions } from '@/accessibilite/adaptation';
 import { QUESTIONS_SERIE, themesEntrainement } from '@/parcours/selection';
 import { useProfilActif } from '@/store/profils';
-import { couleurs, espaces, formes } from '@/theme';
+import { couleurs, couleursMatieres, espaces } from '@/theme';
 
 function Entrainement() {
   const profil = useProfilActif();
@@ -41,13 +41,17 @@ function Entrainement() {
             {duSujet.map((t) => {
               const resultat = profil.progression.entrainement?.[t.id];
               return (
-                <View key={t.id} style={[styles.carte, { gap: ecart('s') }]}>
-                  <Text style={typo.titre3}>{t.titre}</Text>
+                <CarteTheme key={t.id} theme={t} couleurs={couleursMatieres[matiere]}>
                   {resultat ? (
-                    <View style={styles.ligne} accessible accessibilityLabel={`${resultat.etoiles} étoiles gagnées en ${resultat.series} séries`}>
+                    <View
+                      style={styles.ligne}
+                      accessible
+                      accessibilityLabel={`${resultat.etoiles} étoiles gagnées en ${resultat.series} séries`}
+                    >
                       <IconeEtoile taille={20} couleur={couleurs.jaune[600]} />
                       <Text style={typo.petit}>
-                        {resultat.etoiles} étoile{resultat.etoiles > 1 ? 's' : ''} · {resultat.series} série{resultat.series > 1 ? 's' : ''}
+                        {resultat.etoiles} étoile{resultat.etoiles > 1 ? 's' : ''} · {resultat.series} série
+                        {resultat.series > 1 ? 's' : ''}
                       </Text>
                     </View>
                   ) : (
@@ -58,7 +62,7 @@ function Entrainement() {
                     libelleAccessible={`Jouer une série : ${t.titre}`}
                     onPress={() => router.push({ pathname: '/etape', params: { entrainement: t.id } })}
                   />
-                </View>
+                </CarteTheme>
               );
             })}
           </View>
@@ -72,12 +76,5 @@ export default avecReglagesEnfant(Entrainement);
 
 const styles = StyleSheet.create({
   matiere: { color: couleurs.encreDouce },
-  carte: {
-    backgroundColor: couleurs.blanc,
-    borderColor: couleurs.bordure,
-    borderWidth: 2,
-    borderRadius: formes.carte.rayon,
-    padding: espaces.l,
-  },
   ligne: { flexDirection: 'row', alignItems: 'center', gap: espaces.xs },
 });

@@ -61,7 +61,13 @@ export function IconeBouclier({ taille = 24, couleur }: PropsIcone) {
 export function IconeHautParleur({ taille = 24, couleur }: PropsIcone) {
   return (
     <Svg width={taille} height={taille} viewBox="0 0 24 24">
-      <Path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill={couleur} stroke={couleur} strokeWidth={1.5} strokeLinejoin="round" />
+      <Path
+        d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"
+        fill={couleur}
+        stroke={couleur}
+        strokeWidth={1.5}
+        strokeLinejoin="round"
+      />
       <Path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11" stroke={couleur} strokeWidth={2.2} {...trait} />
     </Svg>
   );
@@ -79,7 +85,10 @@ export function IconeAmpoule({ taille = 24, couleur }: PropsIcone) {
 export function IconeFlamme({ taille = 24, couleur }: PropsIcone) {
   return (
     <Svg width={taille} height={taille} viewBox="0 0 24 24">
-      <Path d="M12 2.5c1 3.5 6 6 6 11.5a6 6 0 0 1-12 0c0-3 1.6-4.6 3-6 .3 1.8 1.2 3 2.3 3.2C10.6 8 11 5 12 2.5z" fill={couleur} />
+      <Path
+        d="M12 2.5c1 3.5 6 6 6 11.5a6 6 0 0 1-12 0c0-3 1.6-4.6 3-6 .3 1.8 1.2 3 2.3 3.2C10.6 8 11 5 12 2.5z"
+        fill={couleur}
+      />
     </Svg>
   );
 }
@@ -168,7 +177,10 @@ export function IconeParents({ taille = 24, couleur }: PropsIcone) {
     <Svg width={taille} height={taille} viewBox="0 0 24 24">
       <Circle cx={8.5} cy={7} r={3} fill={couleur} />
       <Circle cx={16.5} cy={9} r={2.4} fill={couleur} />
-      <Path d="M3 19.5c0-3.5 2.5-6 5.5-6s5.5 2.5 5.5 6zM14.2 19.5c.1-2.3-.6-4.2-1.7-5.3.9-.6 2-.9 3.1-.9 2.6 0 4.4 2.3 4.4 6.2z" fill={couleur} />
+      <Path
+        d="M3 19.5c0-3.5 2.5-6 5.5-6s5.5 2.5 5.5 6zM14.2 19.5c.1-2.3-.6-4.2-1.7-5.3.9-.6 2-.9 3.1-.9 2.6 0 4.4 2.3 4.4 6.2z"
+        fill={couleur}
+      />
     </Svg>
   );
 }
@@ -176,8 +188,24 @@ export function IconeParents({ taille = 24, couleur }: PropsIcone) {
 export function IconeOeil({ taille = 24, couleur }: PropsIcone) {
   return (
     <Svg width={taille} height={taille} viewBox="0 0 24 24">
-      <Path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" stroke={couleur} strokeWidth={2.4} {...trait} />
+      <Path
+        d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"
+        stroke={couleur}
+        strokeWidth={2.4}
+        {...trait}
+      />
       <Circle cx={12} cy={12} r={3} fill={couleur} />
+    </Svg>
+  );
+}
+
+export function IconeGrille({ taille = 24, couleur }: PropsIcone) {
+  return (
+    <Svg width={taille} height={taille} viewBox="0 0 24 24">
+      <Rect x={3.5} y={3.5} width={7} height={7} rx={2} fill={couleur} />
+      <Rect x={13.5} y={3.5} width={7} height={7} rx={2} fill={couleur} />
+      <Rect x={3.5} y={13.5} width={7} height={7} rx={2} fill={couleur} />
+      <Rect x={13.5} y={13.5} width={7} height={7} rx={2} fill={couleur} />
     </Svg>
   );
 }

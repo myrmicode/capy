@@ -15,7 +15,10 @@ export interface EtapeTheme {
 
 export interface Unite {
   id: string;
+  /** Nom imagé de l'unité (« Au marché »). */
   titre: string;
+  /** Ce qu'on y apprend, en mots simples : il accompagne toujours le nom imagé. */
+  objectif: string;
   etapes: readonly EtapeTheme[];
   /** Identifiant du coffre de fin d'unité. */
   coffre: string;
@@ -25,7 +28,12 @@ export interface Theme {
   id: string;
   domaine: DomaineId;
   classe: Classe;
+  /** Titre dit à l'enfant : ce qu'il fait, pas le nom savant de la compétence. */
   titre: string;
+  /** Une phrase qui dit ce qu'on apprend (« Calculer vite, sans poser l'opération. »). */
+  description: string;
+  /** Un exemple très court, pour reconnaître le thème d'un coup d'œil. */
+  exemple: string;
   unites: readonly Unite[];
 }
 
@@ -34,15 +42,30 @@ const RESOUDRE_PROBLEMES_CE2: Theme = {
   domaine: 'resoudre-problemes',
   classe: 'CE2',
   titre: 'Résoudre des problèmes',
+  description: 'Lire une petite histoire et trouver le bon calcul.',
+  exemple: '5 pommes, puis 3 de plus : combien ?',
   unites: [
     {
       id: 'ce2-rp-u1',
       titre: 'Au marché',
+      objectif: 'Ajouter, enlever, faire des paquets.',
       coffre: 'ce2-rp-u1-coffre',
       etapes: [
-        { id: 'ce2-rp-1', titre: 'Les paquets', modeles: ['groupements'], jeux: ['marche', 'reponses'], nombreQuestions: 5 },
+        {
+          id: 'ce2-rp-1',
+          titre: 'Les paquets',
+          modeles: ['groupements'],
+          jeux: ['marche', 'reponses'],
+          nombreQuestions: 5,
+        },
         { id: 'ce2-rp-2', titre: 'On en ajoute', modeles: ['ajout'], jeux: ['bonFil', 'reponses'], nombreQuestions: 5 },
-        { id: 'ce2-rp-3', titre: 'On en enlève', modeles: ['retrait'], jeux: ['bonFil', 'reponses'], nombreQuestions: 5 },
+        {
+          id: 'ce2-rp-3',
+          titre: 'On en enlève',
+          modeles: ['retrait'],
+          jeux: ['bonFil', 'reponses'],
+          nombreQuestions: 5,
+        },
         {
           id: 'ce2-rp-4',
           titre: 'Ajouter ou enlever ?',
@@ -62,9 +85,16 @@ const RESOUDRE_PROBLEMES_CE2: Theme = {
     {
       id: 'ce2-rp-u2',
       titre: 'À la ferme',
+      objectif: 'Comparer, partager, calculer en deux fois.',
       coffre: 'ce2-rp-u2-coffre',
       etapes: [
-        { id: 'ce2-rp-6', titre: 'Combien de plus ?', modeles: ['ecart'], jeux: ['bonFil', 'reponses'], nombreQuestions: 5 },
+        {
+          id: 'ce2-rp-6',
+          titre: 'Combien de plus ?',
+          modeles: ['ecart'],
+          jeux: ['bonFil', 'reponses'],
+          nombreQuestions: 5,
+        },
         {
           id: 'ce2-rp-7',
           titre: 'Multiplier et partager',
@@ -102,16 +132,37 @@ const CALCUL_MENTAL_CE2: Theme = {
   id: 'ce2-calcul-mental',
   domaine: 'calcul-mental',
   classe: 'CE2',
-  titre: 'Calcul mental',
+  titre: 'Calculer dans sa tête',
+  description: 'Calculer vite, sans poser l’opération.',
+  exemple: '8 + 7 = 15',
   unites: [
     {
       id: 'ce2-cm-u1',
       titre: 'Le carnet de calcul',
+      objectif: 'Les tables, les doubles, aller jusqu’à 100.',
       coffre: 'ce2-cm-u1-coffre',
       etapes: [
-        { id: 'ce2-cm-1', titre: 'Les tables', modeles: ['tables'], jeux: ['lucioles', 'reponses'], nombreQuestions: 6 },
-        { id: 'ce2-cm-2', titre: 'Le double', modeles: ['doubles'], jeux: ['lucioles', 'reponses'], nombreQuestions: 5 },
-        { id: 'ce2-cm-3', titre: 'Aller jusqu’à 100', modeles: ['complement-cent'], jeux: ['lucioles', 'reponses'], nombreQuestions: 5 },
+        {
+          id: 'ce2-cm-1',
+          titre: 'Les tables',
+          modeles: ['tables'],
+          jeux: ['lucioles', 'reponses'],
+          nombreQuestions: 6,
+        },
+        {
+          id: 'ce2-cm-2',
+          titre: 'Le double',
+          modeles: ['doubles'],
+          jeux: ['lucioles', 'reponses'],
+          nombreQuestions: 5,
+        },
+        {
+          id: 'ce2-cm-3',
+          titre: 'Aller jusqu’à 100',
+          modeles: ['complement-cent'],
+          jeux: ['lucioles', 'reponses'],
+          nombreQuestions: 5,
+        },
         {
           id: 'ce2-cm-4',
           titre: 'De dizaine en dizaine',
@@ -135,11 +186,14 @@ const LIGNE_GRADUEE_CE2: Theme = {
   id: 'ce2-ligne-graduee',
   domaine: 'ligne-graduee',
   classe: 'CE2',
-  titre: 'Ligne graduée',
+  titre: 'Placer des nombres sur une ligne',
+  description: 'Trouver où va un nombre sur une ligne graduée.',
+  exemple: '0, 10, 20… où va 15 ?',
   unites: [
     {
       id: 'ce2-lg-u1',
       titre: 'Le fil du funambule',
+      objectif: 'Lire et placer des nombres sur une ligne.',
       coffre: 'ce2-lg-u1-coffre',
       etapes: [
         {
@@ -181,11 +235,13 @@ const LIGNE_GRADUEE_CE2: Theme = {
 function uniteFr(
   id: string,
   titre: string,
+  objectif: string,
   etapes: readonly [titre: string, modeles: readonly string[], jeux: readonly JeuId[], questions: number][],
 ): Unite {
   return {
     id,
     titre,
+    objectif,
     coffre: `${id}-coffre`,
     etapes: etapes.map(([t, modeles, jeux, nombreQuestions], i) => ({
       id: `${id}-${i + 1}`,
@@ -201,9 +257,11 @@ const ACCORD_CE2: Theme = {
   id: 'ce2-accord',
   domaine: 'accord-nom-adjectif',
   classe: 'CE2',
-  titre: 'Accorder le nom et l’adjectif',
+  titre: 'Accorder les adjectifs',
+  description: 'Mettre la bonne fin à l’adjectif : e, s ou es.',
+  exemple: 'des fleurs bleues',
   unites: [
-    uniteFr('ce2-acc-u1', 'Le jardin des accords', [
+    uniteFr('ce2-acc-u1', 'Le jardin des accords', 'Choisir la bonne fin : e, s ou es.', [
       ['Le bon accord', ['accord-adjectif'], ['lucioles', 'reponses'], 5],
       ['Masculin ou féminin ?', ['accord-adjectif'], ['lucioles', 'reponses'], 5],
       ['Singulier ou pluriel ?', ['accord-adjectif'], ['lucioles', 'reponses'], 6],
@@ -216,9 +274,12 @@ const NATURE_CE2: Theme = {
   id: 'ce2-nature',
   domaine: 'nature-mots',
   classe: 'CE2',
-  titre: 'La nature des mots',
+  // Espace insécable : le point d'interrogation ne passe jamais seul à la ligne.
+  titre: 'Nom, verbe ou adjectif ?',
+  description: 'Reconnaître la sorte de chaque mot.',
+  exemple: 'chat : nom · courir : verbe',
   unites: [
-    uniteFr('ce2-nat-u1', 'Les paniers de mots', [
+    uniteFr('ce2-nat-u1', 'Les paniers de mots', 'Ranger les mots : nom, verbe, adjectif.', [
       ['Nom ou verbe ?', ['nature-du-mot', 'trouver-le-mot'], ['paniers', 'wagons'], 5],
       ['Trouve le mot', ['trouver-le-mot', 'nature-du-mot'], ['wagons', 'paniers', 'reponses'], 5],
       ['Ranger les mots', ['nature-du-mot'], ['paniers', 'reponses'], 6],
@@ -232,8 +293,10 @@ const SYNONYMES_CE2: Theme = {
   domaine: 'synonymes',
   classe: 'CE2',
   titre: 'Les synonymes',
+  description: 'Trouver un mot qui veut dire presque la même chose.',
+  exemple: 'content = joyeux',
   unites: [
-    uniteFr('ce2-syn-u1', 'Les mots jumeaux', [
+    uniteFr('ce2-syn-u1', 'Les mots jumeaux', 'Des mots qui veulent dire presque pareil.', [
       ['Presque pareil', ['synonymes'], ['lucioles', 'reponses'], 5],
       ['Attention aux contraires', ['synonymes'], ['lucioles', 'reponses'], 5],
       ['Révision', ['synonymes'], ['lucioles', 'reponses'], 7],
@@ -246,8 +309,10 @@ const FAMILLES_CE2: Theme = {
   domaine: 'familles-mots',
   classe: 'CE2',
   titre: 'Les familles de mots',
+  description: 'Trouver les mots qui viennent du même mot.',
+  exemple: 'jardin, jardinier, jardiner',
   unites: [
-    uniteFr('ce2-fam-u1', 'L’arbre des familles', [
+    uniteFr('ce2-fam-u1', 'L’arbre des familles', 'Des mots qui viennent du même mot.', [
       ['La même famille', ['meme-famille'], ['lucioles', 'reponses'], 5],
       ['L’intrus', ['intrus-famille', 'meme-famille'], ['lucioles', 'reponses'], 5],
       ['Révision', ['meme-famille', 'intrus-famille'], ['lucioles', 'reponses'], 7],
@@ -260,8 +325,10 @@ const SUJET_VERBE_CE2: Theme = {
   domaine: 'sujet-verbe',
   classe: 'CE2',
   titre: 'Le sujet et le verbe',
+  description: 'Trouver qui fait l’action, et l’action.',
+  exemple: 'Le chat dort : qui dort ?',
   unites: [
-    uniteFr('ce2-sv-u1', 'Le train des phrases', [
+    uniteFr('ce2-sv-u1', 'Le train des phrases', 'Qui fait l’action, et quelle est l’action.', [
       ['Trouve le verbe', ['sujet-et-verbe'], ['wagons', 'reponses'], 5],
       ['Trouve le sujet', ['sujet-et-verbe'], ['wagons', 'reponses'], 5],
       ['Phrases à l’envers', ['sujet-et-verbe'], ['wagons', 'reponses'], 6],
@@ -274,9 +341,11 @@ const CONJUGAISON_CE2: Theme = {
   id: 'ce2-conjugaison',
   domaine: 'conjugaison',
   classe: 'CE2',
-  titre: 'Conjuguer',
+  titre: 'Conjuguer les verbes',
+  description: 'Écrire le verbe pour hier, aujourd’hui ou demain.',
+  exemple: 'je chantais, je chante, je chanterai',
   unites: [
-    uniteFr('ce2-conj-u1', 'Hier, aujourd’hui, demain', [
+    uniteFr('ce2-conj-u1', 'Hier, aujourd’hui, demain', 'Le présent, l’imparfait et le futur.', [
       ['Le présent', ['conjugaison-present'], ['lucioles', 'reponses'], 5],
       ['L’imparfait', ['conjugaison-imparfait'], ['lucioles', 'reponses'], 5],
       ['Le futur', ['conjugaison-futur'], ['lucioles', 'reponses'], 5],
@@ -290,8 +359,10 @@ const DICTEE_CE2: Theme = {
   domaine: 'ecrire-mots',
   classe: 'CE2',
   titre: 'Écrire des mots',
+  description: 'Écouter un mot, puis l’écrire lettre par lettre.',
+  exemple: 'une maison, un oiseau',
   unites: [
-    uniteFr('ce2-dic-u1', 'La dictée de Capy', [
+    uniteFr('ce2-dic-u1', 'La dictée de Capy', 'Écouter un mot, puis bien l’écrire.', [
       ['Le mot bien écrit', ['dictee-mots'], ['reponses', 'dictee'], 5],
       ['J’écris les mots', ['dictee-mots'], ['dictee', 'reponses'], 5],
       ['Les petits mots', ['mots-outils'], ['dictee', 'reponses'], 5],
@@ -305,8 +376,10 @@ const PHRASES_LUES_CE2: Theme = {
   domaine: 'comprendre-phrases-lues',
   classe: 'CE2',
   titre: 'Comprendre des phrases',
+  description: 'Lire une phrase et dire qui fait quoi.',
+  exemple: 'Le chien suit le chat : qui suit ?',
   unites: [
-    uniteFr('ce2-phr-u1', 'Les phrases de Capy', [
+    uniteFr('ce2-phr-u1', 'Les phrases de Capy', 'Lire une phrase et dire qui fait quoi.', [
       ['Qui fait quoi ?', ['qui-fait-quoi', 'meme-sens'], ['reponses', 'passage'], 5],
       ['La phrase qui dit pareil', ['meme-sens', 'qui-fait-quoi'], ['passage', 'reponses'], 5],
       ['Phrases pièges', ['qui-fait-quoi', 'meme-sens'], ['reponses', 'passage'], 6],
@@ -320,8 +393,10 @@ const TEXTE_LU_CE2: Theme = {
   domaine: 'comprendre-texte-lu',
   classe: 'CE2',
   titre: 'Comprendre un texte',
+  description: 'Lire une petite histoire et répondre aux questions.',
+  exemple: 'Où va Lou ? La réponse est dans l’histoire.',
   unites: [
-    uniteFr('ce2-txt-u1', 'Les histoires de Capy', [
+    uniteFr('ce2-txt-u1', 'Les histoires de Capy', 'Lire une histoire et répondre aux questions.', [
       ['Petites histoires', ['questions-texte', 'preuve-texte'], ['reponses', 'passage'], 4],
       ['La phrase qui le dit', ['preuve-texte', 'questions-texte'], ['passage', 'reponses'], 4],
       ['Histoires à lire', ['questions-texte', 'preuve-texte'], ['reponses', 'passage'], 5],
@@ -366,4 +441,3 @@ export function trouverCoffre(coffreId: string): { theme: Theme; unite: Unite } 
   }
   return undefined;
 }
-

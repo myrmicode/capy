@@ -1,13 +1,34 @@
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { avecReglagesEnfant, useThemeEnfant } from '@/accessibilite/contexte';
-import { BulleCapy, Bouton, Ecran, EtapeParcours, IconeEtoile, IconeFlamme } from '@/composants';
-import { domaineDe, LIBELLES_MATIERES, MATIERES } from '@/config/domaines';
-import type { Theme } from '@/config/parcours';
-import { mascotte, type PoseCapy } from '@/mascotte';
 import {
+  BulleCapy,
+  Bouton,
+  ChoixTheme,
+  Ecran,
+  EtapeParcours,
+  IconeEtoile,
+  IconeFlamme,
+  IconeGrille,
+  SurfaceEnRelief,
+  TuileTheme,
+} from '@/composants';
+import { TEXTE_EMPILE } from '@/composants/CarteTheme';
+import { domaineDe, LIBELLES_MATIERES, MATIERES, type Matiere } from '@/config/domaines';
+import type { Theme } from '@/config/parcours';
+import type { PoseCapy } from '@/mascotte';
+import {
+  avancementDuTheme,
   cheminDuTheme,
   dateLocale,
   joursDepuisDerniereActivite,
@@ -19,20 +40,24 @@ import { themesEntrainement, themesProposes } from '@/parcours/selection';
 import { verrouillerParents } from '@/parents/verrou';
 import { useProfilActif } from '@/store/profils';
 import { ficheSaisie, prioritesDe } from '@/toile/niveaux';
-import { couleurs, espaces, formes } from '@/theme';
+import { couleurs, couleursMatieres, espaces, formes, type CouleursMatiere } from '@/theme';
 
 /** Décalages horizontaux du chemin en zigzag, répétés. */
 const ZIGZAG = [0, 56, 84, 56, 0, -56, -84, -56];
 /** Absence (en jours) à partir de laquelle Capy dit qu'on lui a manqué. */
 const ABSENCE_LONGUE = 3;
+/** Largeur maximale de la fiche qui s'ouvre sous une étape. */
+const LARGEUR_FICHE = 360;
 
 function Parcours() {
   const profil = useProfilActif();
-  const { typo, cible } = useThemeEnfant();
-  const gras = { fontFamily: typo.texteGras.fontFamily };
+  const { typo } = useThemeEnfant();
   // Revenu sur son parcours, l'enfant ne retrouve jamais l'espace parent ouvert.
   useFocusEffect(useCallback(() => verrouillerParents(), []));
   const [themeChoisiId, setThemeChoisiId] = useState<string | null>(null);
+  const [choixOuvert, setChoixOuvert] = useState(false);
+  // Comme sur Duolingo : toucher une étape ouvre sa fiche, avec le bouton pour la commencer.
+  const [noeudOuvertId, setNoeudOuvertId] = useState<string | null>(null);
   if (!profil) return null;
 
   const p = profil.progression;
@@ -44,10 +69,7 @@ function Parcours() {
   const theme = themes.find((t) => t.id === themeChoisiId) ?? parDefaut;
   // Un axe prioritaire par matière (français, mathématiques).
   const priorites = prioritesDe(profil.classe, profil.toile);
-  const prioritaire = !!theme && priorites.has(theme.domaine);
-  // Les thèmes sont regroupés par matière ; la matière du thème le plus prioritaire vient en premier.
-  const matiereDuTheme = (t: Theme) => domaineDe(profil.classe, t.domaine)?.matiere ?? 'mathematiques';
-  const matieresDesThemes = [...new Set(themes.map(matiereDuTheme))];
+  const matiereDuTheme = (t: Theme): Matiere => domaineDe(profil.classe, t.domaine)?.matiere ?? 'mathematiques';
   const aujourdhui = dateLocale(new Date());
   const serie = serieDeJours(p.jours, aujourdhui);
   const absence = joursDepuisDerniereActivite(p.jours, aujourdhui);
@@ -109,6 +131,8 @@ function Parcours() {
     );
   }
 
+  const matiere = matiereDuTheme(theme);
+  const c = couleursMatieres[matiere];
   const chemin = cheminDuTheme(theme, p);
   const enCours = chemin.find((n) => n.etat === 'enCours');
   const uniteEnCours = theme.unites.find((u) => u.id === (enCours ?? chemin[chemin.length - 1]).uniteId)!;
@@ -134,85 +158,239 @@ function Parcours() {
 
   const ouvrir = (n: Noeud) => {
     if (n.etat === 'verrouillee') return;
+    setNoeudOuvertId(null);
     if (n.type === 'coffre') router.push({ pathname: '/coffre', params: { id: n.id } });
     else router.push({ pathname: '/etape', params: { etape: n.id } });
   };
+
+  const surtitre =
+    theme.unites.length > 1
+      ? `${LIBELLES_MATIERES[matiere]} · Unité ${numeroUnite} sur ${theme.unites.length}`
+      : LIBELLES_MATIERES[matiere];
 
   return (
     <Ecran>
       {entete}
 
-      {themes.length > 1
-        ? matieresDesThemes.map((matiere) => (
-            <View key={matiere} style={styles.rangee}>
-              <Text style={[typo.petit, styles.matiere, gras]}>{LIBELLES_MATIERES[matiere]}</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.themes}>
-                {themes
-                  .filter((t) => matiereDuTheme(t) === matiere)
-                  .map((t) => {
-                    const choisi = t.id === theme.id;
-                    return (
-                      <Pressable
-                        key={t.id}
-                        onPress={() => setThemeChoisiId(t.id)}
-                        accessibilityRole="tab"
-                        accessibilityState={{ selected: choisi }}
-                        accessibilityLabel={`${t.titre}${priorites.has(t.domaine) ? ', priorité' : ''}`}
-                        style={[styles.puceTheme, { minHeight: cible }, choisi && styles.puceChoisie]}
-                      >
-                        {priorites.has(t.domaine) ? <View style={styles.pointPriorite} /> : null}
-                        <Text style={[typo.texteGras, choisi && styles.texteBlanc]}>{t.titre}</Text>
-                      </Pressable>
-                    );
-                  })}
-              </ScrollView>
-            </View>
-          ))
-        : null}
-
-      <View style={styles.bandeau}>
-        <View style={styles.flex}>
-          <Text style={[typo.petit, styles.surtitre]}>
-            Unité {numeroUnite} · {uniteEnCours.titre}
-          </Text>
-          <Text style={typo.titre2}>{theme.titre}</Text>
-          {prioritaire ? (
-            <View style={styles.priorite}>
-              <Text style={[typo.petit, styles.texteBlanc, gras]}>Priorité</Text>
-            </View>
+      <View style={[styles.bandeau, { backgroundColor: c.face, borderBottomColor: c.relief }]}>
+        <View style={styles.bandeauHaut}>
+          <View style={[styles.flex, styles.bandeauTextes]}>
+            <Text style={[typo.petit, styles.texteBlanc, { fontFamily: typo.texteGras.fontFamily }]}>{surtitre}</Text>
+            <Text style={[typo.titre2, styles.texteBlanc]} accessibilityRole="header">
+              {theme.titre}
+            </Text>
+            <Text style={[typo.texte, styles.texteBlanc]}>{theme.description}</Text>
+          </View>
+          {/* Avec un texte plus grand, la place va au titre. */}
+          {(typo.texte.fontSize ?? 16) < TEXTE_EMPILE ? (
+            <TuileTheme
+              domaine={theme.domaine}
+              couleurs={c}
+              taille={Math.round((typo.titre2.fontSize ?? 24) * 2.6)}
+              inverse
+            />
           ) : null}
         </View>
-        <Image source={mascotte.reussite} style={styles.capyBandeau} resizeMode="contain" accessible={false} />
+        {priorites.has(theme.domaine) ? (
+          <View style={styles.badgePriorite}>
+            <Text style={[typo.petit, { color: couleurs.jaune.texte, fontFamily: typo.texteGras.fontFamily }]}>
+              À faire en premier
+            </Text>
+          </View>
+        ) : null}
+        {themes.length > 1 ? (
+          <SurfaceEnRelief
+            onPress={() => setChoixOuvert(true)}
+            accessibilityRole="button"
+            accessibilityLabel={`Changer de thème, ${themes.length} thèmes`}
+            couleurFace={couleurs.blanc}
+            couleurRelief={c.relief}
+            relief={4}
+            rayon={formes.pilule}
+            style={styles.changer}
+            styleFace={styles.changerFace}
+          >
+            <IconeGrille taille={20} couleur={c.face} />
+            <Text style={[typo.bouton, { color: c.face }]}>Changer de thème</Text>
+          </SurfaceEnRelief>
+        ) : null}
       </View>
 
       <BulleCapy pose={pose} tailleCapy={80} texte={message} />
 
-      {theme.unites.map((unite, u) => (
-        <View key={unite.id} style={styles.unite}>
-          <Text style={[typo.texteGras, styles.titreUnite]}>
-            Unité {u + 1} · {unite.titre}
-          </Text>
-          {chemin
-            .filter((n) => n.uniteId === unite.id)
-            .map((n, i) => (
-              <View key={n.id} style={[styles.noeud, { transform: [{ translateX: ZIGZAG[i % ZIGZAG.length] }] }]}>
-                <EtapeParcours
-                  etat={n.etat}
-                  numero={n.type === 'etape' ? n.numero : 0}
-                  coffre={n.type === 'coffre'}
-                  onPress={() => ouvrir(n)}
-                />
-                {n.type === 'etape' ? (
-                  <Text style={[typo.petit, styles.titreEtape, n.etat === 'enCours' && [styles.titreEnCours, gras]]}>
-                    {n.titre}
-                  </Text>
-                ) : null}
+      {theme.unites.map((unite, u) => {
+        const noeuds = chemin.filter((n) => n.uniteId === unite.id);
+        const etapes = noeuds.filter((n) => n.type === 'etape');
+        return (
+          <View key={unite.id} style={styles.unite}>
+            <View style={styles.separateur} accessibilityRole="header">
+              <View style={styles.trait} />
+              <View style={styles.separateurTextes}>
+                <Text style={[typo.texteGras, styles.titreUnite]}>
+                  Unité {u + 1} · {unite.titre}
+                </Text>
+                <Text style={[typo.petit, styles.centre]}>{unite.objectif}</Text>
               </View>
-            ))}
-        </View>
-      ))}
+              <View style={styles.trait} />
+            </View>
+            {noeuds.map((n, i) => {
+              const decalage = ZIGZAG[i % ZIGZAG.length];
+              const ouvert = noeudOuvertId === n.id;
+              return (
+                <View key={n.id} style={styles.noeud}>
+                  <View style={[styles.noeud, { transform: [{ translateX: decalage }] }]}>
+                    {n.etat === 'enCours' && !ouvert ? (
+                      <BulleCommencer texte={n.type === 'coffre' ? 'Ouvrir' : 'Commencer'} couleur={c.face} />
+                    ) : null}
+                    <EtapeParcours
+                      etat={n.etat}
+                      numero={n.type === 'etape' ? n.numero : 0}
+                      coffre={n.type === 'coffre'}
+                      couleursMatiere={c}
+                      onPress={() => setNoeudOuvertId(ouvert ? null : n.id)}
+                    />
+                    {n.type === 'etape' ? (
+                      <Text
+                        style={[
+                          typo.petit,
+                          styles.titreEtape,
+                          n.etat === 'enCours' && { color: c.relief, fontFamily: typo.texteGras.fontFamily },
+                        ]}
+                      >
+                        {n.titre}
+                      </Text>
+                    ) : null}
+                  </View>
+                  {ouvert ? (
+                    <FicheNoeud
+                      noeud={n}
+                      position={n.type === 'etape' ? etapes.indexOf(n) + 1 : 0}
+                      nombre={etapes.length}
+                      couleursMatiere={c}
+                      decalage={decalage}
+                      onOuvrir={() => ouvrir(n)}
+                    />
+                  ) : null}
+                </View>
+              );
+            })}
+          </View>
+        );
+      })}
       {boutonEntrainement}
+
+      <ChoixTheme
+        visible={choixOuvert}
+        onFermer={() => setChoixOuvert(false)}
+        themes={themes}
+        matiereDe={matiereDuTheme}
+        themeActuelId={theme.id}
+        priorites={priorites}
+        avancementDe={(t) => avancementDuTheme(t, p)}
+        onChoisir={(id) => {
+          setThemeChoisiId(id);
+          setNoeudOuvertId(null);
+        }}
+      />
     </Ecran>
+  );
+}
+
+/** La petite bulle « Commencer » qui flotte au-dessus de l'étape en cours (immobile en mode calme). */
+function BulleCommencer({ texte, couleur }: { texte: string; couleur: string }) {
+  const { typo, animationsReduites } = useThemeEnfant();
+  const y = useSharedValue(0);
+  useEffect(() => {
+    if (animationsReduites) {
+      y.value = 0;
+      return;
+    }
+    y.value = withRepeat(withSequence(withTiming(-5, { duration: 700 }), withTiming(0, { duration: 700 })), -1);
+    return () => cancelAnimation(y);
+  }, [animationsReduites, y]);
+  const style = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }] }));
+  return (
+    <Animated.View
+      style={[styles.bulleCommencer, style]}
+      accessible={false}
+      importantForAccessibility="no-hide-descendants"
+    >
+      <View style={styles.bulleCommencerFace}>
+        <Text style={[typo.texteGras, { color: couleur }]}>{texte}</Text>
+      </View>
+      <View style={styles.pointe} />
+    </Animated.View>
+  );
+}
+
+interface PropsFicheNoeud {
+  noeud: Noeud;
+  /** Rang de l'étape dans son unité (0 pour un coffre). */
+  position: number;
+  nombre: number;
+  couleursMatiere: CouleursMatiere;
+  /** Décalage horizontal de l'étape, pour pointer vers elle. */
+  decalage: number;
+  onOuvrir: () => void;
+}
+
+/** Fiche qui s'ouvre sous une étape : ce qu'elle est, et le bouton pour y aller. */
+function FicheNoeud({ noeud, position, nombre, couleursMatiere: c, decalage, onOuvrir }: PropsFicheNoeud) {
+  const { typo, ecart, cible } = useThemeEnfant();
+  const coffre = noeud.type === 'coffre';
+  const titre = coffre ? 'Le coffre de l’unité' : noeud.titre;
+  let fond: string;
+  let encre: string;
+  let detail: string;
+  let bouton: string | null;
+  if (noeud.etat === 'enCours') {
+    fond = c.face;
+    encre = couleurs.blanc;
+    detail = coffre ? 'Ouvre-le : une surprise t’attend !' : `Étape ${position} sur ${nombre}`;
+    bouton = coffre ? 'Ouvrir le coffre' : 'Commencer';
+  } else if (noeud.etat === 'reussie') {
+    fond = couleurs.jaune[400];
+    encre = couleurs.jaune.texte;
+    detail = coffre ? 'Tu l’as déjà ouvert.' : `Étape ${position} sur ${nombre} · réussie`;
+    bouton = coffre ? 'Revoir le coffre' : 'Rejouer';
+  } else {
+    fond = couleurs.gris[200];
+    encre = couleurs.encreDouce;
+    detail = coffre
+      ? 'Il s’ouvre quand toutes les étapes de l’unité sont faites.'
+      : 'Fais d’abord les étapes d’avant pour ouvrir celle-ci.';
+    bouton = null;
+  }
+  const pointe = Math.max(-(LARGEUR_FICHE / 2 - 32), Math.min(LARGEUR_FICHE / 2 - 32, decalage));
+  return (
+    <View style={styles.fiche}>
+      <View
+        style={[
+          styles.pointeFiche,
+          { backgroundColor: fond, transform: [{ translateX: pointe }, { rotate: '45deg' }] },
+        ]}
+      />
+      <View style={[styles.ficheCorps, { backgroundColor: fond, gap: ecart('s') }]}>
+        <Text style={[typo.titre3, { color: encre }]}>{titre}</Text>
+        <Text style={[typo.texte, { color: encre }]}>{detail}</Text>
+        {bouton ? (
+          <SurfaceEnRelief
+            onPress={onOuvrir}
+            accessibilityRole="button"
+            accessibilityLabel={coffre ? bouton : `${bouton} : ${titre}`}
+            couleurFace={couleurs.blanc}
+            couleurRelief={noeud.etat === 'reussie' ? couleurs.jaune[600] : c.relief}
+            relief={formes.bouton.relief}
+            rayon={formes.pilule}
+            style={{ minHeight: Math.max(formes.bouton.hauteur, cible) + formes.bouton.relief }}
+          >
+            <Text style={[typo.bouton, { color: noeud.etat === 'reussie' ? couleurs.jaune.texte : c.face }]}>
+              {bouton}
+            </Text>
+          </SurfaceEnRelief>
+        ) : null}
+      </View>
+    </View>
   );
 }
 
@@ -236,6 +414,7 @@ function Compteur({ icone, texte, libelle, fond, couleur }: PropsCompteur) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  centre: { textAlign: 'center' },
   entete: { flexDirection: 'row', alignItems: 'center', gap: espaces.s },
   lien: { color: couleurs.sarcelle[700], paddingVertical: 4 },
   compteur: {
@@ -246,55 +425,65 @@ const styles = StyleSheet.create({
     paddingHorizontal: espaces.m,
     minHeight: formes.cibleTactile,
   },
-  rangee: { gap: espaces.xs },
-  matiere: { color: couleurs.encreDouce },
-  themes: { gap: espaces.s, paddingVertical: espaces.xs },
-  puceTheme: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: espaces.s,
-    minHeight: formes.cibleTactile,
-    paddingHorizontal: espaces.l,
-    borderRadius: formes.pilule,
-    borderWidth: 2,
-    borderColor: couleurs.bordure,
-    backgroundColor: couleurs.blanc,
-  },
-  puceChoisie: {
-    backgroundColor: couleurs.sarcelle[700],
-    borderColor: couleurs.sarcelle[700],
-  },
-  pointPriorite: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: couleurs.brun[600],
-  },
   bandeau: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: couleurs.creme,
     borderRadius: formes.carte.rayon,
-    paddingLeft: espaces.l,
-    paddingVertical: espaces.s,
-    overflow: 'hidden',
+    borderBottomWidth: 6,
+    padding: espaces.l,
+    gap: espaces.m,
   },
-  surtitre: { color: couleurs.brun[800] },
-  priorite: {
+  bandeauHaut: { flexDirection: 'row', alignItems: 'center', gap: espaces.m },
+  bandeauTextes: { gap: espaces.xs },
+  texteBlanc: { color: couleurs.blanc },
+  badgePriorite: {
     alignSelf: 'flex-start',
-    backgroundColor: couleurs.brun[600],
+    backgroundColor: couleurs.jaune[400],
     borderRadius: formes.pilule,
     paddingHorizontal: espaces.m,
     paddingVertical: 2,
-    marginTop: espaces.xs,
   },
-  texteBlanc: { color: couleurs.blanc },
-  capyBandeau: { width: 120, height: 90, borderRadius: 16 },
+  changer: { alignSelf: 'flex-start', minHeight: formes.cibleTactile + 4 },
+  changerFace: { flexDirection: 'row', gap: espaces.s, paddingHorizontal: espaces.l },
   unite: { alignItems: 'center', gap: espaces.s, paddingTop: espaces.l },
-  titreUnite: { color: couleurs.encreDouce, marginBottom: espaces.s },
-  noeud: { alignItems: 'center' },
+  separateur: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: espaces.m,
+    alignSelf: 'stretch',
+    marginBottom: espaces.s,
+  },
+  separateurTextes: { flexShrink: 1, alignItems: 'center' },
+  trait: { flex: 1, height: 2, backgroundColor: couleurs.gris[300], borderRadius: 1, minWidth: 16 },
+  titreUnite: { color: couleurs.encreDouce, textAlign: 'center' },
+  noeud: { alignItems: 'center', alignSelf: 'stretch' },
   titreEtape: { maxWidth: 160, textAlign: 'center' },
-  titreEnCours: { color: couleurs.sarcelle[900] },
+  bulleCommencer: { alignItems: 'center', marginBottom: -4 },
+  bulleCommencerFace: {
+    backgroundColor: couleurs.blanc,
+    borderColor: couleurs.bordure,
+    borderWidth: 2,
+    borderRadius: 14,
+    paddingHorizontal: espaces.m,
+    paddingVertical: espaces.xs,
+  },
+  pointe: {
+    width: 12,
+    height: 12,
+    backgroundColor: couleurs.blanc,
+    borderColor: couleurs.bordure,
+    borderRightWidth: 2,
+    borderBottomWidth: 2,
+    transform: [{ rotate: '45deg' }],
+    marginTop: -7,
+  },
+  fiche: {
+    width: '100%',
+    maxWidth: LARGEUR_FICHE,
+    alignItems: 'center',
+    marginTop: espaces.s,
+    marginBottom: espaces.s,
+  },
+  pointeFiche: { width: 18, height: 18, borderRadius: 3, marginBottom: -10 },
+  ficheCorps: { alignSelf: 'stretch', borderRadius: formes.carte.rayon, padding: espaces.l },
 });
 
 export default avecReglagesEnfant(Parcours);
