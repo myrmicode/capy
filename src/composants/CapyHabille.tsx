@@ -21,7 +21,20 @@ const CADRES: Record<ObjetId, [number, number, number, number]> = {
   lunettesSoleil: [110, 75, 160, 75],
   bonnet: [115, -40, 170, 125],
   medaille: [130, 170, 150, 120],
+  feuilleRousse: [150, -20, 110, 90],
+  cacheOreilles: [95, -15, 210, 120],
+  papillon: [195, -20, 95, 80],
+  collierCoquillages: [110, 180, 170, 90],
 };
+
+/** Les coquillages du collier d'été, le long du fil. */
+const COQUILLAGES = [
+  { x: 140, y: 214, couleur: '#f4a261' },
+  { x: 166, y: 232, couleur: '#ffafcc' },
+  { x: 195, y: 240, couleur: '#ffffff' },
+  { x: 224, y: 232, couleur: '#ffafcc' },
+  { x: 250, y: 214, couleur: '#f4a261' },
+];
 
 export function DessinObjet({ id }: { id: ObjetId }) {
   switch (id) {
@@ -107,6 +120,51 @@ export function DessinObjet({ id }: { id: ObjetId }) {
           <Rect x={120} y={54} width={162} height={26} rx={12} fill="#a8dadc" />
           <Path d="M164 2 L164 54 M200 -8 L200 54 M236 2 L236 54" stroke="#3a6a88" strokeWidth={4} />
           <Circle cx={200} cy={-18} r={18} fill="#f1faee" />
+        </G>
+      );
+    case 'feuilleRousse':
+      return (
+        <G>
+          <Path d="M205 62 Q160 40 172 -6 Q222 6 228 52 Z" fill="#e76f51" />
+          <Path d="M205 62 Q192 30 186 6" stroke="#b5482f" strokeWidth={4} fill="none" />
+          <Path d="M196 36 L178 28 M200 22 L186 14 M200 46 L214 34" stroke="#b5482f" strokeWidth={3} />
+          <Path d="M205 62 L212 72" stroke="#8d6e4f" strokeWidth={4} />
+        </G>
+      );
+    case 'cacheOreilles':
+      return (
+        <G>
+          <Path d="M124 82 Q130 -6 200 -8 Q270 -6 276 82" stroke="#6d597a" strokeWidth={10} fill="none" />
+          <Circle cx={124} cy={84} r={26} fill="#f2a7c3" />
+          <Circle cx={276} cy={84} r={26} fill="#f2a7c3" />
+          <Circle cx={118} cy={78} r={8} fill="#fbd3e2" />
+          <Circle cx={270} cy={78} r={8} fill="#fbd3e2" />
+        </G>
+      );
+    case 'papillon':
+      return (
+        <G>
+          <Path d="M242 28 Q214 -14 204 10 Q200 34 242 30 Z" fill="#ffd166" stroke="#e0a52a" strokeWidth={3} />
+          <Path d="M242 28 Q270 -14 280 10 Q284 34 242 30 Z" fill="#ffd166" stroke="#e0a52a" strokeWidth={3} />
+          <Path d="M242 30 Q222 52 212 44 Q214 32 242 30 Z" fill="#f4a261" />
+          <Path d="M242 30 Q262 52 272 44 Q270 32 242 30 Z" fill="#f4a261" />
+          <Path d="M242 14 L242 46" stroke="#3d405b" strokeWidth={5} strokeLinecap="round" />
+          <Path d="M242 14 Q234 2 228 0 M242 14 Q250 2 256 0" stroke="#3d405b" strokeWidth={2} fill="none" />
+        </G>
+      );
+    case 'collierCoquillages':
+      return (
+        <G>
+          <Path d="M124 200 Q195 262 266 200" stroke="#8d6e4f" strokeWidth={3} fill="none" />
+          {COQUILLAGES.map(({ x, y, couleur }) => (
+            <Path
+              key={x}
+              d={`M${x} ${y + 14} L${x - 11} ${y} Q${x} ${y - 10} ${x + 11} ${y} Z`}
+              fill={couleur}
+              stroke="#c97a4a"
+              strokeWidth={2}
+            />
+          ))}
         </G>
       );
     case 'medaille':

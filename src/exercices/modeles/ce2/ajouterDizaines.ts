@@ -15,6 +15,15 @@ export const ajouterDizaines = definirModele<{ nombre: number; dizaines: number 
       donnees: { nombre: { min: 100, max: 899 }, dizaines: { min: 10, max: 90 } },
       reponse: { min: 110, max: 989 },
     },
+    CE1: { donnees: { nombre: { min: 11, max: 89 }, dizaines: { min: 10, max: 80 } }, reponse: { min: 21, max: 99 } },
+    CM1: {
+      donnees: { nombre: { min: 1000, max: 8999 }, dizaines: { min: 10, max: 90 } },
+      reponse: { min: 1010, max: 9089 },
+    },
+    CM2: {
+      donnees: { nombre: { min: 10000, max: 89999 }, dizaines: { min: 10, max: 90 } },
+      reponse: { min: 10010, max: 90089 },
+    },
   },
   reglesAccessibles: {
     CE2: {
@@ -24,6 +33,30 @@ export const ajouterDizaines = definirModele<{ nombre: number; dizaines: number 
       2: {
         donnees: { nombre: { min: 100, max: 500 }, dizaines: { min: 10, max: 50 } },
         reponse: { min: 110, max: 550 },
+      },
+    },
+    CE1: {
+      1: { donnees: { nombre: { min: 11, max: 49 }, dizaines: { min: 10, max: 30 } }, reponse: { min: 21, max: 79 } },
+      2: { donnees: { nombre: { min: 11, max: 59 }, dizaines: { min: 10, max: 40 } }, reponse: { min: 21, max: 99 } },
+    },
+    CM1: {
+      1: {
+        donnees: { nombre: { min: 100, max: 899 }, dizaines: { min: 10, max: 90 } },
+        reponse: { min: 110, max: 989 },
+      },
+      2: {
+        donnees: { nombre: { min: 100, max: 999 }, dizaines: { min: 10, max: 90 } },
+        reponse: { min: 110, max: 1089 },
+      },
+    },
+    CM2: {
+      1: {
+        donnees: { nombre: { min: 1000, max: 8999 }, dizaines: { min: 10, max: 90 } },
+        reponse: { min: 1010, max: 9089 },
+      },
+      2: {
+        donnees: { nombre: { min: 1000, max: 9999 }, dizaines: { min: 10, max: 90 } },
+        reponse: { min: 1010, max: 10089 },
       },
     },
   },

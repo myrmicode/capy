@@ -23,15 +23,18 @@ describe('composition d’une étape', () => {
           expect(exercice.enonce).toMatch(/fraises/);
           expect(exercice.reponse).toBeLessThanOrEqual(30);
         }
-        if (jeu === 'bonFil' && exercice.nature === 'nombre') expect(OPERATIONS_BON_FIL).toContain(exercice.operations[0]);
+        if (jeu === 'bonFil' && exercice.nature === 'nombre')
+          expect(OPERATIONS_BON_FIL).toContain(exercice.operations[0]);
       }
       // Jamais deux fois le même exercice dans une étape.
       expect(new Set(etape.map((q) => q.exercice.enonce)).size).toBe(etape.length);
     }
   });
 
-  it('renvoie une étape vide quand la classe n’a pas encore de modèles', () => {
-    expect(genererEtape({ ...BASE, classe: 'CP', graine: 1 })).toEqual([]);
+  it('renvoie une étape vide quand l’axe n’a pas encore de modèles', () => {
+    expect(genererEtape({ ...BASE, classe: 'CP', domaine: 'comprendre-mots', modeles: undefined, graine: 1 })).toEqual(
+      [],
+    );
   });
 });
 

@@ -9,7 +9,7 @@
 // - du plus fragile au moins fragile, d'après la toile du jour (qui évolue avec
 //   les exercices). Un thème reste proposé jusqu'au bout, même si l'axe progresse.
 import type { Classe } from '@/config/classes';
-import { domaineDe } from '@/config/domaines';
+import { ATELIERS, domaineDe } from '@/config/domaines';
 import { themesDe, type EtapeTheme, type Theme } from '@/config/parcours';
 import { ficheSaisie, symboleDe, type ToileEnfant } from '@/toile/niveaux';
 
@@ -41,6 +41,9 @@ export const QUESTIONS_SERIE = 5;
 export function themesEntrainement(classe: Classe, toile: ToileEnfant | undefined): Theme[] {
   if (!toile) return [];
   return themesDe(classe).filter((t) => {
+    // Les ateliers (formes, mesures) ne sont sur aucune toile : ouverts dès que la fiche de leur matière est saisie.
+    const atelier = ATELIERS[t.domaine];
+    if (atelier) return ficheSaisie(toile, atelier.matiere);
     const domaine = domaineDe(classe, t.domaine);
     if (!domaine || !ficheSaisie(toile, domaine.matiere)) return false;
     const niveauFiche = toile.septembre[t.domaine];

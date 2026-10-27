@@ -58,7 +58,10 @@ export type DomaineId =
   | 'poser-calculer'
   | 'fractions'
   | 'reconnaitre-nombres'
-  | 'representations-nombres';
+  | 'representations-nombres'
+  // Ateliers, hors des toiles
+  | 'geometrie'
+  | 'grandeurs';
 
 export interface Domaine {
   id: DomaineId;
@@ -174,6 +177,20 @@ export const DOMAINES_PAR_CLASSE: Record<Classe, Domaine[]> = {
     ma('resoudre-problemes', 'Résoudre des problèmes'),
   ],
 };
+
+/**
+ * Ateliers : des compétences du programme que les évaluations Repères ne
+ * mesurent pas (géométrie, grandeurs et mesures). Ils se jouent en
+ * entraînement libre, sans jamais changer la toile.
+ */
+export const ATELIERS: Partial<Record<DomaineId, { libelle: string; matiere: Matiere }>> = {
+  geometrie: { libelle: 'Les formes', matiere: 'mathematiques' },
+  grandeurs: { libelle: 'Les mesures', matiere: 'mathematiques' },
+};
+
+export function estAtelier(id: DomaineId): boolean {
+  return ATELIERS[id] !== undefined;
+}
 
 /** Tous les axes d'une classe, ou seulement ceux d'une matière. */
 export function domainesDe(classe: Classe, matiere?: Matiere): Domaine[] {

@@ -36,13 +36,15 @@ export function textesDesJeux({ faciles = false } = {}): string[] {
   );
 }
 
-/** Les mots de tout le contenu CE2, sur un nombre de tirages donné par modèle et par niveau. */
+/** Les mots de tout le contenu, sur un nombre de tirages donné par modèle, par classe et par niveau. */
 export function motsDuContenu(tirages: number): Set<string> {
   const mots = new Set<string>();
   const ajouter = (t: string) => motsDe(t).forEach((m) => mots.add(m));
   for (const m of [...MODELES, ...MODELES_FRANCAIS]) {
-    for (const niveau of NIVEAUX) {
-      for (let g = 0; g < tirages; g++) textesColorables(m.generer('CE2', g, { niveau })).forEach(ajouter);
+    for (const classe of m.classes) {
+      for (const niveau of NIVEAUX) {
+        for (let g = 0; g < tirages; g++) textesColorables(m.generer(classe, g, { niveau })).forEach(ajouter);
+      }
     }
   }
   textesDesJeux().forEach(ajouter);

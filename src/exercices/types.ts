@@ -75,6 +75,9 @@ export interface Exercice {
    * l'histoire ne permet pas de répondre, mélangées de façon reproductible.
    */
   questionsAuChoix?: string[];
+  /** Texte dit par Capy, jamais écrit (dictée de nombres). */
+  lecture?: string;
+  illustration?: Illustration;
 }
 
 /** Ce qu'on écrit pour créer un modèle (voir `modeles/`). */
@@ -95,11 +98,16 @@ export interface DefinitionModele<D extends Donnees> {
   /** Contraintes entre les nombres (ex. « on ne retire pas plus qu'il n'y a »). */
   estValide?: (d: D) => boolean;
   /** Tirage personnalisé ; par défaut chaque nombre est tiré uniformément dans ses bornes. */
-  tirer?: (alea: Alea, regles: ReglesClasse<D>, niveau: NiveauDifficulte) => D;
+  tirer?: (alea: Alea, regles: ReglesClasse<D>, niveau: NiveauDifficulte, classe: Classe) => D;
   /** La réponse est toujours calculée, jamais écrite à la main. */
   calculer: (d: D) => number;
   /** Variantes d'histoire ; l'une d'elles est choisie au hasard. */
   histoires: readonly Histoire<D>[];
+  /**
+   * Histoires propres à une classe, à la place des autres (en CM, des contextes
+   * où les grands nombres ont du sens : habitants, kilomètres, spectateurs).
+   */
+  histoiresParClasse?: Partial<Record<Classe, readonly Histoire<D>[]>>;
   erreursTypiques: (d: D) => Distracteur[];
 }
 
@@ -114,8 +122,81 @@ export type Histoire<D extends Donnees> = (
   explication: string;
   /** Questions qui semblent aller avec l'histoire mais auxquelles ses nombres ne permettent pas de répondre. */
   autresQuestions?: readonly string[];
+  /** Texte dit par Capy, jamais écrit (dictée de nombres). */
+  lecture?: string;
+  /** Objets dessinés dans l'énoncé (compter des objets) : le nombre est dans le dessin, pas dans le texte. */
+  illustration?: Illustration;
   facile: VersionFacile;
 };
+
+/** Objets à compter, dessinés en rangées. */
+export interface IllustrationObjets {
+  type: 'objets';
+  objet: 'fraise' | 'pomme' | 'etoile';
+  nombre: number;
+  /** Rangées de dix (sinon de cinq) : aide à compter vite les grandes collections. */
+  parDix?: boolean;
+}
+
+/** Un segment posé sur une règle graduée en centimètres (et en millimètres si `mm`). */
+export interface IllustrationRegle {
+  type: 'regle';
+  /** Début et fin du segment, en millimètres. */
+  debut: number;
+  fin: number;
+  /** Graduations des millimètres visibles. */
+  mm?: boolean;
+}
+
+export const FORMES = [
+  'carre',
+  'rectangle',
+  'triangle',
+  'cercle',
+  'losange',
+  'pentagone',
+  'hexagone',
+  'octogone',
+  'trapeze',
+  'coeur',
+] as const;
+export type Forme = (typeof FORMES)[number];
+
+/** Une figure géométrique. */
+export interface IllustrationFigure {
+  type: 'figure';
+  forme: Forme;
+}
+
+export type Illustration = IllustrationObjets | IllustrationRegle | IllustrationFigure;
+
+/** Ce qui distingue deux dessins (deux exercices au même énoncé ne sont pas le même exercice). */
+export function cleIllustration(i: Illustration): string {
+  return i.type === 'objets' ? `${i.objet} ${i.nombre}` : i.type === 'regle' ? `regle ${i.debut} ${i.fin}` : i.forme;
+}
+
+/** Nombre de côtés de chaque figure (0 pour le cercle et le cœur, qui n'ont pas de côtés droits). */
+export const COTES: Record<Forme, number> = {
+  carre: 4,
+  rectangle: 4,
+  triangle: 3,
+  cercle: 0,
+  losange: 4,
+  pentagone: 5,
+  hexagone: 6,
+  octogone: 8,
+  trapeze: 4,
+  coeur: 0,
+};
+
+/** Les nombres qu'on lit sur le dessin (les graduations de la règle sont en centimètres, les côtés se comptent). */
+export function nombresDuDessin(i: Illustration): number[] {
+  return i.type === 'objets'
+    ? [i.nombre]
+    : i.type === 'regle'
+      ? [i.debut, i.fin, i.debut / 10, i.fin / 10]
+      : [COTES[i.forme]];
+}
 
 export interface OptionsGeneration {
   /** Variante d'histoire imposée (index dans « histoires »). */
@@ -177,6 +258,8 @@ export interface ExerciceTexte {
   /** Texte découpé en phrases que l'enfant peut toucher (jeu « La bonne phrase »). */
   phrases?: string[];
   /** Mots mélangés à remettre dans l'ordre (jeu « La phrase en désordre ») ; la réponse est la phrase. */
+  /** Figure dessinée dans l’énoncé. */
+  illustration?: Illustration;
   motsEnDesordre?: string[];
   /**
    * L'enfant lit seul : c'est la compétence travaillée. « Écouter » ne lit alors

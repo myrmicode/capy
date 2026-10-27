@@ -29,7 +29,7 @@ import {
   type Action,
   type Etre,
 } from '../../comprehension';
-import { definirModeleTexte, majuscule, type ContenuTexte } from '../../moteur';
+import { definirModeleTexte, majuscule, NIVEAUX_CE1, type ContenuTexte } from '../../moteur';
 
 type Fabrique = (alea: Alea) => ContenuTexte;
 
@@ -37,7 +37,11 @@ type Fabrique = (alea: Alea) => ContenuTexte;
  * Surtout des tournures du niveau demandé, parfois une plus simple. L'enfant lit
  * seul : c'est la compétence travaillée, Capy ne lit pas la phrase.
  */
-function tirerFabrique(alea: Alea, niveau: NiveauDifficulte, parNiveau: Record<NiveauDifficulte, readonly Fabrique[]>): Fabrique {
+function tirerFabrique(
+  alea: Alea,
+  niveau: NiveauDifficulte,
+  parNiveau: Record<NiveauDifficulte, readonly Fabrique[]>,
+): Fabrique {
   const plusSimple = niveau > 1 && alea.entier(0, 3) === 0;
   const fabrique = alea.choix(parNiveau[plusSimple ? (alea.entier(1, niveau - 1) as NiveauDifficulte) : niveau]);
   return (a) => ({ ...fabrique(a), lectureAutonome: true });
@@ -62,7 +66,9 @@ function quiFait(phraseDe: (a: Etre, p: Etre, v: Action) => string, demanderPati
         { valeur: 'les deux', erreur: 'action vue comme réciproque' },
         { valeur: le(absent), erreur: 'animal absent de la phrase' },
       ],
-      indice: demanderPatient ? 'Cherche à qui on fait l’action. Attention : ce n’est pas toujours le dernier animal de la phrase.' : INDICE_ACTION,
+      indice: demanderPatient
+        ? 'Cherche à qui on fait l’action. Attention : ce n’est pas toujours le dernier animal de la phrase.'
+        : INDICE_ACTION,
       explication: `C’est ${le(agent)} qui ${v.present} ${le(patient)}. La réponse est donc « ${reponse} ».`,
     };
   };
@@ -78,7 +84,10 @@ function ou(inverse: boolean): Fabrique {
       enonce: inverse ? positionInverse(objet, p, repere) : position(objet, p, repere),
       question: `Où est ${le(objet)} ?`,
       reponse,
-      distracteurs: POSITIONS.filter((x) => x !== p).map((x) => ({ valeur: `${x} ${le(repere)}`, erreur: 'position mal comprise' })),
+      distracteurs: POSITIONS.filter((x) => x !== p).map((x) => ({
+        valeur: `${x} ${le(repere)}`,
+        erreur: 'position mal comprise',
+      })),
       indice: 'Imagine la scène dans ta tête, ou dessine-la sur une feuille.',
       explication: `${position(objet, p, repere)} La réponse est « ${reponse} ».`,
     };
@@ -161,8 +170,10 @@ export const quiFaitQuoi = definirModeleTexte({
   id: 'qui-fait-quoi',
   titre: 'Lis et réponds',
   domaine: 'comprendre-phrases-lues',
-  competence: 'Comprendre une phrase lue seul : qui agit, où, comment, dans quel ordre, même avec une tournure inhabituelle.',
-  classes: ['CE2'],
+  competence:
+    'Comprendre une phrase lue seul : qui agit, où, comment, dans quel ordre, même avec une tournure inhabituelle.',
+  classes: ['CE1', 'CE2'],
+  niveauxParClasse: { CE1: NIVEAUX_CE1 },
   // + : phrases dans l'ordre des faits ; ++ : passif, négation, « plus que », « puis » ;
   // +++ : « c'est… que », « moins que », « avant de », « après avoir », position vue depuis l'autre objet.
   construire: (alea, _classe, niveau) =>
@@ -224,7 +235,9 @@ function memeSensPosition(alea: Alea): ContenuTexte {
     enonce: phrases.join(' '),
     question: `Touche la phrase qui veut dire : « ${position(objet, p, repere)} »`,
     reponse,
-    distracteurs: phrases.filter((x) => x !== reponse).map((valeur) => ({ valeur, erreur: 'position vue depuis l’autre objet mal comprise' })),
+    distracteurs: phrases
+      .filter((x) => x !== reponse)
+      .map((valeur) => ({ valeur, erreur: 'position vue depuis l’autre objet mal comprise' })),
     phrases,
     indice: 'Imagine la scène, puis regarde-la depuis l’autre objet.',
     explication: `« ${reponse} » décrit la même scène, vue depuis ${le(repere)}.`,
@@ -236,7 +249,8 @@ export const memeSens = definirModeleTexte({
   titre: 'La phrase qui dit pareil',
   domaine: 'comprendre-phrases-lues',
   competence: 'Reconnaître, parmi des phrases proches, celle qui décrit la situation donnée.',
-  classes: ['CE2'],
+  classes: ['CE1', 'CE2'],
+  niveauxParClasse: { CE1: NIVEAUX_CE1 },
   // + : phrases simples ; ++ : phrases passives ; +++ : « c'est… que » et positions inversées.
   construire: (alea, _classe, niveau) =>
     tirerFabrique(alea, niveau, {

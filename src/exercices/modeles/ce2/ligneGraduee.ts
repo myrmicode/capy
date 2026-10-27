@@ -2,11 +2,14 @@
  * Compétence visée : se repérer sur une ligne graduée régulièrement (de 1 en 1,
  * de 2 en 2, de 5 en 5, de 10 en 10, de 100 en 100) : placer un nombre et lire
  * le nombre associé à une graduation. Nombres jusqu'à 1 000.
- * Attendus de fin de cycle 2 (CE2).
+ * Attendus de fin de cycle 2 (CE2). En CE1, des nombres jusqu'à 1 000 et des pas
+ * plus simples ; en CM, des nombres jusqu'à 100 000 puis 1 000 000.
  *
  * Le fil compte toujours 10 intervalles : il va de « debut » à debut + 10 × pas.
  * La difficulté joue sur le pas et sur la taille des nombres (voir les paliers).
  */
+import type { Classe } from '@/config/classes';
+
 import type { Alea } from '../../alea';
 import { definirModele, nb } from '../../moteur';
 import type { NiveauDifficulte, ReglesClasse } from '../../types';
@@ -22,6 +25,19 @@ interface Palier {
   max: number;
 }
 type Paliers = Record<NiveauDifficulte, Palier>;
+type PaliersParClasse = Partial<Record<Classe, Paliers>>;
+
+/** Règles de chaque classe (niveau visé) et règles accessibles (+ et ++), à partir des paliers. */
+function reglesDesClasses<D extends DonneesPlacer | DonneesLire>(
+  paliers: PaliersParClasse,
+  regles: (p: Palier) => ReglesClasse<D>,
+) {
+  const classes = Object.entries(paliers) as [Classe, Paliers][];
+  return {
+    regles: Object.fromEntries(classes.map(([c, p]) => [c, regles(p[3])])),
+    reglesAccessibles: Object.fromEntries(classes.map(([c, p]) => [c, { 1: regles(p[1]), 2: regles(p[2]) }])),
+  };
+}
 
 /** Tire un départ multiple du pas, pour que le fil reste dans les bornes du palier. */
 function tirerDebut(alea: Alea, pas: number, max: number): number {
@@ -61,18 +77,17 @@ function reglesLire(p: Palier): ReglesClasse<DonneesLire> {
   };
 }
 
-function placer(id: string, titre: string, paliers: Paliers) {
-  const cible = paliers[3].pas;
+function placer(id: string, titre: string, paliersParClasse: PaliersParClasse) {
+  const cible = paliersParClasse.CE2![3].pas;
   return definirModele<DonneesPlacer>({
     id,
     titre,
     domaine: 'ligne-graduee',
     competence: `Placer un nombre sur une ligne graduée de ${cible.join(', ')} en ${cible.join(', ')}.`,
     operations: ['+'],
-    regles: { CE2: reglesPlacer(paliers[3]) },
-    reglesAccessibles: { CE2: { 1: reglesPlacer(paliers[1]), 2: reglesPlacer(paliers[2]) } },
-    tirer: (alea, _regles, niveau) => {
-      const palier = paliers[niveau];
+    ...reglesDesClasses(paliersParClasse, reglesPlacer),
+    tirer: (alea, _regles, niveau, classe) => {
+      const palier = paliersParClasse[classe]![niveau];
       const pas = alea.choix(palier.pas);
       const debut = tirerDebut(alea, pas, palier.max);
       // Jamais sur les extrémités : il faut compter les graduations.
@@ -102,18 +117,17 @@ function placer(id: string, titre: string, paliers: Paliers) {
   });
 }
 
-function lire(id: string, titre: string, paliers: Paliers) {
-  const cible = paliers[3].pas;
+function lire(id: string, titre: string, paliersParClasse: PaliersParClasse) {
+  const cible = paliersParClasse.CE2![3].pas;
   return definirModele<DonneesLire>({
     id,
     titre,
     domaine: 'ligne-graduee',
     competence: `Lire le nombre associé à une graduation, sur une ligne graduée de ${cible.join(', ')} en ${cible.join(', ')}.`,
     operations: ['+'],
-    regles: { CE2: reglesLire(paliers[3]) },
-    reglesAccessibles: { CE2: { 1: reglesLire(paliers[1]), 2: reglesLire(paliers[2]) } },
-    tirer: (alea, _regles, niveau) => {
-      const palier = paliers[niveau];
+    ...reglesDesClasses(paliersParClasse, reglesLire),
+    tirer: (alea, _regles, niveau, classe) => {
+      const palier = paliersParClasse[classe]![niveau];
       const pas = alea.choix(palier.pas);
       return { debut: tirerDebut(alea, pas, palier.max), pas, rang: alea.entier(2, INTERVALLES_LIGNE - 1) };
     },
@@ -141,17 +155,41 @@ function lire(id: string, titre: string, paliers: Paliers) {
   });
 }
 
-/** Petits pas : + de 1 en 1 jusqu'à 50 ; ++ de 1, 2 ou 5 jusqu'à 200 ; +++ jusqu'à 1 000. */
-const PETITS_PAS: Paliers = {
-  1: { pas: [1], max: 50 },
-  2: { pas: [1, 2, 5], max: 200 },
-  3: { pas: [1, 2, 5], max: 1000 },
+const PETITS_PAS: PaliersParClasse = {
+  // + de 1 en 1 jusqu'à 20 ; ++ jusqu'à 50 ; +++ de 1 ou 2 jusqu'à 100.
+  CP: { 1: { pas: [1], max: 20 }, 2: { pas: [1], max: 50 }, 3: { pas: [1, 2], max: 100 } },
+  // + de 1 en 1 jusqu'à 30 ; ++ jusqu'à 100 ; +++ de 1, 2 ou 5 jusqu'à 500.
+  CE1: { 1: { pas: [1], max: 30 }, 2: { pas: [1], max: 100 }, 3: { pas: [1, 2, 5], max: 500 } },
+  // + de 1 en 1 jusqu'à 50 ; ++ de 1, 2 ou 5 jusqu'à 200 ; +++ jusqu'à 1 000.
+  CE2: { 1: { pas: [1], max: 50 }, 2: { pas: [1, 2, 5], max: 200 }, 3: { pas: [1, 2, 5], max: 1000 } },
+  // + comme en CE2 ; ++ de 10, 20 ou 50 jusqu'à 10 000 ; +++ jusqu'à 100 000.
+  CM1: {
+    1: { pas: [1, 2, 5], max: 1000 },
+    2: { pas: [10, 20, 50], max: 10000 },
+    3: { pas: [10, 50, 100], max: 100000 },
+  },
+  // + jusqu'à 100 000 ; ++ de 100, 200 ou 500 jusqu'à 1 000 000 ; +++ aussi de 1 000 en 1 000.
+  CM2: {
+    1: { pas: [10, 50, 100], max: 100000 },
+    2: { pas: [100, 200, 500], max: 1000000 },
+    3: { pas: [100, 500, 1000], max: 1000000 },
+  },
 };
-/** Grands pas : + de 10 en 10 jusqu'à 200 ; ++ jusqu'à 1 000 ; +++ aussi de 100 en 100. */
-const GRANDS_PAS: Paliers = {
-  1: { pas: [10], max: 200 },
-  2: { pas: [10], max: 1000 },
-  3: { pas: [10, 100], max: 1000 },
+const GRANDS_PAS: PaliersParClasse = {
+  // + de 2 en 2 jusqu'à 40 ; ++ de 5 en 5 jusqu'à 100 ; +++ aussi de 10 en 10.
+  CP: { 1: { pas: [2], max: 40 }, 2: { pas: [5], max: 100 }, 3: { pas: [5, 10], max: 100 } },
+  // + de 10 en 10 jusqu'à 200 ; ++ jusqu'à 500 ; +++ aussi de 100 en 100, jusqu'à 1 000.
+  CE1: { 1: { pas: [10], max: 200 }, 2: { pas: [10], max: 500 }, 3: { pas: [10, 100], max: 1000 } },
+  // + de 10 en 10 jusqu'à 200 ; ++ jusqu'à 1 000 ; +++ aussi de 100 en 100.
+  CE2: { 1: { pas: [10], max: 200 }, 2: { pas: [10], max: 1000 }, 3: { pas: [10, 100], max: 1000 } },
+  // + de 100 en 100 jusqu'à 10 000 ; ++ aussi de 1 000 en 1 000 ; +++ jusqu'à 1 000 000.
+  CM1: { 1: { pas: [100], max: 10000 }, 2: { pas: [100, 1000], max: 100000 }, 3: { pas: [1000, 10000], max: 1000000 } },
+  // + de 1 000 en 1 000 jusqu'à 100 000 ; ++ aussi de 10 000 en 10 000 ; +++ de 10 000 ou 50 000.
+  CM2: {
+    1: { pas: [1000], max: 100000 },
+    2: { pas: [1000, 10000], max: 1000000 },
+    3: { pas: [10000, 50000], max: 1000000 },
+  },
 };
 
 export const placerPetitsPas = placer('placer-petits-pas', 'Placer (petits pas)', PETITS_PAS);

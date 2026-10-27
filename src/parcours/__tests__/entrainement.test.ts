@@ -1,11 +1,18 @@
 import { THEMES } from '@/config/parcours';
+import { cleIllustration } from '@/exercices/types';
 import { fusionnerProgression } from '@/serveur/fusion';
 import { useProfils } from '@/store/profils';
 import { appliquerFiche, valeurDe } from '@/toile/niveaux';
 
 import { genererEtape } from '../etape';
 import { enregistrerEntrainement, progressionVide, totalEtoiles } from '../progression';
-import { QUESTIONS_SERIE, serieEntrainement, themeEnEntrainement, themesEntrainement, themesProposes } from '../selection';
+import {
+  QUESTIONS_SERIE,
+  serieEntrainement,
+  themeEnEntrainement,
+  themesEntrainement,
+  themesProposes,
+} from '../selection';
 
 const maths = appliquerFiche(
   undefined,
@@ -20,7 +27,8 @@ describe('entraînement libre', () => {
   it('ne propose que les compétences à +++ sur la fiche, et rien sans fiche', () => {
     expect(themesEntrainement('CE2', undefined)).toEqual([]);
     const ids = themesEntrainement('CE2', maths).map((t) => t.domaine);
-    expect(ids.sort()).toEqual(['ligne-graduee', 'resoudre-problemes']);
+    // Et les ateliers (formes, mesures), qui ne sont sur aucune toile.
+    expect(ids.sort()).toEqual(['geometrie', 'grandeurs', 'ligne-graduee', 'resoudre-problemes']);
     // Elles ne sont pas dans le parcours principal, et inversement.
     const parcours = themesProposes('CE2', maths).map((t) => t.id);
     for (const t of themesEntrainement('CE2', maths)) expect(parcours).not.toContain(t.id);
@@ -35,10 +43,13 @@ describe('entraînement libre', () => {
       const questions = genererEtape({ classe: theme.classe, domaine: theme.domaine, graine, ...serie, niveau: 3 });
       expect(questions).toHaveLength(QUESTIONS_SERIE);
     }
-    // Deux séries de suite ne se ressemblent pas.
+    // Deux séries de suite ne se ressemblent pas (pour un texte entendu, c'est le texte dit qui change).
+    const cle = (q: (typeof a)[number]) =>
+      q.exercice.lecture ??
+      `${q.exercice.enonce} ${q.exercice.illustration ? cleIllustration(q.exercice.illustration) : ''}`;
     const a = genererEtape({ classe: theme.classe, domaine: theme.domaine, graine: 1, ...serie, niveau: 3 });
     const b = genererEtape({ classe: theme.classe, domaine: theme.domaine, graine: 2, ...serie, niveau: 3 });
-    expect(a.map((q) => q.exercice.enonce)).not.toEqual(b.map((q) => q.exercice.enonce));
+    expect(a.map(cle)).not.toEqual(b.map(cle));
   });
 
   it('rapporte des étoiles à chaque série, qui s’ajoutent au trésor', () => {
@@ -59,7 +70,12 @@ describe('entraînement libre', () => {
     const lou = ajouterProfil('Lou', 'CE2');
     enregistrerToile(lou.id, 'mathematiques', maths.septembre, LE_20);
     for (let i = 0; i < 3; i++) {
-      enregistrer(lou.id, 'ce2-resoudre-problemes', { domaine: 'resoudre-problemes', reussiesPremierCoup: 0, nombreQuestions: 5, dureeSecondes: 60 });
+      enregistrer(lou.id, 'ce2-resoudre-problemes', {
+        domaine: 'resoudre-problemes',
+        reussiesPremierCoup: 0,
+        nombreQuestions: 5,
+        dureeSecondes: 60,
+      });
     }
     const toile = useProfils.getState().profils[0].toile!;
     expect(toile.septembre['resoudre-problemes']).toBe(valeurDe('+++'));

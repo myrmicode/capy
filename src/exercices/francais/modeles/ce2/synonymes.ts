@@ -4,14 +4,15 @@
  * axe « Reconnaître des synonymes ».
  */
 import { SYNONYMES } from '../../lexique';
-import { definirModeleTexte } from '../../moteur';
+import { definirModeleTexte, NIVEAUX_CM } from '../../moteur';
 
 export const synonymes = definirModeleTexte({
   id: 'synonymes',
   titre: 'Le mot qui veut dire pareil',
   domaine: 'synonymes',
   competence: 'Trouver le synonyme d’un mot parmi des mots de même classe.',
-  classes: ['CE2'],
+  classes: ['CE2', 'CM1'],
+  niveauxParClasse: { CM1: NIVEAUX_CM },
   // + : adjectifs, sans le piège du contraire ; ++ : adjectifs et verbes, avec le
   // contraire ; +++ : tous les mots, noms compris.
   construire: (alea, _classe, niveau) => {

@@ -5,6 +5,7 @@
  * Attendus de fin de cycle 2 (CE2).
  */
 import { definirModele, nb } from '../../moteur';
+import { HISTOIRES_PARTAGE_CM } from '../histoiresCM';
 
 export const partage = definirModele<{ total: number; parts: number }>({
   id: 'partage',
@@ -17,6 +18,9 @@ export const partage = definirModele<{ total: number; parts: number }>({
       donnees: { total: { min: 4, max: 50 }, parts: { min: 2, max: 5 } },
       reponse: { min: 2, max: 10 },
     },
+    CE1: { donnees: { total: { min: 4, max: 30 }, parts: { min: 2, max: 5 } }, reponse: { min: 2, max: 6 } },
+    CM1: { donnees: { total: { min: 20, max: 891 }, parts: { min: 2, max: 9 } }, reponse: { min: 10, max: 99 } },
+    CM2: { donnees: { total: { min: 110, max: 9999 }, parts: { min: 11, max: 25 } }, reponse: { min: 10, max: 399 } },
   },
   reglesAccessibles: {
     CE2: {
@@ -24,6 +28,21 @@ export const partage = definirModele<{ total: number; parts: number }>({
       1: { donnees: { total: { min: 4, max: 15 }, parts: { min: 2, max: 3 } }, reponse: { min: 2, max: 5 } },
       // ++ : partager jusqu'en 4.
       2: { donnees: { total: { min: 4, max: 32 }, parts: { min: 2, max: 4 } }, reponse: { min: 2, max: 8 } },
+    },
+    CE1: {
+      // + : partager en 2 ; ++ : en 2 ou 3 ; +++ : jusqu’en 5.
+      1: { donnees: { total: { min: 4, max: 10 }, parts: { min: 2, max: 2 } }, reponse: { min: 2, max: 5 } },
+      2: { donnees: { total: { min: 4, max: 18 }, parts: { min: 2, max: 3 } }, reponse: { min: 2, max: 6 } },
+    },
+    CM1: {
+      // + : comme en CE2 ; ++ : les tables ; +++ : un quotient à deux chiffres.
+      1: { donnees: { total: { min: 4, max: 50 }, parts: { min: 2, max: 5 } }, reponse: { min: 2, max: 10 } },
+      2: { donnees: { total: { min: 4, max: 108 }, parts: { min: 2, max: 9 } }, reponse: { min: 2, max: 12 } },
+    },
+    CM2: {
+      // + : un quotient à deux chiffres ; ++ : jusqu’à 399 ; +++ : un diviseur à deux chiffres.
+      1: { donnees: { total: { min: 20, max: 891 }, parts: { min: 2, max: 9 } }, reponse: { min: 10, max: 99 } },
+      2: { donnees: { total: { min: 100, max: 3591 }, parts: { min: 2, max: 9 } }, reponse: { min: 50, max: 399 } },
     },
   },
   // On tire le nombre de parts et la valeur d'une part : le partage tombe toujours juste.
@@ -34,6 +53,7 @@ export const partage = definirModele<{ total: number; parts: number }>({
   },
   estValide: ({ total, parts }) => total % parts === 0,
   calculer: ({ total, parts }) => total / parts,
+  histoiresParClasse: { CM1: HISTOIRES_PARTAGE_CM, CM2: HISTOIRES_PARTAGE_CM },
   erreursTypiques: ({ total: n, parts: p }) => [
     { valeur: n - p, erreur: 'soustraction au lieu d’un partage' },
     { valeur: n / p + 1, erreur: 'partage inégal (une part de trop)' },

@@ -20,6 +20,13 @@ export interface ToileEnfant {
   actuelle: Niveaux;
   /** Date de saisie de chaque fiche (AAAA-MM-JJ). */
   saisieLe: Partial<Record<Matiere, string>>;
+  /**
+   * Photo de la toile du jour au milieu de l'année (le 15 janvier qui suit la
+   * fiche), pour voir le chemin parcouru : septembre, janvier, aujourd'hui.
+   */
+  janvier?: Niveaux;
+  /** Jour où la photo de mi-année de chaque matière a été enregistrée (AAAA-MM-JJ). */
+  janvierLe?: Partial<Record<Matiere, string>>;
 }
 
 /**
@@ -83,11 +90,46 @@ export function appliquerFiche(
   jour: string,
 ): ToileEnfant {
   const fiche = completerNiveaux(classe, niveaux, matiere);
+  // Une nouvelle fiche ouvre une nouvelle année : l'ancienne photo de janvier de cette matière s'efface.
+  const janvier = Object.fromEntries(Object.entries(toile?.janvier ?? {}).filter(([id]) => !(id in fiche))) as Niveaux;
+  const { [matiere]: _, ...janvierLe } = toile?.janvierLe ?? {};
   return {
     septembre: { ...toile?.septembre, ...fiche },
     actuelle: { ...toile?.actuelle, ...fiche },
     saisieLe: { ...toile?.saisieLe, [matiere]: jour },
+    ...(Object.keys(janvierLe).length > 0 ? { janvier, janvierLe } : {}),
   };
+}
+
+/** Jour de la photo de mi-année pour une fiche saisie ce jour-là ; aucune si la fiche date déjà de janvier ou après. */
+export function jourMiAnnee(saisie: string): string | undefined {
+  const mois = Number(saisie.slice(5, 7));
+  return mois >= 8 ? `${Number(saisie.slice(0, 4)) + 1}-01-15` : undefined;
+}
+
+/**
+ * Prend la photo de mi-année des matières dont le 15 janvier est passé, une
+ * seule fois par fiche. La toile du jour ne bouge qu'avec les étapes : prise
+ * plus tard, avant la première étape d'après le 15 janvier, la photo est la même.
+ */
+export function avecPhotoDeJanvier(toile: ToileEnfant, classe: Classe, jour: string): ToileEnfant {
+  let resultat = toile;
+  for (const matiere of MATIERES) {
+    const saisie = toile.saisieLe[matiere];
+    const miAnnee = saisie ? jourMiAnnee(saisie) : undefined;
+    if (!miAnnee || jour < miAnnee || toile.janvierLe?.[matiere]) continue;
+    const photo: Niveaux = {};
+    for (const d of domainesDe(classe, matiere)) {
+      const niveau = resultat.actuelle[d.id];
+      if (niveau !== undefined) photo[d.id] = niveau;
+    }
+    resultat = {
+      ...resultat,
+      janvier: { ...resultat.janvier, ...photo },
+      janvierLe: { ...resultat.janvierLe, [matiere]: jour },
+    };
+  }
+  return resultat;
 }
 
 export function toileApresEtape(
@@ -142,7 +184,6 @@ export function prioritesDe(classe: Classe, toile: ToileEnfant | undefined): Set
   return ids;
 }
 
-
 /**
  * Remet au format actuel une toile enregistrée avant la prise en compte des deux
  * matières : on garde les axes qui existent toujours pour la classe, et la date
@@ -150,7 +191,13 @@ export function prioritesDe(classe: Classe, toile: ToileEnfant | undefined): Set
  */
 export function migrerToile(ancienne: unknown, classe: Classe): ToileEnfant | undefined {
   if (!ancienne || typeof ancienne !== 'object') return undefined;
-  const t = ancienne as { septembre?: Niveaux; actuelle?: Niveaux; saisieLe?: unknown };
+  const t = ancienne as {
+    septembre?: Niveaux;
+    actuelle?: Niveaux;
+    saisieLe?: unknown;
+    janvier?: Niveaux;
+    janvierLe?: unknown;
+  };
   const ids = new Set(domainesDe(classe).map((d) => d.id));
   const garder = (n: Niveaux | undefined): Niveaux =>
     Object.fromEntries(Object.entries(n ?? {}).filter(([id]) => ids.has(id as DomaineId)));
@@ -158,5 +205,12 @@ export function migrerToile(ancienne: unknown, classe: Classe): ToileEnfant | un
     typeof t.saisieLe === 'string' ? { mathematiques: t.saisieLe } : ((t.saisieLe ?? {}) as ToileEnfant['saisieLe']);
   const septembre = garder(t.septembre);
   if (Object.keys(septembre).length === 0) return undefined;
-  return { septembre, actuelle: { ...septembre, ...garder(t.actuelle) }, saisieLe };
+  const janvierLe =
+    t.janvierLe && typeof t.janvierLe === 'object' ? (t.janvierLe as ToileEnfant['janvierLe']) : undefined;
+  return {
+    septembre,
+    actuelle: { ...septembre, ...garder(t.actuelle) },
+    saisieLe,
+    ...(janvierLe ? { janvier: garder(t.janvier), janvierLe } : {}),
+  };
 }

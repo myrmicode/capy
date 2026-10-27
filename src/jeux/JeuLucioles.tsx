@@ -21,6 +21,10 @@ import { couleurs, espaces, formes } from '@/theme';
 import type { PropsJeu } from './types';
 
 const TAILLE = 104;
+/** Au-delà de ce nombre de caractères (« 81 100 »), le nombre prend une luciole allongée… */
+const CHIFFRES_PLEINE_TAILLE = 6;
+/** … et, au-delà de celui-ci, il rapetisse pour y tenir. */
+const CHIFFRES_LUCIOLE_ALLONGEE = 7;
 
 const etiquette = (v: number | string) => (typeof v === 'number' ? nb(v) : v);
 /** Amplitude du vol, en pixels : assez pour vivre, assez peu pour viser facilement. */
@@ -38,7 +42,7 @@ export function JeuLucioles({ exercice, actif, onRepondre }: PropsJeu) {
 
   return (
     <View style={styles.jeu}>
-      <CarteEnonce enonce={exercice.enonce} question={exercice.question} />
+      <CarteEnonce enonce={exercice.enonce} question={exercice.question} illustration={exercice.illustration} />
       <View style={styles.ciel}>
         {choix.map((valeur, i) => (
           <Luciole
@@ -72,6 +76,8 @@ function Luciole({ valeur, index, graine, etat, actif, onPress }: PropsLuciole) 
   // Les lucioles grandissent avec le texte (réglage de taille, et sur tablette).
   const echelle = (typo.enonce.fontSize ?? 18) / 18;
   const taille = Math.round(TAILLE * echelle);
+  // Un mot, ou un grand nombre (8 110 000), prend une luciole allongée pour tenir en entier.
+  const allongee = typeof valeur === 'string' || etiquette(valeur).length > CHIFFRES_PLEINE_TAILLE;
   const dx = useSharedValue(0);
   const dy = useSharedValue(0);
 
@@ -105,7 +111,7 @@ function Luciole({ valeur, index, graine, etat, actif, onPress }: PropsLuciole) 
           style={({ pressed }) => [
             styles.halo,
             { width: taille + 24, height: taille + 24, borderRadius: (taille + 24) / 2 },
-            typeof valeur === 'string' && [styles.haloMot, { width: Math.round(144 * echelle) }],
+            allongee && [styles.haloMot, { width: Math.round(144 * echelle) }],
             pressed && styles.appuye,
           ]}
         >
@@ -114,7 +120,7 @@ function Luciole({ valeur, index, graine, etat, actif, onPress }: PropsLuciole) 
             style={[
               styles.luciole,
               { width: taille, height: taille, borderRadius: taille / 2 },
-              typeof valeur === 'string' && [styles.lucioleMot, { width: Math.round(132 * echelle) }],
+              allongee && [styles.lucioleMot, { width: Math.round(132 * echelle) }],
               { backgroundColor: couleur, borderColor: bord },
             ]}
           >
@@ -122,7 +128,16 @@ function Luciole({ valeur, index, graine, etat, actif, onPress }: PropsLuciole) 
               style={[
                 typeof valeur === 'string'
                   ? [typo.enonce, styles.mot]
-                  : [styles.nombre, { fontFamily: typo.nombreReponse.fontFamily, fontSize: Math.round(30 * echelle) }],
+                  : [
+                      styles.nombre,
+                      // Un grand nombre (811 000) rapetisse pour tenir en entier dans la luciole, sur toutes les plateformes.
+                      {
+                        fontFamily: typo.nombreReponse.fontFamily,
+                        fontSize: Math.round(
+                          30 * echelle * Math.min(1, CHIFFRES_LUCIOLE_ALLONGEE / etiquette(valeur).length),
+                        ),
+                      },
+                    ],
                 { color: texte },
               ]}
               {...(typeof valeur === 'number' ? { adjustsFontSizeToFit: true, numberOfLines: 1 } : {})}

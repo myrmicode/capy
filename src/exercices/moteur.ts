@@ -17,7 +17,7 @@ const ESSAIS_MAX = 10_000;
 
 /** Écrit un nombre à la française : 12 345 (espace fine insécable entre les milliers). */
 export function nb(n: number): string {
-  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f');
 }
 
 function tirageUniforme<D extends Donnees>(alea: Alea, regles: ReglesClasse<D>): D {
@@ -70,15 +70,19 @@ export function definirModele<D extends Donnees>(def: DefinitionModele<D>): Mode
       const regles = reglesDe(classe, niveau);
       const alea = creerAlea(graine);
       for (let essai = 0; essai < ESSAIS_MAX; essai++) {
-        const d = def.tirer ? def.tirer(alea, regles, niveau) : tirageUniforme(alea, regles);
+        const d = def.tirer ? def.tirer(alea, regles, niveau, classe) : tirageUniforme(alea, regles);
         if (def.estValide && !def.estValide(d)) continue;
         const reponse = def.calculer(d);
         if (reponse < regles.reponse.min || reponse > regles.reponse.max) continue;
 
-        const tiree = alea.choix(def.histoires);
+        // Une variante imposée (mini-jeu illustré) vient toujours de la liste commune.
+        const tiree = alea.choix(def.histoiresParClasse?.[classe] ?? def.histoires);
         const histoire = options.histoire === undefined ? tiree : def.histoires[options.histoire];
         if (!histoire) throw new Error(`Le modèle « ${def.id} » n'a pas d'histoire n° ${options.histoire}.`);
-        const { enonce, question, indice, explication, autresQuestions, facile } = histoire(d, reponse);
+        const { enonce, question, indice, explication, autresQuestions, lecture, illustration, facile } = histoire(
+          d,
+          reponse,
+        );
         const distracteurs = choisirDistracteurs(reponse, def.erreursTypiques(d), alea);
         return {
           nature: 'nombre',
@@ -98,6 +102,8 @@ export function definirModele<D extends Donnees>(def: DefinitionModele<D>): Mode
           explication,
           facile,
           ...(autresQuestions ? { questionsAuChoix: alea.melanger([question, ...autresQuestions]) } : {}),
+          ...(lecture ? { lecture } : {}),
+          ...(illustration ? { illustration } : {}),
         };
       }
       throw new Error(`Le modèle « ${def.id} » n'arrive pas à tirer un exercice valide en ${classe}.`);

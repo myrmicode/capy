@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import Svg, { Circle, G, Line, Polygon, Text as TexteSvg, TSpan } from 'react-native-svg';
 
 import { useThemeEnfant } from '@/accessibilite/contexte';
@@ -9,8 +9,8 @@ import { couleurs, espaces, polices } from '@/theme';
 
 export interface CoucheToile {
   niveaux: Niveaux;
-  /** « septembre » : contour brun en pointillés ; « actuelle » : surface sarcelle. */
-  style: 'septembre' | 'actuelle';
+  /** « septembre » : contour brun en tirets ; « janvier » : contour encre en points ; « actuelle » : surface sarcelle. */
+  style: 'septembre' | 'janvier' | 'actuelle';
 }
 
 interface PropsToile {
@@ -18,7 +18,7 @@ interface PropsToile {
   couches: readonly CoucheToile[];
   /** Largeur maximale du dessin (la toile prend sinon toute la largeur disponible). */
   largeurMax?: number;
-  /** Affiche la légende sous la toile quand il y a deux couches. */
+  /** Affiche la légende sous la toile quand il y a plusieurs couches. */
   legende?: boolean;
 }
 
@@ -77,7 +77,12 @@ export interface Disposition {
  * Place la toile et ses libellés dans la largeur disponible. Les libellés d'un
  * même côté sont écartés verticalement pour ne jamais se chevaucher.
  */
-export function disposer(nombreAxes: number, libelles: readonly string[], largeur: number, policeVoulue: number): Disposition {
+export function disposer(
+  nombreAxes: number,
+  libelles: readonly string[],
+  largeur: number,
+  policeVoulue: number,
+): Disposition {
   // Place réservée aux libellés : celle de la plus longue ligne réelle.
   const plusLongue = Math.max(1, ...libelles.flatMap((l) => lignes(l).map((m) => m.length)));
   const rayonPour = (police: number) => largeur / 2 - plusLongue * police * 0.56 - ECART_LIBELLE - 4;
@@ -170,24 +175,35 @@ export function Toile({ domaines, couches, largeurMax = 680, legende = true }: P
         ))}
         {domaines.map((x, i) => {
           const bout = point(i, 1);
-          return <Line key={x.id} x1={d.centreX} y1={0} x2={bout.x} y2={bout.y} stroke={couleurs.gris[300]} strokeWidth={1.5} />;
+          return (
+            <Line
+              key={x.id}
+              x1={d.centreX}
+              y1={0}
+              x2={bout.x}
+              y2={bout.y}
+              stroke={couleurs.gris[300]}
+              strokeWidth={1.5}
+            />
+          );
         })}
 
         {couches.map((couche, k) => {
           const valeur = (i: number) => couche.niveaux[domaines[i].id] ?? 0;
-          const septembre = couche.style === 'septembre';
+          const contour = couche.style !== 'actuelle';
           return (
             <G key={k}>
               <Polygon
                 points={polygone(valeur)}
-                fill={septembre ? 'none' : couleurs.sarcelle[400]}
-                fillOpacity={septembre ? 0 : 0.35}
-                stroke={septembre ? couleurs.brun[600] : couleurs.sarcelle[700]}
-                strokeWidth={septembre ? 2.5 : 3}
-                strokeDasharray={septembre ? '7 6' : undefined}
+                fill={contour ? 'none' : couleurs.sarcelle[400]}
+                fillOpacity={contour ? 0 : 0.35}
+                stroke={CONTOURS[couche.style]}
+                strokeWidth={contour ? 2.5 : 3}
+                strokeDasharray={couche.style === 'septembre' ? '7 6' : couche.style === 'janvier' ? '1 6' : undefined}
+                strokeLinecap="round"
                 strokeLinejoin="round"
               />
-              {!septembre
+              {!contour
                 ? domaines.map((x, i) => {
                     const p = point(i, valeur(i));
                     return <Circle key={x.id} cx={p.x} cy={p.y} r={5} fill={couleurs.sarcelle[700]} />;
@@ -218,25 +234,36 @@ export function Toile({ domaines, couches, largeurMax = 680, legende = true }: P
 
       {legende && couches.length > 1 ? (
         <View style={styles.legende}>
-          <View style={styles.element}>
-            <View style={styles.traitSeptembre} />
-            <Text style={typo.petit}>Septembre (fiche de l’école)</Text>
-          </View>
-          <View style={styles.element}>
-            <View style={styles.traitActuel} />
-            <Text style={typo.petit}>Aujourd’hui</Text>
-          </View>
+          {couches.map((c) => (
+            <View key={c.style} style={styles.element}>
+              <View style={TRAITS[c.style]} />
+              <Text style={typo.petit}>{LEGENDES[c.style]}</Text>
+            </View>
+          ))}
         </View>
       ) : null}
     </View>
   );
 }
 
+const CONTOURS: Record<CoucheToile['style'], string> = {
+  septembre: couleurs.brun[600],
+  janvier: couleurs.encreDouce,
+  actuelle: couleurs.sarcelle[700],
+};
+
+const LEGENDES: Record<CoucheToile['style'], string> = {
+  septembre: 'Septembre (fiche de l’école)',
+  janvier: 'Mi-année (janvier)',
+  actuelle: 'Aujourd’hui',
+};
+
 const styles = StyleSheet.create({
   cadre: { width: '100%', alignItems: 'center', gap: espaces.s },
   legende: { flexDirection: 'row', flexWrap: 'wrap', gap: espaces.l, justifyContent: 'center' },
   element: { flexDirection: 'row', alignItems: 'center', gap: espaces.s },
   traitSeptembre: { width: 28, height: 0, borderTopWidth: 3, borderStyle: 'dashed', borderColor: couleurs.brun[600] },
+  traitJanvier: { width: 28, height: 0, borderTopWidth: 3, borderStyle: 'dotted', borderColor: couleurs.encreDouce },
   traitActuel: {
     width: 28,
     height: 14,
@@ -246,3 +273,9 @@ const styles = StyleSheet.create({
     borderColor: couleurs.sarcelle[700],
   },
 });
+
+const TRAITS: Record<CoucheToile['style'], ViewStyle> = {
+  septembre: styles.traitSeptembre,
+  janvier: styles.traitJanvier,
+  actuelle: styles.traitActuel,
+};

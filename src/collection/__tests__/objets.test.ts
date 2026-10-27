@@ -2,7 +2,16 @@ import { CARNET, pagesDuCarnet } from '@/contenu/carnet';
 import { THEMES } from '@/config/parcours';
 import { enregistrerEtape, ouvrirCoffre, progressionVide, type ProgressionEnfant } from '@/parcours/progression';
 
-import { DEFIS_PAR_OBJET, nombreDeTresors, nouvelObjet, OBJETS, objetsGagnes, tenueValide } from '../objets';
+import {
+  DEFIS_PAR_OBJET,
+  DEFIS_PAR_OBJET_SAISON,
+  nombreDeTresors,
+  nouvelObjet,
+  OBJETS,
+  objetsGagnes,
+  tenueValide,
+  TOUS_LES_OBJETS,
+} from '../objets';
 
 const avecCoffres = (n: number): ProgressionEnfant =>
   Array.from({ length: n }, (_, i) => `c${i}`).reduce(ouvrirCoffre, progressionVide());
@@ -36,13 +45,26 @@ describe('trésors de Capy', () => {
   });
 
   it('a des objets aux noms uniques', () => {
-    expect(new Set(OBJETS.map((o) => o.id)).size).toBe(OBJETS.length);
+    expect(new Set(TOUS_LES_OBJETS.map((o) => o.id)).size).toBe(TOUS_LES_OBJETS.length);
+  });
+
+  it(`donne le trésor d’une saison après ${DEFIS_PAR_OBJET_SAISON} défis réussis pendant cette saison`, () => {
+    // Deux défis en hiver, puis un troisième : les cache-oreilles.
+    const hiver = { ...progressionVide(), defis: { '2026-12-03': 3, '2027-01-10': 2 } };
+    const apres = { ...hiver, defis: { ...hiver.defis, '2027-02-01': 1 } };
+    expect(objetsGagnes(hiver).some((o) => o.saison)).toBe(false);
+    expect(nouvelObjet(hiver, apres)?.id).toBe('cacheOreilles');
+    // Un défi raté (0 étoile) ne compte pas, ni un défi d'une autre saison.
+    const autre = { ...hiver, defis: { ...hiver.defis, '2027-01-11': 0, '2027-03-15': 3 } };
+    expect(nouvelObjet(hiver, autre)).toBeNull();
+    expect(tenueValide({ tete: 'cacheOreilles' }, apres)).toEqual({ tete: 'cacheOreilles' });
+    expect(tenueValide({ tete: 'cacheOreilles' }, hiver)).toEqual({});
   });
 });
 
 describe('carnet de Capy', () => {
-  it('a une page pour chaque thème de CE2', () => {
-    for (const t of THEMES.filter((x) => x.classe === 'CE2')) expect(CARNET[t.domaine]).toBeDefined();
+  it('a une page pour chaque thème, dans toutes les classes', () => {
+    for (const t of THEMES) expect(CARNET[t.domaine]).toBeDefined();
   });
 
   it('ajoute une page dès la première étape finie du thème', () => {

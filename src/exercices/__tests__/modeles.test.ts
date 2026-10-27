@@ -1,6 +1,7 @@
 import { MODELES } from '../modeles';
 import { nb } from '../moteur';
-import { NIVEAUX, type Donnees, type Exercice } from '../types';
+import { nombreEnLettres } from '../nombres';
+import { cleIllustration, NIVEAUX, nombresDuDessin, type Donnees, type Exercice } from '../types';
 
 const TIRAGES = 10_000;
 
@@ -19,6 +20,26 @@ const ORACLES: Record<string, (d: Donnees) => number> = {
   'rendre-monnaie': (d) => d.billet - d.prix,
   duree: (d) => d.debut + d.duree,
   tables: (d) => d.a * d.b,
+  'tables-multiplication': (d) => d.a * d.b,
+  'tables-addition': (d) => d.a + d.b,
+  'fois-dix-cent': (d) => d.nombre * d.multiplicateur,
+  'lire-nombre': (d) => d.nombre,
+  'compter-objets': (d) => d.nombre,
+  'mesurer-regle': (d) => d.fin - d.debut,
+  'metres-en-cm': (d) => d.quantite * 100,
+  'km-en-m': (d) => d.quantite * 1000,
+  'kg-en-g': (d) => d.quantite * 1000,
+  'litres-en-cl': (d) => d.quantite * 100,
+  'heures-en-minutes': (d) => d.heures * 60 + d.minutes,
+  'ecrire-nombre': (d) => d.nombre,
+  'plus-grand': (d) => Math.max(d.a, d.b, d.c, d.d),
+  'plus-petit': (d) => Math.min(d.a, d.b, d.c, d.d),
+  denombrer: (d) => 100 * d.boites + 10 * d.paquets + d.seuls,
+  decomposer: (d) => 1000 * d.milliers + 100 * d.centaines + d.unites,
+  'addition-posee': (d) => d.a + d.b,
+  'soustraction-posee': (d) => d.a - d.b,
+  'multiplication-posee': (d) => d.a * d.b,
+  'fraction-de': (d) => (d.total * d.numerateur) / d.denominateur,
   doubles: (d) => d.nombre + d.nombre,
   'complement-cent': (d) => 100 - d.depart,
   'ajouter-dizaines': (d) => d.nombre + d.dizaines,
@@ -30,7 +51,7 @@ const ORACLES: Record<string, (d: Donnees) => number> = {
 
 /** Nombres écrits dans un texte (avec l'espace fine des milliers). */
 function nombresDans(texte: string): number[] {
-  return (texte.match(/\d+(?: \d{3})*/g) ?? []).map((n) => Number(n.replace(/ /g, '')));
+  return (texte.match(/\d+(?:\u202f\d{3})*/g) ?? []).map((n) => Number(n.replace(/\u202f/g, '')));
 }
 
 const MOTS_INTERDITS = /\b(faux|fausse|note|score|nul|raté)\b/i;
@@ -71,7 +92,12 @@ describe.each(MODELES.map((m) => [m.id, m] as const))('modèle « %s »', (id, m
         else if (!Number.isInteger(valeur) || valeur < bornes.min || valeur > bornes.max) {
           signaler(`« ${nom} » = ${valeur} hors bornes`);
         }
-        if (!nombresEnonce.includes(valeur)) signaler(`« ${nom} » = ${valeur} absent de l'énoncé et de la question`);
+        // En chiffres, ou en lettres (lire un nombre écrit en lettres, ou dit par Capy dans une dictée de nombres).
+        const enLettres = `${ex.enonce} ${ex.lecture ?? ''}`.includes(nombreEnLettres(valeur));
+        // Ou dessiné : on compte les objets de l'illustration.
+        const dessine = ex.illustration !== undefined && nombresDuDessin(ex.illustration).includes(valeur);
+        if (!nombresEnonce.includes(valeur) && !enLettres && !dessine)
+          signaler(`« ${nom} » = ${valeur} absent de l'énoncé et de la question`);
       }
 
       // Trois distracteurs : entiers, positifs, distincts entre eux et de la réponse.
@@ -100,11 +126,14 @@ describe.each(MODELES.map((m) => [m.id, m] as const))('modèle « %s »', (id, m
 
       // La question perdue : la bonne question et deux autres, toutes différentes.
       if (ex.questionsAuChoix) {
-        if (ex.questionsAuChoix.length !== 3 || new Set(ex.questionsAuChoix).size !== 3) signaler('questions au choix invalides');
+        if (ex.questionsAuChoix.length !== 3 || new Set(ex.questionsAuChoix).size !== 3)
+          signaler('questions au choix invalides');
         if (!ex.questionsAuChoix.includes(ex.question)) signaler('la bonne question manque');
       }
 
-      enonces.add(`${ex.enonce} ${ex.question}`);
+      enonces.add(
+        `${ex.enonce} ${ex.question} ${ex.lecture ?? ''} ${ex.illustration ? cleIllustration(ex.illustration) : ''}`,
+      );
     }
 
     expect(problemes).toEqual([]);
@@ -150,6 +179,6 @@ describe.each(MODELES.map((m) => [m.id, m] as const))('modèle « %s »', (id, m
 });
 
 it('refuse de générer pour une classe sans règles', () => {
-  const groupements = MODELES.find((m) => m.id === 'groupements')!;
-  expect(() => groupements.generer('CP', 1)).toThrow(/pas de règles/);
+  const ecart = MODELES.find((m) => m.id === 'ecart')!;
+  expect(() => ecart.generer('CP', 1)).toThrow(/pas de règles/);
 });

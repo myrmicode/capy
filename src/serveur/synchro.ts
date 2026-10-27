@@ -4,7 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
 import { lireReglages } from '@/accessibilite/reglages';
-import { OBJETS, type ObjetId } from '@/collection/objets';
+import { TOUS_LES_OBJETS, type ObjetId } from '@/collection/objets';
 import { CLASSES } from '@/config/classes';
 import type { DomaineId } from '@/config/domaines';
 import { JEUX, type JeuId } from '@/jeux/registre';
@@ -16,7 +16,7 @@ import { planifierSynchro, type ProfilDistant } from './fusion';
 import { supabase } from './supabase';
 
 const TABLE = 'profils_enfants';
-const IDS_OBJETS = OBJETS.map((o) => o.id) as [ObjetId, ...ObjetId[]];
+const IDS_OBJETS = TOUS_LES_OBJETS.map((o) => o.id) as [ObjetId, ...ObjetId[]];
 
 /** Une ligne de la table, telle que renvoyée par le serveur. */
 const Ligne = z.object({

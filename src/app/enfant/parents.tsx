@@ -19,7 +19,7 @@ import { synchroniser } from '@/serveur/synchro';
 import { useCompte } from '@/store/compte';
 import { useProfilActif, useProfils } from '@/store/profils';
 import { useReglages } from '@/store/reglages';
-import { ficheSaisie } from '@/toile/niveaux';
+import { avecPhotoDeJanvier, ficheSaisie, jourMiAnnee } from '@/toile/niveaux';
 import { couleurs, espaces, formes } from '@/theme';
 
 /** Espace parent, derrière le contrôle parental. Il se reverrouille dès qu'on le quitte. */
@@ -62,6 +62,8 @@ function ContenuParents() {
   const p = profil.progression;
   const optionsLecture = optionsActives(lireReglages(profil.reglages));
   const aujourdhui = dateLocale(new Date());
+  // La photo de mi-année se voit dès le 15 janvier, même avant la première étape qui l'enregistre.
+  const toile = profil.toile && avecPhotoDeJanvier(profil.toile, profil.classe, aujourdhui);
   const etapesReussies = Object.keys(p.etapes).length;
   const serie = serieDeJours(p.jours, aujourdhui);
   // Idées sans écran : les compétences les plus fragiles d'abord (les trois premiers thèmes proposés).
@@ -90,21 +92,32 @@ function ContenuParents() {
       </View>
 
       <Section titre="Les toiles">
-        {MATIERES.filter((m) => ficheSaisie(profil.toile, m)).map((m) => (
-          <View key={m} style={styles.toile}>
-            <Text style={typo.texteGras}>{LIBELLES_MATIERES[m]}</Text>
-            <Toile
-              domaines={domainesDe(profil.classe, m)}
-              couches={[
-                { niveaux: profil.toile!.septembre, style: 'septembre' },
-                { niveaux: profil.toile!.actuelle, style: 'actuelle' },
-              ]}
-            />
-            <Text style={[typo.petit, styles.centre]}>
-              Fiche saisie le {dateEnFrancais(profil.toile!.saisieLe[m]!)}.
-            </Text>
-          </View>
-        ))}
+        {MATIERES.filter((m) => ficheSaisie(toile, m)).map((m) => {
+          const saisie = toile!.saisieLe[m]!;
+          const miAnnee = jourMiAnnee(saisie);
+          const avecJanvier = toile!.janvierLe?.[m] !== undefined;
+          return (
+            <View key={m} style={styles.toile}>
+              <Text style={typo.texteGras}>{LIBELLES_MATIERES[m]}</Text>
+              <Toile
+                domaines={domainesDe(profil.classe, m)}
+                couches={[
+                  { niveaux: toile!.septembre, style: 'septembre' },
+                  ...(avecJanvier ? [{ niveaux: toile!.janvier ?? {}, style: 'janvier' as const }] : []),
+                  { niveaux: toile!.actuelle, style: 'actuelle' },
+                ]}
+              />
+              <Text style={[typo.petit, styles.centre]}>
+                Fiche saisie le {dateEnFrancais(saisie)}.
+                {miAnnee
+                  ? avecJanvier
+                    ? ` Toile de mi-année : celle du ${dateEnFrancais(miAnnee)}.`
+                    : ` Le ${dateEnFrancais(miAnnee)}, Capy gardera une photo de la toile, pour voir le chemin parcouru.`
+                  : ''}
+              </Text>
+            </View>
+          );
+        })}
         {profil.toile ? (
           <>
             <Text style={[typo.petit, styles.centre]}>La toile du jour évolue avec les résultats aux exercices.</Text>

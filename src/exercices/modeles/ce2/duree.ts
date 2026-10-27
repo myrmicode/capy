@@ -16,6 +16,8 @@ export const duree = definirModele<{ debut: number; duree: number }>({
   operations: ['+'],
   regles: {
     CE2: { donnees: { debut: { min: 1, max: 10 }, duree: { min: 2, max: 9 } }, reponse: { min: 3, max: 12 } },
+    CE1: { donnees: { debut: { min: 1, max: 10 }, duree: { min: 1, max: 3 } }, reponse: { min: 2, max: 12 } },
+    CM1: { donnees: { debut: { min: 1, max: 10 }, duree: { min: 2, max: 9 } }, reponse: { min: 3, max: 12 } },
   },
   reglesAccessibles: {
     CE2: {
@@ -23,6 +25,15 @@ export const duree = definirModele<{ debut: number; duree: number }>({
       1: { donnees: { debut: { min: 1, max: 6 }, duree: { min: 1, max: 2 } }, reponse: { min: 2, max: 8 } },
       // ++ : jusqu'à cinq heures.
       2: { donnees: { debut: { min: 1, max: 9 }, duree: { min: 1, max: 5 } }, reponse: { min: 2, max: 11 } },
+    },
+    CE1: {
+      // + : une heure ; ++ : une ou deux heures ; +++ : jusqu’à trois heures.
+      1: { donnees: { debut: { min: 1, max: 6 }, duree: { min: 1, max: 1 } }, reponse: { min: 2, max: 7 } },
+      2: { donnees: { debut: { min: 1, max: 8 }, duree: { min: 1, max: 2 } }, reponse: { min: 2, max: 10 } },
+    },
+    CM1: {
+      1: { donnees: { debut: { min: 1, max: 9 }, duree: { min: 1, max: 5 } }, reponse: { min: 2, max: 11 } },
+      2: { donnees: { debut: { min: 1, max: 10 }, duree: { min: 2, max: 9 } }, reponse: { min: 3, max: 12 } },
     },
   },
   calculer: ({ debut, duree: d }) => debut + d,

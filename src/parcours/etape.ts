@@ -1,6 +1,7 @@
 import type { Classe } from '@/config/classes';
 import type { DomaineId } from '@/config/domaines';
 import { creerAlea, modelesPour, NIVEAU_CIBLE, type ExerciceQuelconque, type NiveauDifficulte } from '@/exercices';
+import { cleIllustration } from '@/exercices/types';
 import { JEUX, type JeuId } from '@/jeux/registre';
 
 import { niveauxDesQuestions } from './niveau';
@@ -28,6 +29,14 @@ export interface ParametresEtape {
 }
 
 const ESSAIS_PAR_QUESTION = 200;
+
+/**
+ * Ce qui ne doit pas revenir deux fois dans une étape : l'énoncé, ou le texte
+ * dit par Capy quand l'énoncé est le même pour tous (texte entendu, dictée),
+ * ou le nombre d'objets dessinés.
+ */
+const cleQuestion = (ex: ExerciceQuelconque) =>
+  ex.lecture ?? (ex.illustration ? `${ex.enonce} ${cleIllustration(ex.illustration)}` : ex.enonce);
 
 /**
  * Compose une étape : une suite de questions qui alterne les mini-jeux.
@@ -71,7 +80,7 @@ export function genererEtape({
       if (jeu.accepte(ex)) {
         questions.push({ jeu: jeu.id, exercice: ex, revision: true });
         dernierModele = ex.modeleId;
-        dejaPosees.add(ex.enonce);
+        dejaPosees.add(cleQuestion(ex));
         break;
       }
     }
@@ -89,13 +98,13 @@ export function genererEtape({
       // Si le modèle « varié » ne convient jamais à ce jeu, on reprend tous les modèles du jeu.
       const modele = alea.choix(essai < ESSAIS_PAR_QUESTION / 2 ? choisis : candidats);
       const ex = modele.generer(classe, alea.entier(0, 2 ** 31 - 1), { histoire: jeu.histoire, niveau: niveaux[i] });
-      if (jeu.accepte(ex) && !dejaPosees.has(ex.enonce)) exercice = ex;
+      if (jeu.accepte(ex) && !dejaPosees.has(cleQuestion(ex))) exercice = ex;
     }
     if (!exercice) throw new Error(`Aucun exercice ne convient au jeu « ${jeu.id} » en ${classe}.`);
 
     questions.push({ jeu: jeu.id, exercice });
     dernierModele = exercice.modeleId;
-    dejaPosees.add(exercice.enonce);
+    dejaPosees.add(cleQuestion(exercice));
   }
   return questions;
 }

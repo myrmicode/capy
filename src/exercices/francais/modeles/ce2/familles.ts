@@ -4,7 +4,7 @@
  * Attendus de fin de cycle 2 (CE2) ; axe « Reconnaître des mots de la même famille ».
  */
 import { FAMILLES } from '../../lexique';
-import { definirModeleTexte } from '../../moteur';
+import { definirModeleTexte, NIVEAUX_CM } from '../../moteur';
 
 const INDICE = 'Des mots de la même famille se ressemblent ET parlent de la même chose.';
 const INDICE_FACILE = 'Les mots d’une famille se ressemblent. Ils parlent de la même chose.';
@@ -14,7 +14,8 @@ export const memeFamille = definirModeleTexte({
   titre: 'Les mots de la même famille',
   domaine: 'familles-mots',
   competence: 'Trouver un mot de la même famille qu’un mot donné.',
-  classes: ['CE2'],
+  classes: ['CE2', 'CM1'],
+  niveauxParClasse: { CM1: NIVEAUX_CM },
   // + : sans mot-piège parmi les propositions ; ++ et +++ : avec le mot qui ressemble.
   construire: (alea, _classe, niveau) => {
     const famille = alea.choix(FAMILLES);
@@ -46,7 +47,8 @@ export const intrus = definirModeleTexte({
   titre: 'L’intrus',
   domaine: 'familles-mots',
   competence: 'Repérer, dans une liste, le mot qui n’appartient pas à la famille.',
-  classes: ['CE2'],
+  classes: ['CE2', 'CM1'],
+  niveauxParClasse: { CM1: NIVEAUX_CM },
   construire: (alea) => {
     const famille = alea.choix(FAMILLES.filter((f) => f.piege));
     const piege = famille.piege!;

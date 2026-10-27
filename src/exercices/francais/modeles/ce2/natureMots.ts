@@ -3,7 +3,7 @@
  * (nom, verbe, adjectif, déterminant) dans une phrase simple.
  * Attendus de fin de cycle 2 (CE2) ; axe « Identifier la nature des mots ».
  */
-import { definirModeleTexte, majuscule, phrase } from '../../moteur';
+import { definirModeleTexte, majuscule, NIVEAUX_CM, phrase } from '../../moteur';
 import { NATURES, phraseSimple, type Mot, type NatureMot } from '../../phrases';
 
 const INDICE =
@@ -22,7 +22,8 @@ function explication(m: Mot, infinitif: string): string {
   }
 }
 
-const ERREUR_CONFUSION = (choisie: NatureMot, vraie: NatureMot) => `${choisie.toLowerCase()} au lieu de ${vraie.toLowerCase()}`;
+const ERREUR_CONFUSION = (choisie: NatureMot, vraie: NatureMot) =>
+  `${choisie.toLowerCase()} au lieu de ${vraie.toLowerCase()}`;
 
 /** Jeu des paniers : un mot est mis en valeur, l'enfant dit sa nature. */
 export const natureDuMot = definirModeleTexte({
@@ -30,7 +31,8 @@ export const natureDuMot = definirModeleTexte({
   titre: 'Quelle nature ?',
   domaine: 'nature-mots',
   competence: 'Donner la nature d’un mot dans une phrase : nom, verbe, adjectif ou déterminant.',
-  classes: ['CE2'],
+  classes: ['CE2', 'CM1', 'CM2'],
+  niveauxParClasse: { CM1: NIVEAUX_CM, CM2: NIVEAUX_CM },
   // + : deux paniers (nom, verbe) ; ++ : l'adjectif en plus ; +++ : les quatre.
   construire: (alea, _classe, niveau) => {
     const paniers = NATURES.slice(0, niveau + 1);
@@ -38,12 +40,17 @@ export const natureDuMot = definirModeleTexte({
     const possibles = p.mots.map((_m, i) => i).filter((i) => paniers.includes(p.mots[i].nature));
     const cible = alea.choix(possibles);
     const mot = p.mots[cible];
-    const segments = p.mots.map((m, i) => ({ texte: i === 0 ? majuscule(m.texte) : m.texte, ...(i === cible ? { surligne: true } : {}) }));
+    const segments = p.mots.map((m, i) => ({
+      texte: i === 0 ? majuscule(m.texte) : m.texte,
+      ...(i === cible ? { surligne: true } : {}),
+    }));
     return {
       enonce: phrase(segments),
       question: `Quelle est la nature du mot « ${mot.texte} » ?`,
       reponse: mot.nature,
-      distracteurs: paniers.filter((n) => n !== mot.nature).map((n) => ({ valeur: n, erreur: ERREUR_CONFUSION(n, mot.nature) })),
+      distracteurs: paniers
+        .filter((n) => n !== mot.nature)
+        .map((n) => ({ valeur: n, erreur: ERREUR_CONFUSION(n, mot.nature) })),
       segments,
       categories: [...paniers],
       indice: INDICE,
@@ -58,7 +65,8 @@ export const trouverLeMot = definirModeleTexte({
   titre: 'Trouve le mot',
   domaine: 'nature-mots',
   competence: 'Repérer dans une phrase le verbe ou l’adjectif.',
-  classes: ['CE2'],
+  classes: ['CE2', 'CM1', 'CM2'],
+  niveauxParClasse: { CM1: NIVEAUX_CM, CM2: NIVEAUX_CM },
   // + : le verbe seulement ; ++ et +++ : le verbe ou l'adjectif.
   construire: (alea, _classe, niveau) => {
     const p = phraseSimple(alea);

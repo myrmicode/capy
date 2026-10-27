@@ -5,6 +5,7 @@
  */
 import type { Alea } from '../../alea';
 import { definirModele, nb } from '../../moteur';
+import { HISTOIRES_PAYER_CM } from '../histoiresCM';
 import type { NiveauDifficulte, ReglesClasse } from '../../types';
 
 const ARTICLES = [
@@ -23,6 +24,8 @@ export const payer = definirModele<{ prixA: number; prixB: number }>({
   operations: ['+'],
   regles: {
     CE2: { donnees: { prixA: { min: 5, max: 60 }, prixB: { min: 5, max: 40 } }, reponse: { min: 12, max: 100 } },
+    CE1: { donnees: { prixA: { min: 2, max: 30 }, prixB: { min: 2, max: 20 } }, reponse: { min: 5, max: 50 } },
+    CM1: { donnees: { prixA: { min: 20, max: 400 }, prixB: { min: 10, max: 300 } }, reponse: { min: 30, max: 700 } },
   },
   reglesAccessibles: {
     CE2: {
@@ -31,9 +34,19 @@ export const payer = definirModele<{ prixA: number; prixB: number }>({
       // ++ : total jusqu'à 50 €.
       2: { donnees: { prixA: { min: 3, max: 30 }, prixB: { min: 2, max: 20 } }, reponse: { min: 8, max: 50 } },
     },
+    CE1: {
+      1: { donnees: { prixA: { min: 1, max: 5 }, prixB: { min: 1, max: 4 } }, reponse: { min: 3, max: 9 } },
+      2: { donnees: { prixA: { min: 1, max: 9 }, prixB: { min: 1, max: 6 } }, reponse: { min: 3, max: 15 } },
+    },
+    CM1: {
+      // + : jusqu’à 120 € ; ++ : jusqu’à 300 € ; +++ : jusqu’à 700 €.
+      1: { donnees: { prixA: { min: 20, max: 80 }, prixB: { min: 10, max: 40 } }, reponse: { min: 30, max: 120 } },
+      2: { donnees: { prixA: { min: 40, max: 200 }, prixB: { min: 10, max: 100 } }, reponse: { min: 50, max: 300 } },
+    },
   },
   estValide: ({ prixA, prixB }) => prixA !== prixB,
   calculer: ({ prixA, prixB }) => prixA + prixB,
+  histoiresParClasse: { CM1: HISTOIRES_PAYER_CM },
   erreursTypiques: ({ prixA: a, prixB: b }) => [
     { valeur: Math.abs(a - b), erreur: 'soustraction au lieu d’addition' },
     { valeur: a, erreur: 'un seul achat compté' },
@@ -80,6 +93,8 @@ export const rendreMonnaie = definirModele<{ billet: number; prix: number }>({
   operations: ['−'],
   regles: {
     CE2: { donnees: { billet: { min: 20, max: 100 }, prix: { min: 5, max: 95 } }, reponse: { min: 2, max: 95 } },
+    CE1: { donnees: { billet: { min: 10, max: 20 }, prix: { min: 2, max: 19 } }, reponse: { min: 1, max: 18 } },
+    CM1: { donnees: { billet: { min: 20, max: 100 }, prix: { min: 5, max: 95 } }, reponse: { min: 2, max: 95 } },
   },
   reglesAccessibles: {
     CE2: {
@@ -87,6 +102,15 @@ export const rendreMonnaie = definirModele<{ billet: number; prix: number }>({
       1: { donnees: { billet: { min: 10, max: 10 }, prix: { min: 1, max: 9 } }, reponse: { min: 1, max: 9 } },
       // ++ : un billet de 10 € ou de 20 €.
       2: { donnees: { billet: { min: 10, max: 20 }, prix: { min: 2, max: 19 } }, reponse: { min: 1, max: 18 } },
+    },
+    CE1: {
+      // + : un billet de 10 €, petit prix ; ++ : un billet de 10 € ; +++ : 10 € ou 20 €.
+      1: { donnees: { billet: { min: 10, max: 10 }, prix: { min: 5, max: 9 } }, reponse: { min: 1, max: 5 } },
+      2: { donnees: { billet: { min: 10, max: 10 }, prix: { min: 1, max: 9 } }, reponse: { min: 1, max: 9 } },
+    },
+    CM1: {
+      1: { donnees: { billet: { min: 10, max: 20 }, prix: { min: 2, max: 19 } }, reponse: { min: 1, max: 18 } },
+      2: { donnees: { billet: { min: 20, max: 50 }, prix: { min: 5, max: 49 } }, reponse: { min: 1, max: 45 } },
     },
   },
   tirer: (alea: Alea, regles: ReglesClasse<{ billet: number; prix: number }>, _niveau: NiveauDifficulte) =>

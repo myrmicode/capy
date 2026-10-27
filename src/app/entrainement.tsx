@@ -6,7 +6,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { avecReglagesEnfant, useThemeEnfant } from '@/accessibilite/contexte';
 import { BulleCapy, Bouton, CarteTheme, Ecran, IconeEtoile } from '@/composants';
-import { domaineDe, LIBELLES_MATIERES, MATIERES } from '@/config/domaines';
+import { domaineDe, estAtelier, LIBELLES_MATIERES, MATIERES } from '@/config/domaines';
 import { nombreDeQuestions } from '@/accessibilite/adaptation';
 import { QUESTIONS_SERIE, themesEntrainement } from '@/parcours/selection';
 import { useProfilActif } from '@/store/profils';
@@ -19,6 +19,22 @@ function Entrainement() {
 
   const themes = themesEntrainement(profil.classe, profil.toile);
   const questions = nombreDeQuestions(QUESTIONS_SERIE, reglages);
+  // D'abord chaque matière, puis les ateliers (formes, mesures), qui ne sont sur aucune toile.
+  const groupes = [
+    ...MATIERES.map((matiere) => ({
+      cle: matiere,
+      titre: LIBELLES_MATIERES[matiere],
+      couleurs: couleursMatieres[matiere],
+      themes: themes.filter((t) => domaineDe(profil.classe, t.domaine)?.matiere === matiere),
+    })),
+    {
+      cle: 'ateliers',
+      titre: 'Les ateliers\u00a0: formes et mesures',
+      couleurs: couleursMatieres.mathematiques,
+      themes: themes.filter((t) => estAtelier(t.domaine)),
+    },
+  ];
+  const ateliers = themes.some((t) => estAtelier(t.domaine));
 
   return (
     <Ecran pied={<Bouton titre="Retour au parcours" variante="secondaire" onPress={() => router.back()} />}>
@@ -28,20 +44,20 @@ function Entrainement() {
         tailleCapy={88}
         texte={
           themes.length > 0
-            ? `Ici, tu rejoues ce que tu sais déjà bien faire. Une série, c’est ${questions} questions, et elle rapporte des étoiles.`
+            ? `Ici, tu rejoues ce que tu sais déjà bien faire${ateliers ? ', et tu découvres les formes et les mesures' : ''}. Une série, c’est ${questions} questions, et elle rapporte des étoiles.`
             : 'Rien à rejouer pour l’instant : tout ce que je sais faire travailler est dans ton parcours.'
         }
       />
-      {MATIERES.map((matiere) => {
-        const duSujet = themes.filter((t) => domaineDe(profil.classe, t.domaine)?.matiere === matiere);
+      {groupes.map((groupe) => {
+        const duSujet = groupe.themes;
         if (duSujet.length === 0) return null;
         return (
-          <View key={matiere} style={{ gap: ecart('m') }}>
-            <Text style={[typo.texteGras, styles.matiere]}>{LIBELLES_MATIERES[matiere]}</Text>
+          <View key={groupe.cle} style={{ gap: ecart('m') }}>
+            <Text style={[typo.texteGras, styles.matiere]}>{groupe.titre}</Text>
             {duSujet.map((t) => {
               const resultat = profil.progression.entrainement?.[t.id];
               return (
-                <CarteTheme key={t.id} theme={t} couleurs={couleursMatieres[matiere]}>
+                <CarteTheme key={t.id} theme={t} couleurs={groupe.couleurs}>
                   {resultat ? (
                     <View
                       style={styles.ligne}

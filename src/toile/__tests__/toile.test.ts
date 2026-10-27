@@ -6,8 +6,10 @@ import { nombreEnLettres, nouveauDefi } from '@/parents/controleParental';
 import {
   analyserToile,
   appliquerFiche,
+  avecPhotoDeJanvier,
   completerNiveaux,
   ficheSaisie,
+  jourMiAnnee,
   migrerToile,
   niveauApresEtape,
   prioritesDe,
@@ -38,12 +40,20 @@ describe('axes des toiles (planches officielles des évaluations Repères)', () 
       ]),
     );
     expect(domainesDe('CE2', 'francais').map((d) => d.libelle)).toEqual(
-      expect.arrayContaining(['Accorder le nom et l’adjectif', 'Identifier la nature des mots', 'Lire à voix haute un texte']),
+      expect.arrayContaining([
+        'Accorder le nom et l’adjectif',
+        'Identifier la nature des mots',
+        'Lire à voix haute un texte',
+      ]),
     );
   });
 
   it('signale la lecture à voix haute comme hors de l’appli (pas de voix enregistrée)', () => {
-    expect(domainesDe('CE2').filter((d) => d.horsAppli).map((d) => d.id)).toEqual(['lire-texte']);
+    expect(
+      domainesDe('CE2')
+        .filter((d) => d.horsAppli)
+        .map((d) => d.id),
+    ).toEqual(['lire-texte']);
   });
 });
 
@@ -137,7 +147,36 @@ describe('bilan', () => {
     expect([...prioritesDe('CE2', toile)].sort()).toEqual(['fractions', 'nature-mots']);
     expect(prioritesDe('CE2', undefined).size).toBe(0);
   });
+});
 
+describe('toile de mi-année', () => {
+  const fiche = appliquerFiche(undefined, 'CE2', 'mathematiques', { 'resoudre-problemes': plus }, '2026-09-20');
+  const avancee = { ...fiche, actuelle: { ...fiche.actuelle, 'resoudre-problemes': 0.6 } };
+
+  it('a lieu le 15 janvier qui suit une fiche de la rentrée, jamais pour une fiche de janvier', () => {
+    expect(jourMiAnnee('2026-09-20')).toBe('2027-01-15');
+    expect(jourMiAnnee('2026-12-02')).toBe('2027-01-15');
+    expect(jourMiAnnee('2027-01-10')).toBeUndefined();
+  });
+
+  it('garde la toile du jour une seule fois, et seulement pour les matières saisies', () => {
+    expect(avecPhotoDeJanvier(avancee, 'CE2', '2027-01-14')).toBe(avancee);
+    const photo = avecPhotoDeJanvier(avancee, 'CE2', '2027-02-03');
+    expect(photo.janvier).toEqual(avancee.actuelle);
+    expect(photo.janvierLe).toEqual({ mathematiques: '2027-02-03' });
+    // Plus tard, la toile du jour avance mais la photo ne bouge plus.
+    const plusTard = toileApresEtape(photo, 'resoudre-problemes', 5, 5);
+    expect(avecPhotoDeJanvier(plusTard, 'CE2', '2027-03-01').janvier).toEqual(photo.janvier);
+  });
+
+  it('s’efface quand une nouvelle fiche de la même matière est saisie, et survit à la synchronisation', () => {
+    const photo = avecPhotoDeJanvier(avancee, 'CE2', '2027-01-15');
+    expect(migrerToile(JSON.parse(JSON.stringify(photo)), 'CE2')).toEqual(photo);
+    const nouvelle = appliquerFiche(photo, 'CE2', 'mathematiques', { 'resoudre-problemes': deux }, '2027-09-18');
+    expect(nouvelle.janvier).toBeUndefined();
+    expect(nouvelle.janvierLe).toBeUndefined();
+    expect(appliquerFiche(photo, 'CE2', 'francais', {}, '2027-01-20').janvier).toEqual(photo.janvier);
+  });
 });
 
 describe('migration des toiles enregistrées avant les deux matières', () => {

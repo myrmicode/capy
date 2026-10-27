@@ -6,6 +6,7 @@
  */
 import { soustractionPetitDuGrand } from '../../erreurs';
 import { definirModele, nb } from '../../moteur';
+import { HISTOIRES_RETRAIT_CM } from '../histoiresCM';
 
 export const retrait = definirModele<{ depart: number; retrait: number }>({
   id: 'retrait',
@@ -18,6 +19,16 @@ export const retrait = definirModele<{ depart: number; retrait: number }>({
       donnees: { depart: { min: 100, max: 999 }, retrait: { min: 10, max: 899 } },
       reponse: { min: 10, max: 989 },
     },
+    CE1: { donnees: { depart: { min: 50, max: 500 }, retrait: { min: 10, max: 299 } }, reponse: { min: 10, max: 490 } },
+    CM1: {
+      donnees: { depart: { min: 1000, max: 9999 }, retrait: { min: 100, max: 7999 } },
+      reponse: { min: 100, max: 9899 },
+    },
+    CM2: {
+      donnees: { depart: { min: 10000, max: 99999 }, retrait: { min: 1000, max: 79999 } },
+      reponse: { min: 1000, max: 98999 },
+    },
+    CP: { donnees: { depart: { min: 20, max: 90 }, retrait: { min: 5, max: 40 } }, reponse: { min: 5, max: 85 } },
   },
   reglesAccessibles: {
     CE2: {
@@ -29,9 +40,38 @@ export const retrait = definirModele<{ depart: number; retrait: number }>({
         reponse: { min: 10, max: 490 },
       },
     },
+    CE1: {
+      1: { donnees: { depart: { min: 10, max: 39 }, retrait: { min: 2, max: 9 } }, reponse: { min: 3, max: 37 } },
+      2: { donnees: { depart: { min: 20, max: 99 }, retrait: { min: 5, max: 50 } }, reponse: { min: 5, max: 94 } },
+    },
+    CM1: {
+      1: {
+        donnees: { depart: { min: 100, max: 999 }, retrait: { min: 10, max: 899 } },
+        reponse: { min: 10, max: 989 },
+      },
+      2: {
+        donnees: { depart: { min: 1000, max: 5000 }, retrait: { min: 100, max: 3000 } },
+        reponse: { min: 100, max: 4900 },
+      },
+    },
+    CM2: {
+      1: {
+        donnees: { depart: { min: 1000, max: 9999 }, retrait: { min: 100, max: 7999 } },
+        reponse: { min: 100, max: 9899 },
+      },
+      2: {
+        donnees: { depart: { min: 10000, max: 50000 }, retrait: { min: 1000, max: 30000 } },
+        reponse: { min: 1000, max: 49000 },
+      },
+    },
+    CP: {
+      1: { donnees: { depart: { min: 5, max: 10 }, retrait: { min: 1, max: 4 } }, reponse: { min: 1, max: 9 } },
+      2: { donnees: { depart: { min: 10, max: 20 }, retrait: { min: 2, max: 9 } }, reponse: { min: 2, max: 18 } },
+    },
   },
   estValide: ({ depart, retrait: b }) => b < depart,
   calculer: ({ depart, retrait: b }) => depart - b,
+  histoiresParClasse: { CM1: HISTOIRES_RETRAIT_CM, CM2: HISTOIRES_RETRAIT_CM },
   erreursTypiques: ({ depart: a, retrait: b }) => [
     { valeur: soustractionPetitDuGrand(a, b), erreur: 'dans chaque colonne, le plus petit chiffre ôté du plus grand' },
     { valeur: a + b, erreur: 'addition au lieu de soustraction' },

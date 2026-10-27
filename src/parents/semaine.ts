@@ -1,9 +1,9 @@
 // Résumé de la semaine pour les parents : des phrases plutôt que des chiffres,
 // jamais de comparaison avec d'autres enfants, jamais de reproche.
 import type { Classe } from '@/config/classes';
-import { domaineDe } from '@/config/domaines';
+import { domaineDe, type DomaineId } from '@/config/domaines';
 import { dateLocale, decaler, tempsDeLaSemaine, type ProgressionEnfant } from '@/parcours/progression';
-import { symboleDe, type ToileEnfant } from '@/toile/niveaux';
+import { avecPhotoDeJanvier, symboleDe, type Niveaux, type ToileEnfant } from '@/toile/niveaux';
 
 import { dureeEnFrancais } from './format';
 
@@ -45,17 +45,26 @@ export function resumeSemaine(profil: ProfilResume, maintenant = new Date()): st
 
   // Ce qui avance depuis la fiche de l'école (toile de septembre → toile du jour).
   if (profil.toile) {
-    const avance: string[] = [];
-    for (const [id, actuel] of Object.entries(profil.toile.actuelle)) {
-      const depart = profil.toile.septembre[id as keyof typeof profil.toile.septembre];
-      if (depart === undefined || actuel === undefined) continue;
-      const avant = symboleDe(depart);
-      const apres = symboleDe(actuel);
-      const domaine = domaineDe(profil.classe, id as Parameters<typeof domaineDe>[1]);
-      if (domaine && apres.length > avant.length)
-        avance.push(`${domaine.libelle.toLowerCase()} (de ${avant} à ${apres})`);
-    }
+    const progres = (depuis: Niveaux, jusqua: Niveaux) => {
+      const avance: string[] = [];
+      for (const [id, actuel] of Object.entries(jusqua)) {
+        const depart = depuis[id as DomaineId];
+        if (depart === undefined || actuel === undefined) continue;
+        const avant = symboleDe(depart);
+        const apres = symboleDe(actuel);
+        const domaine = domaineDe(profil.classe, id as DomaineId);
+        if (domaine && apres.length > avant.length)
+          avance.push(`${domaine.libelle.toLowerCase()} (de ${avant} à ${apres})`);
+      }
+      return avance;
+    };
+    const avance = progres(profil.toile.septembre, profil.toile.actuelle);
     if (avance.length > 0) phrases.push(`Depuis la fiche de l’école, ça avance : ${liste(avance)}.`);
+    const janvier = avecPhotoDeJanvier(profil.toile, profil.classe, aujourdhui).janvier;
+    if (janvier) {
+      const depuisJanvier = progres(janvier, profil.toile.actuelle);
+      if (depuisJanvier.length > 0) phrases.push(`Depuis janvier aussi : ${liste(depuisJanvier)}.`);
+    }
   }
 
   const aRevoir = Object.values(p.aRevoir ?? {});

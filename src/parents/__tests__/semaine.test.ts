@@ -38,6 +38,21 @@ describe('résumé de la semaine', () => {
     expect(texte).toContain('Capy fera revoir');
     expect(texte).not.toMatch(/faux|note|score|nul/i);
   });
+
+  it('dit aussi ce qui avance depuis la toile de mi-année', () => {
+    const fiche = appliquerFiche(undefined, 'CE2', 'mathematiques', { 'resoudre-problemes': 0.2 }, '2026-09-15');
+    const toile = {
+      ...fiche,
+      janvier: { ...fiche.actuelle, 'resoudre-problemes': 0.6 },
+      janvierLe: { mathematiques: '2027-01-15' },
+      actuelle: { ...fiche.actuelle, 'resoudre-problemes': 0.9 },
+    };
+    const texte = resumeSemaine(
+      { prenom: 'Lou', classe: 'CE2', progression: progressionVide(), toile },
+      new Date(2027, 2, 1),
+    ).join(' ');
+    expect(texte).toContain('Depuis janvier aussi : résoudre des problèmes (de ++ à +++)');
+  });
 });
 
 describe('idées de jeux sans écran', () => {

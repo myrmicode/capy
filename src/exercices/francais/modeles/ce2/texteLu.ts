@@ -7,7 +7,7 @@
 import type { Alea } from '../../../alea';
 import type { DistracteurTexte, NiveauDifficulte } from '../../../types';
 import { accorde, il, ils, PRENOMS, tirerDifferents, type Etre } from '../../comprehension';
-import { definirModeleTexte, majuscule, type ContenuTexte } from '../../moteur';
+import { definirModeleTexte, majuscule, NIVEAUX_CE1, NIVEAUX_CM, type ContenuTexte } from '../../moteur';
 
 interface QuestionTexte {
   niveau: NiveauDifficulte;
@@ -104,7 +104,7 @@ function objetPerdu(alea: Alea, niveau: NiveauDifficulte): Histoire {
   const questions: QuestionTexte[] = [
     {
       niveau: 1,
-      question: `Où vont ${p.nom} et ${q.nom} ?`,
+      question: `Où vont ${p.nom} et ${q.nom}\u00a0?`,
       reponse: sortie.lieu,
       distracteurs: autres(
         SORTIES.map((s) => s.lieu),
@@ -117,7 +117,7 @@ function objetPerdu(alea: Alea, niveau: NiveauDifficulte): Histoire {
     },
     {
       niveau: 1,
-      question: `Qu’est-ce que ${p.nom} a perdu ?`,
+      question: `Qu’est-ce que ${p.nom} a perdu\u00a0?`,
       reponse: objet.son,
       distracteurs: autres(
         OBJETS_PERDUS.map((o) => o.son),
@@ -130,7 +130,7 @@ function objetPerdu(alea: Alea, niveau: NiveauDifficulte): Histoire {
     },
     {
       niveau: 1,
-      question: `Qui retrouve ${objet.le} ?`,
+      question: `Qui retrouve ${objet.le}\u00a0?`,
       reponse: q.nom,
       distracteurs: [
         { valeur: p.nom, erreur: 'personnage principal pris pour celui qui agit' },
@@ -143,16 +143,16 @@ function objetPerdu(alea: Alea, niveau: NiveauDifficulte): Histoire {
     },
     {
       niveau: 2,
-      question: `Où était ${objet.le} ?`,
+      question: `Où était ${objet.le}\u00a0?`,
       reponse: cachette,
       distracteurs: autres(toutesCachettes, cachette, 'autre cachette'),
       preuve: n - 2,
       consignePreuve: `Touche la phrase qui dit où était ${objet.le}.`,
-      indice: 'Cherche la phrase où l’objet est retrouvé : elle dit aussi à quel endroit.',
+      indice: 'Cherche la phrase où l’objet est retrouvé\u00a0: elle dit aussi à quel endroit.',
     },
     {
       niveau: 2,
-      question: `Que font ${p.nom} et ${q.nom} ${sortie.lieu} ?`,
+      question: `Que font ${p.nom} et ${q.nom} ${sortie.lieu}\u00a0?`,
       reponse: `${ils(p, q)} ${sortie.activite}`,
       distracteurs: autres(
         SORTIES.map((s) => `${ils(p, q)} ${s.activite}`),
@@ -167,7 +167,7 @@ function objetPerdu(alea: Alea, niveau: NiveauDifficulte): Histoire {
   if (!deduire) {
     questions.push({
       niveau: 2,
-      question: 'Quand se passe l’histoire ?',
+      question: 'Quand se passe l’histoire\u00a0?',
       reponse: moment.toLowerCase(),
       distracteurs: autres(
         MOMENTS.map((m) => m.toLowerCase()),
@@ -182,7 +182,7 @@ function objetPerdu(alea: Alea, niveau: NiveauDifficulte): Histoire {
     questions.push(
       {
         niveau: 3,
-        question: `Comment se sent ${p.nom} à la fin ?`,
+        question: `Comment se sent ${p.nom} à la fin\u00a0?`,
         reponse: content,
         distracteurs: [
           { valeur: accorde(p, 'inquiet', 'inquiète'), erreur: 'sentiment du milieu de l’histoire' },
@@ -196,18 +196,18 @@ function objetPerdu(alea: Alea, niveau: NiveauDifficulte): Histoire {
       },
       {
         niveau: 3,
-        question: 'À quel moment de la journée se passe l’histoire ?',
+        question: 'À quel moment de la journée se passe l’histoire\u00a0?',
         reponse: soleil.moment,
         distracteurs: autres(['le matin', 'le soir', 'à midi', 'la nuit'], soleil.moment, 'moment non justifié'),
         preuve: 0,
         consignePreuve: 'Touche la phrase qui aide à savoir à quel moment de la journée se passe l’histoire.',
-        consignePreuveFacile: 'À quel moment se passe l’histoire ? Touche la phrase qui aide.',
+        consignePreuveFacile: 'À quel moment se passe l’histoire\u00a0? Touche la phrase qui aide.',
         indice: 'Regarde ce que fait le soleil.',
         deduite: true,
       },
       {
         niveau: 3,
-        question: `Pourquoi ${p.nom} cherche-t-${pronomP} partout ?`,
+        question: `Pourquoi ${p.nom} cherche-t-${pronomP} partout\u00a0?`,
         reponse: `parce qu’${pronomP} a perdu ${objet.son}`,
         distracteurs: [
           { valeur: `parce qu’${pronomP} joue à cache-cache`, erreur: 'cause inventée' },
@@ -261,13 +261,13 @@ function anniversaire(alea: Alea, niveau: NiveauDifficulte): Histoire {
     `Le soir, ${fete.nom} découvre le gâteau.`,
     deduire
       ? `${majuscule(fete.nom)} sourit jusqu’aux oreilles et serre les enfants dans ses bras.`
-      : `${majuscule(fete.nom)} est très ${heureux} !`,
+      : `${majuscule(fete.nom)} est très ${heureux}\u00a0!`,
   ];
 
   const questions: QuestionTexte[] = [
     {
       niveau: 1,
-      question: 'Pour qui est la surprise ?',
+      question: 'Pour qui est la surprise\u00a0?',
       reponse: `pour ${fete.nom}`,
       distracteurs: autres(
         FETES.map((f) => `pour ${f.nom}`),
@@ -280,7 +280,7 @@ function anniversaire(alea: Alea, niveau: NiveauDifficulte): Histoire {
     },
     {
       niveau: 1,
-      question: `Quel gâteau font ${p.nom} et ${q.nom} ?`,
+      question: `Quel gâteau font ${p.nom} et ${q.nom}\u00a0?`,
       reponse: `un gâteau ${parfum.gateau}`,
       distracteurs: autres(
         PARFUMS.map((x) => `un gâteau ${x.gateau}`),
@@ -293,7 +293,7 @@ function anniversaire(alea: Alea, niveau: NiveauDifficulte): Histoire {
     },
     {
       niveau: 2,
-      question: `Où ${p.nom} et ${q.nom} achètent-${eux} ${parfum.ingredient} ?`,
+      question: `Où ${p.nom} et ${q.nom} achètent-${eux} ${parfum.ingredient}\u00a0?`,
       reponse: achat,
       distracteurs: autres(ACHATS, achat, 'autre lieu'),
       preuve: 1,
@@ -302,7 +302,7 @@ function anniversaire(alea: Alea, niveau: NiveauDifficulte): Histoire {
     },
     {
       niveau: 2,
-      question: `Quand ${fete.nom} découvre-t-${il(fete)} le gâteau ?`,
+      question: `Quand ${fete.nom} découvre-t-${il(fete)} le gâteau\u00a0?`,
       reponse: 'le soir',
       distracteurs: autres(['le matin', 'le soir', 'à midi', 'la nuit'], 'le soir', 'autre moment'),
       preuve: 3,
@@ -313,7 +313,7 @@ function anniversaire(alea: Alea, niveau: NiveauDifficulte): Histoire {
   if (niveau > 1) {
     questions.push({
       niveau: 2,
-      question: 'Où les enfants cachent-ils le gâteau ?',
+      question: 'Où les enfants cachent-ils le gâteau\u00a0?',
       reponse: cachette,
       distracteurs: autres(CACHETTES_GATEAU, cachette, 'autre cachette'),
       preuve: 2,
@@ -325,7 +325,7 @@ function anniversaire(alea: Alea, niveau: NiveauDifficulte): Histoire {
     questions.push(
       {
         niveau: 3,
-        question: `Comment se sent ${fete.nom} quand ${il(fete)} découvre le gâteau ?`,
+        question: `Comment se sent ${fete.nom} quand ${il(fete)} découvre le gâteau\u00a0?`,
         reponse: heureux,
         distracteurs: [
           { valeur: 'triste', erreur: 'sentiment contraire' },
@@ -339,7 +339,7 @@ function anniversaire(alea: Alea, niveau: NiveauDifficulte): Histoire {
       },
       {
         niveau: 3,
-        question: `Pourquoi ${p.nom} et ${q.nom} achètent-${eux} ${parfum.ingredient} ?`,
+        question: `Pourquoi ${p.nom} et ${q.nom} achètent-${eux} ${parfum.ingredient}\u00a0?`,
         reponse: 'pour faire un gâteau',
         distracteurs: [
           { valeur: 'pour un pique-nique', erreur: 'cause inventée' },
@@ -348,7 +348,7 @@ function anniversaire(alea: Alea, niveau: NiveauDifficulte): Histoire {
         ],
         preuve: 2,
         consignePreuve: `Touche la phrase qui aide à comprendre pourquoi ${p.nom} et ${q.nom} font des courses.`,
-        consignePreuveFacile: 'Pourquoi les enfants font-ils des courses ? Touche la phrase qui aide.',
+        consignePreuveFacile: 'Pourquoi les enfants font-ils des courses\u00a0? Touche la phrase qui aide.',
         indice: 'Regarde ce que font les enfants juste après les courses.',
         deduite: true,
       },
@@ -370,8 +370,10 @@ export const questionsTexte = definirModeleTexte({
   id: 'questions-texte',
   titre: 'Lis l’histoire',
   domaine: 'comprendre-texte-lu',
-  competence: 'Répondre à une question sur un court texte lu seul : information écrite, puis information à déduire.',
-  classes: ['CE2'],
+  competence:
+    'Répondre à une question sur un court texte lu seul\u00a0: information écrite, puis information à déduire.',
+  classes: ['CE1', 'CE2', 'CM1', 'CM2'],
+  niveauxParClasse: { CE1: NIVEAUX_CE1, CM1: NIVEAUX_CM, CM2: NIVEAUX_CM },
   // + : texte court, réponse écrite telle quelle ; ++ : pronoms, lieux et moments ;
   // +++ : sentiment, moment ou cause à déduire d'indices.
   construire: (alea, _classe, niveau): ContenuTexte => {
@@ -385,15 +387,49 @@ export const questionsTexte = definirModeleTexte({
       lectureAutonome: true,
       indice: q.indice,
       explication: q.deduite
-        ? `Le texte ne le dit pas avec ces mots, mais « ${preuve} » le montre. La réponse est « ${q.reponse} ».`
-        : `Le texte dit : « ${preuve} » La réponse est « ${q.reponse} ».`,
+        ? `Le texte ne le dit pas avec ces mots, mais «\u00a0${preuve}\u00a0» le montre. La réponse est «\u00a0${q.reponse}\u00a0».`
+        : `Le texte dit\u00a0: «\u00a0${preuve}\u00a0» La réponse est «\u00a0${q.reponse}\u00a0».`,
       ...(q.deduite
         ? {
             facile: {
-              explication: `Le texte ne le dit pas. Mais « ${preuve} » le montre. La réponse est « ${q.reponse} ».`,
+              explication: `Le texte ne le dit pas. Mais «\u00a0${preuve}\u00a0» le montre. La réponse est «\u00a0${q.reponse}\u00a0».`,
             },
           }
         : {}),
+    };
+  },
+});
+
+/**
+ * Comprendre un texte entendu : Capy raconte l'histoire, qui n'est pas écrite à
+ * l'écran ; l'enfant peut la réécouter autant qu'il veut. Axe « Comprendre un
+ * texte » (texte entendu) de la fiche.
+ */
+export const texteEntendu = definirModeleTexte({
+  id: 'texte-entendu',
+  titre: 'Écoute l’histoire',
+  domaine: 'comprendre-texte-entendu',
+  competence:
+    'Comprendre un court texte entendu\u00a0: retrouver une information dite, puis déduire ce qui n’est pas dit.',
+  classes: ['CP', 'CE2', 'CM1', 'CM2'],
+  niveauxParClasse: { CP: { 1: 1, 2: 1, 3: 2 }, CM1: NIVEAUX_CM, CM2: NIVEAUX_CM },
+  // Mêmes histoires et mêmes niveaux que « Lis l'histoire », mais entendues.
+  construire: (alea, _classe, niveau): ContenuTexte => {
+    const { histoire, q } = tirerQuestion(alea, niveau);
+    const preuve = histoire.phrases[q.preuve];
+    return {
+      enonce: 'Touche «\u00a0Écouter\u00a0»\u00a0: Capy te raconte une histoire. Tu peux l’écouter plusieurs fois.',
+      question: q.question,
+      lecture: `${histoire.phrases.join(' ')} ${q.question}`,
+      reponse: q.reponse,
+      distracteurs: alea.melanger(q.distracteurs),
+      indice:
+        'Réécoute l’histoire en pensant à la question\u00a0: la réponse y est dite, ou des indices permettent de la trouver.',
+      explication: `Dans l’histoire, Capy disait\u00a0: «\u00a0${preuve}\u00a0» La réponse est «\u00a0${q.reponse}\u00a0».`,
+      facile: {
+        indice: 'Réécoute l’histoire. Pense à la question.',
+        explication: `Capy disait\u00a0: «\u00a0${preuve}\u00a0» La réponse est «\u00a0${q.reponse}\u00a0».`,
+      },
     };
   },
 });
@@ -403,7 +439,8 @@ export const preuveTexte = definirModeleTexte({
   titre: 'La phrase qui le dit',
   domaine: 'comprendre-texte-lu',
   competence: 'Retrouver dans un texte la phrase qui donne une information ou qui permet de la déduire.',
-  classes: ['CE2'],
+  classes: ['CE1', 'CE2', 'CM1', 'CM2'],
+  niveauxParClasse: { CE1: NIVEAUX_CE1, CM1: NIVEAUX_CM, CM2: NIVEAUX_CM },
   // Mêmes histoires et mêmes niveaux que « Lis l'histoire ».
   construire: (alea, _classe, niveau): ContenuTexte => {
     const { histoire, q } = tirerQuestion(alea, niveau);
@@ -419,7 +456,7 @@ export const preuveTexte = definirModeleTexte({
       phrases: histoire.phrases,
       lectureAutonome: true,
       indice: 'Relis les phrases une par une. Pour chacune, demande-toi si elle répond à la question.',
-      explication: `C’est la phrase « ${reponse} » qui le dit.`,
+      explication: `C’est la phrase «\u00a0${reponse}\u00a0» qui le dit.`,
     };
   },
 });

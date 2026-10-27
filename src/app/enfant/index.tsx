@@ -1,4 +1,4 @@
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
@@ -44,6 +44,7 @@ import {
   type Noeud,
 } from '@/parcours/progression';
 import { themesEntrainement, themesProposes } from '@/parcours/selection';
+import { saisonDe } from '@/parcours/saisons';
 import { verrouillerParents } from '@/parents/verrou';
 import { useProfilActif } from '@/store/profils';
 import { useReglages } from '@/store/reglages';
@@ -67,6 +68,17 @@ function Parcours() {
   const [choixOuvert, setChoixOuvert] = useState(false);
   // Comme sur Duolingo : toucher une étape ouvre sa fiche, avec le bouton pour la commencer.
   const [noeudOuvertId, setNoeudOuvertId] = useState<string | null>(null);
+  // Un thème choisi sur la carte des mondes s'ouvre ici (l'état suit le paramètre quand il change).
+  const { theme: themeDeLaCarte } = useLocalSearchParams<{ theme?: string }>();
+  const [themeDeLaCarteVu, setThemeDeLaCarteVu] = useState(themeDeLaCarte);
+  if (themeDeLaCarte !== themeDeLaCarteVu) {
+    setThemeDeLaCarteVu(themeDeLaCarte);
+    if (themeDeLaCarte) {
+      setThemeChoisiId(themeDeLaCarte);
+      setNoeudOuvertId(null);
+    }
+  }
+  const themeId = themeChoisiId ?? themeDeLaCarte ?? null;
   if (!profil) return null;
 
   const p = profil.progression;
@@ -75,12 +87,13 @@ function Parcours() {
   // thème qui n'est pas terminé.
   const themes = themesProposes(profil.classe, profil.toile);
   const parDefaut = themes.find((t) => cheminDuTheme(t, p).some((n) => n.etat === 'enCours')) ?? themes[0];
-  const theme = themes.find((t) => t.id === themeChoisiId) ?? parDefaut;
+  const theme = themes.find((t) => t.id === themeId) ?? parDefaut;
   // Un axe prioritaire par matière (français, mathématiques).
   const priorites = prioritesDe(profil.classe, profil.toile);
   const matiereDuTheme = (t: Theme): Matiere => domaineDe(profil.classe, t.domaine)?.matiere ?? 'mathematiques';
   const aujourdhui = dateLocale(new Date());
   const soir = ambianceSoir && estLeSoir(new Date());
+  const saison = saisonDe(new Date());
   const serie = serieDeJours(p.jours, aujourdhui);
   const absence = joursDepuisDerniereActivite(p.jours, aujourdhui);
   // Ce qui est déjà à +++ sur la fiche se rejoue en entraînement libre.
@@ -259,7 +272,12 @@ function Parcours() {
                 <View key={n.id} style={styles.noeud}>
                   {/* Un décor sur deux, du côté libre quand l'étape s'écarte du centre. */}
                   {decalage !== 0 && i % 2 === 1 ? (
-                    <DecorParcours matiere={matiere} rang={u * 7 + i} cote={decalage > 0 ? 'gauche' : 'droite'} />
+                    <DecorParcours
+                      matiere={matiere}
+                      saison={saison}
+                      rang={u * 7 + i}
+                      cote={decalage > 0 ? 'gauche' : 'droite'}
+                    />
                   ) : null}
                   <View style={[styles.noeud, { transform: [{ translateX: decalage }] }]}>
                     {n.etat === 'enCours' && !ouvert ? (
@@ -300,6 +318,7 @@ function Parcours() {
           </View>
         );
       })}
+      <Bouton titre="La carte des mondes" variante="secondaire" onPress={() => router.push('/carte')} />
       {boutonEntrainement}
 
       <ChoixTheme

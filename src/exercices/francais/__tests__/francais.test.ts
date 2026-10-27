@@ -1,4 +1,4 @@
-import { NIVEAUX } from '../../types';
+import { cleIllustration, NIVEAUX } from '../../types';
 import { conjuguer, PERSONNES, TEMPS, VERBES_PREMIER_GROUPE } from '../conjugaison';
 import { MODELES_FRANCAIS } from '../index';
 import { ADJECTIFS, FAMILLES, NOMS, SYNONYMES } from '../lexique';
@@ -24,7 +24,14 @@ function contientMot(texte: string, mot: string): boolean {
 
 describe('conjugaison', () => {
   it('conjugue un verbe du 1er groupe aux trois temps', () => {
-    expect(PERSONNES.map((p) => conjuguer('chanter', 'present', p))).toEqual(['chante', 'chantes', 'chante', 'chantons', 'chantez', 'chantent']);
+    expect(PERSONNES.map((p) => conjuguer('chanter', 'present', p))).toEqual([
+      'chante',
+      'chantes',
+      'chante',
+      'chantons',
+      'chantez',
+      'chantent',
+    ]);
     expect(PERSONNES.map((p) => conjuguer('chanter', 'imparfait', p))).toEqual([
       'chantais',
       'chantais',
@@ -121,9 +128,12 @@ describe.each(MODELES_FRANCAIS.map((m) => [m.id, m] as const))('modèle « %s »
         }
         if (!/^\p{Lu}/u.test(ex.enonce)) signaler(`pas de majuscule : ${ex.enonce}`);
       }
-      if (ex.categories && ex.segments?.filter((s) => s.surligne).length !== 1) signaler('il faut un seul mot en couleur');
+      if (ex.categories && ex.segments?.filter((s) => s.surligne).length !== 1)
+        signaler('il faut un seul mot en couleur');
 
-      enonces.add(`${ex.enonce} ${ex.question} ${ex.reponse}`);
+      enonces.add(
+        `${ex.enonce} ${ex.question} ${ex.reponse} ${ex.lecture ?? ''} ${ex.illustration ? cleIllustration(ex.illustration) : ''}`,
+      );
     }
     expect(problemes).toEqual([]);
     expect(enonces.size).toBeGreaterThan(niveau === 3 ? 15 : 8);
@@ -145,7 +155,10 @@ describe('progression de la difficulté en français', () => {
 
   it('accord : singulier seulement au niveau +, pluriels irréguliers seulement au niveau +++', () => {
     expect(tirages('accord-adjectif', 1).every((e) => !/\b(les|des)\b/i.test(e.enonce + e.reponse))).toBe(true);
-    const irreguliers = (n: 1 | 2 | 3) => tirages('accord-adjectif', n, 3000).some((e) => /(chevaux|bateaux|chapeaux|gâteaux|manteaux)/.test(e.enonce + e.reponse));
+    const irreguliers = (n: 1 | 2 | 3) =>
+      tirages('accord-adjectif', n, 3000).some((e) =>
+        /(chevaux|bateaux|chapeaux|gâteaux|manteaux)/.test(e.enonce + e.reponse),
+      );
     expect(irreguliers(2)).toBe(false);
     expect(irreguliers(3)).toBe(true);
   });
@@ -164,9 +177,15 @@ describe('progression de la difficulté en français', () => {
   });
 
   it('synonymes et familles : pas de piège au niveau +', () => {
-    expect(tirages('synonymes', 1).every((e) => !e.distracteurs.some((d) => d.erreur === 'mot de sens contraire'))).toBe(true);
-    expect(tirages('meme-famille', 1).every((e) => !e.distracteurs.some((d) => d.erreur.startsWith('mot qui ressemble')))).toBe(true);
-    expect(tirages('synonymes', 2).some((e) => e.distracteurs.some((d) => d.erreur === 'mot de sens contraire'))).toBe(true);
+    expect(
+      tirages('synonymes', 1).every((e) => !e.distracteurs.some((d) => d.erreur === 'mot de sens contraire')),
+    ).toBe(true);
+    expect(
+      tirages('meme-famille', 1).every((e) => !e.distracteurs.some((d) => d.erreur.startsWith('mot qui ressemble'))),
+    ).toBe(true);
+    expect(tirages('synonymes', 2).some((e) => e.distracteurs.some((d) => d.erreur === 'mot de sens contraire'))).toBe(
+      true,
+    );
   });
 
   it('conjugaison : être et avoir à partir du niveau ++', () => {
@@ -237,7 +256,11 @@ describe('dictée de mots', () => {
     expect(conseilSaisie('chatt', 'chat')).toMatch(/une lettre en trop/);
     expect(conseilSaisie('pome', 'pomme')).toMatch(/manque une lettre/);
     expect(conseilSaisie('jembe', 'jambe')).toMatch(/Une seule lettre/);
-    for (const [s, mot] of [['velo', 'vélo'], ['x', 'beaucoup'], ['abcdef', 'lit']]) {
+    for (const [s, mot] of [
+      ['velo', 'vélo'],
+      ['x', 'beaucoup'],
+      ['abcdef', 'lit'],
+    ]) {
       expect(conseilSaisie(s, mot)).not.toMatch(MOTS_INTERDITS);
     }
   });
@@ -280,7 +303,8 @@ describe('compréhension en lecture', () => {
       const m = /^(L[ea] \S+) est (\S+) par (l[ea] \S+)\.$/.exec(e.enonce);
       if (!m) continue;
       const [, patient, , agent] = m;
-      if (/par l’autre/.test(e.question) && e.question.startsWith('Qui est')) expect(e.reponse).toBe(patient.toLowerCase());
+      if (/par l’autre/.test(e.question) && e.question.startsWith('Qui est'))
+        expect(e.reponse).toBe(patient.toLowerCase());
       else expect(e.reponse).toBe(agent);
     }
   });
@@ -293,7 +317,8 @@ describe('compréhension en lecture', () => {
   });
 
   it('textes : il faut déduire seulement au niveau +++', () => {
-    const deduites = (n: 1 | 2 | 3) => tirages('questions-texte', n).filter((e) => e.explication.includes('ne le dit pas')).length;
+    const deduites = (n: 1 | 2 | 3) =>
+      tirages('questions-texte', n).filter((e) => e.explication.includes('ne le dit pas')).length;
     expect(deduites(1)).toBe(0);
     expect(deduites(2)).toBe(0);
     expect(deduites(3)).toBeGreaterThan(100);

@@ -8,6 +8,7 @@ import { creerAlea, type Alea } from '../alea';
 import {
   NIVEAU_CIBLE,
   type DistracteurTexte,
+  type Illustration,
   type ExerciceTexte,
   type ModeleTexte,
   type NiveauDifficulte,
@@ -34,6 +35,8 @@ export interface ContenuTexte {
   lectureAutonome?: boolean;
   /** Mots mélangés à remettre dans l'ordre. */
   motsEnDesordre?: string[];
+  /** Figure dessinée dans l'énoncé. */
+  illustration?: Illustration;
   indice: string;
   explication: string;
   /**
@@ -51,6 +54,12 @@ export interface DefinitionModeleTexte {
   /** Compétence visée, formulée d'après les attendus officiels (relecture par un enseignant). */
   competence: string;
   classes: Classe[];
+  /**
+   * Niveau du contenu pour chaque niveau demandé, quand une classe n'est pas
+   * celle pour laquelle le contenu a été écrit (le CE2) : en CE1, le niveau visé
+   * reprend le ++ du CE2 ; en CM, le + reprend déjà le ++ du CE2.
+   */
+  niveauxParClasse?: Partial<Record<Classe, Record<NiveauDifficulte, NiveauDifficulte>>>;
   /**
    * Fabrique un exercice au niveau demandé (1 : +, 2 : ++, 3 : +++, le niveau visé) ;
    * renvoie null pour retenter un autre tirage.
@@ -84,7 +93,7 @@ export function definirModeleTexte(def: DefinitionModeleTexte): ModeleTexte {
       }
       const alea = creerAlea(graine);
       for (let essai = 0; essai < ESSAIS_MAX; essai++) {
-        const contenu = def.construire(alea, classe, niveau);
+        const contenu = def.construire(alea, classe, def.niveauxParClasse?.[classe]?.[niveau] ?? niveau);
         if (!contenu) continue;
         const distracteurs = choisirDistracteursTexte(contenu.reponse, contenu.distracteurs);
         if (!contenu.categories && distracteurs.length < 2) continue;
@@ -106,6 +115,7 @@ export function definirModeleTexte(def: DefinitionModeleTexte): ModeleTexte {
           ...(contenu.phrases ? { phrases: contenu.phrases } : {}),
           ...(contenu.lectureAutonome ? { lectureAutonome: true } : {}),
           ...(contenu.motsEnDesordre ? { motsEnDesordre: contenu.motsEnDesordre } : {}),
+          ...(contenu.illustration ? { illustration: contenu.illustration } : {}),
           indice: contenu.indice,
           explication: contenu.explication,
           facile: {
@@ -117,6 +127,35 @@ export function definirModeleTexte(def: DefinitionModeleTexte): ModeleTexte {
         };
       }
       throw new Error(`Le modèle « ${def.id} » n'arrive pas à tirer un exercice valide en ${classe}.`);
+    },
+  };
+}
+
+/** Correspondance des niveaux : le contenu de CE2, un cran plus simple en CE1, un cran plus exigeant en CM. */
+export const NIVEAUX_CE1: Record<NiveauDifficulte, NiveauDifficulte> = { 1: 1, 2: 1, 3: 2 };
+export const NIVEAUX_CM: Record<NiveauDifficulte, NiveauDifficulte> = { 1: 2, 2: 3, 3: 3 };
+
+/**
+ * Reprend un modèle pour un autre axe de la toile (en CM2, « synonymes et
+ * familles de mots » réunit deux axes du CM1) : mêmes exercices, autre axe.
+ */
+export function reprendreModele(
+  modele: ModeleTexte,
+  nouveau: { id: string; titre: string; domaine: DomaineId; classes: Classe[]; competence?: string },
+): ModeleTexte {
+  // Le contenu est celui de la dernière classe du modèle d'origine (la plus avancée).
+  const source = modele.classes[modele.classes.length - 1];
+  return {
+    id: nouveau.id,
+    titre: nouveau.titre,
+    domaine: nouveau.domaine,
+    competence: nouveau.competence ?? modele.competence,
+    classes: nouveau.classes,
+    generer: (classe, graine, options) => {
+      if (!nouveau.classes.includes(classe)) {
+        throw new Error(`Le modèle « ${nouveau.id} » n'a pas de règles pour la classe ${classe}.`);
+      }
+      return { ...modele.generer(source, graine, options), modeleId: nouveau.id, domaine: nouveau.domaine, classe };
     },
   };
 }

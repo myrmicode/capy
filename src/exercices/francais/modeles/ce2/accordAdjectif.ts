@@ -4,7 +4,7 @@
  * Attendus de fin de cycle 2 (CE2) ; axe « Accorder le nom et l'adjectif ».
  */
 import { decrireNom, formeAdjectif, type Genre, type Nombre } from '../../lexique';
-import { definirModeleTexte, majuscule } from '../../moteur';
+import { definirModeleTexte, majuscule, NIVEAUX_CM } from '../../moteur';
 import { groupeNominal } from '../../phrases';
 
 const ERREURS: Record<string, string> = {
@@ -19,7 +19,8 @@ export const accordAdjectif = definirModeleTexte({
   titre: 'Le bon accord',
   domaine: 'accord-nom-adjectif',
   competence: 'Accorder l’adjectif en genre et en nombre avec le nom dans le groupe nominal.',
-  classes: ['CE2'],
+  classes: ['CE2', 'CM1', 'CM2'],
+  niveauxParClasse: { CM1: NIVEAUX_CM, CM2: NIVEAUX_CM },
   // + : singulier seulement (masculin ou féminin) ; ++ : pluriels réguliers en -s ;
   // +++ : tous les pluriels (chevaux, bateaux…).
   construire: (alea, _classe, niveau) => {
@@ -61,7 +62,10 @@ export const accordAdjectif = definirModeleTexte({
       enonce: `Capy a écrit plusieurs fois le même groupe de mots.`,
       question: 'Quel groupe est bien accordé ?',
       reponse: ecrire(forme),
-      distracteurs: autres.map((f) => ({ valeur: ecrire(formeAdjectif(a, f.genre, f.nombre)), erreur: ERREURS[f.cle] })),
+      distracteurs: autres.map((f) => ({
+        valeur: ecrire(formeAdjectif(a, f.genre, f.nombre)),
+        erreur: ERREURS[f.cle],
+      })),
       indice,
       explication: `${accord} Le groupe bien accordé est « ${ecrire(forme)} ».`,
     };

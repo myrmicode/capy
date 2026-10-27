@@ -5,6 +5,7 @@
  * Attendus de fin de cycle 2 (CE2).
  */
 import { definirModele, nb } from '../../moteur';
+import { HISTOIRES_DEUX_ETAPES_CM } from '../histoiresCM';
 
 export const deuxEtapes = definirModele<{ depart: number; premier: number; second: number }>({
   id: 'deux-etapes',
@@ -17,6 +18,18 @@ export const deuxEtapes = definirModele<{ depart: number; premier: number; secon
     CE2: {
       donnees: { depart: { min: 20, max: 100 }, premier: { min: 5, max: 50 }, second: { min: 2, max: 20 } },
       reponse: { min: 1, max: 93 },
+    },
+    CE1: {
+      donnees: { depart: { min: 10, max: 50 }, premier: { min: 2, max: 20 }, second: { min: 2, max: 10 } },
+      reponse: { min: 1, max: 46 },
+    },
+    CM1: {
+      donnees: { depart: { min: 200, max: 2000 }, premier: { min: 50, max: 900 }, second: { min: 20, max: 500 } },
+      reponse: { min: 1, max: 1930 },
+    },
+    CM2: {
+      donnees: { depart: { min: 2000, max: 20000 }, premier: { min: 500, max: 9000 }, second: { min: 200, max: 5000 } },
+      reponse: { min: 1, max: 19300 },
     },
   },
   reglesAccessibles: {
@@ -32,9 +45,44 @@ export const deuxEtapes = definirModele<{ depart: number; premier: number; secon
         reponse: { min: 1, max: 53 },
       },
     },
+    CE1: {
+      1: {
+        donnees: { depart: { min: 10, max: 20 }, premier: { min: 2, max: 5 }, second: { min: 2, max: 5 } },
+        reponse: { min: 1, max: 16 },
+      },
+      2: {
+        donnees: { depart: { min: 10, max: 30 }, premier: { min: 2, max: 10 }, second: { min: 2, max: 5 } },
+        reponse: { min: 1, max: 26 },
+      },
+    },
+    CM1: {
+      1: {
+        donnees: { depart: { min: 20, max: 100 }, premier: { min: 5, max: 50 }, second: { min: 2, max: 20 } },
+        reponse: { min: 1, max: 93 },
+      },
+      2: {
+        donnees: { depart: { min: 100, max: 1000 }, premier: { min: 20, max: 400 }, second: { min: 10, max: 200 } },
+        reponse: { min: 1, max: 970 },
+      },
+    },
+    CM2: {
+      1: {
+        donnees: { depart: { min: 200, max: 2000 }, premier: { min: 50, max: 900 }, second: { min: 20, max: 500 } },
+        reponse: { min: 1, max: 1930 },
+      },
+      2: {
+        donnees: {
+          depart: { min: 1000, max: 10000 },
+          premier: { min: 200, max: 4000 },
+          second: { min: 100, max: 2000 },
+        },
+        reponse: { min: 1, max: 9700 },
+      },
+    },
   },
   estValide: ({ depart, premier, second }) => premier !== second && premier + second < depart,
   calculer: ({ depart, premier, second }) => depart - premier - second,
+  histoiresParClasse: { CM1: HISTOIRES_DEUX_ETAPES_CM, CM2: HISTOIRES_DEUX_ETAPES_CM },
   erreursTypiques: ({ depart: a, premier: b, second: c }) => [
     { valeur: a - b, erreur: 'une seule étape faite (le second retrait oublié)' },
     { valeur: b + c, erreur: 'résultat intermédiaire donné comme réponse' },

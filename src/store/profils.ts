@@ -9,7 +9,14 @@ import type { DomaineId, Matiere } from '@/config/domaines';
 import * as progression from '@/parcours/progression';
 import type { ProgressionEnfant } from '@/parcours/progression';
 import { noterRevisions, type QuestionRevisee } from '@/parcours/revision';
-import { appliquerFiche, migrerToile, toileApresEtape, type Niveaux, type ToileEnfant } from '@/toile/niveaux';
+import {
+  appliquerFiche,
+  avecPhotoDeJanvier,
+  migrerToile,
+  toileApresEtape,
+  type Niveaux,
+  type ToileEnfant,
+} from '@/toile/niveaux';
 
 /**
  * Profil d'un enfant. Règle non négociable : on ne stocke que le prénom ou
@@ -143,7 +150,14 @@ export const useProfils = create<EtatProfils>()(
                 r.dureeSecondes,
                 m,
               ),
-              toile: p.toile && toileApresEtape(p.toile, r.domaine, r.reussiesPremierCoup, r.nombreQuestions),
+              toile:
+                p.toile &&
+                toileApresEtape(
+                  avecPhotoDeJanvier(p.toile, p.classe, progression.dateLocale(m)),
+                  r.domaine,
+                  r.reussiesPremierCoup,
+                  r.nombreQuestions,
+                ),
             }),
             maintenant,
           ),
@@ -160,7 +174,14 @@ export const useProfils = create<EtatProfils>()(
                 m,
               ),
               // Même règle que le parcours ; la fiche de septembre ne change jamais.
-              toile: p.toile && toileApresEtape(p.toile, r.domaine, r.reussiesPremierCoup, r.nombreQuestions),
+              toile:
+                p.toile &&
+                toileApresEtape(
+                  avecPhotoDeJanvier(p.toile, p.classe, progression.dateLocale(m)),
+                  r.domaine,
+                  r.reussiesPremierCoup,
+                  r.nombreQuestions,
+                ),
             }),
             maintenant,
           ),

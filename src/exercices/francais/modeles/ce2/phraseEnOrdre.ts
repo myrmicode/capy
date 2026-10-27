@@ -7,7 +7,7 @@
  * début et la fin, et rendent l'ordre unique.
  */
 import { conjuguer } from '../../conjugaison';
-import { definirModeleTexte, majuscule } from '../../moteur';
+import { definirModeleTexte, majuscule, NIVEAUX_CM } from '../../moteur';
 import { groupeNominal, tirerVerbe } from '../../phrases';
 
 const DEBUTS = ['Ce matin,', 'Dans la cour,', 'Le soir,', 'Sous la pluie,', 'Après l’école,'];
@@ -17,7 +17,8 @@ export const phraseEnOrdre = definirModeleTexte({
   titre: 'La phrase en désordre',
   domaine: 'sujet-verbe',
   competence: 'Remettre dans l’ordre les mots d’une phrase simple : groupe sujet, verbe, complément.',
-  classes: ['CE2'],
+  classes: ['CE2', 'CM1'],
+  niveauxParClasse: { CM1: NIVEAUX_CM },
   // + : sujet sans adjectif ; ++ : avec un adjectif ; +++ : un complément peut ouvrir la phrase.
   construire: (alea, _classe, niveau) => {
     const sujet = groupeNominal(alea, ['animal', 'humain'], { adjectif: niveau >= 2 });

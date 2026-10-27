@@ -6,6 +6,7 @@
  */
 import { additionSansRetenue } from '../../erreurs';
 import { definirModele, nb } from '../../moteur';
+import { HISTOIRES_AJOUT_CM } from '../histoiresCM';
 
 export const ajout = definirModele<{ depart: number; ajout: number }>({
   id: 'ajout',
@@ -18,6 +19,16 @@ export const ajout = definirModele<{ depart: number; ajout: number }>({
       donnees: { depart: { min: 20, max: 600 }, ajout: { min: 10, max: 399 } },
       reponse: { min: 30, max: 999 },
     },
+    CE1: { donnees: { depart: { min: 20, max: 300 }, ajout: { min: 10, max: 199 } }, reponse: { min: 30, max: 499 } },
+    CM1: {
+      donnees: { depart: { min: 1000, max: 7000 }, ajout: { min: 100, max: 2999 } },
+      reponse: { min: 1100, max: 9999 },
+    },
+    CM2: {
+      donnees: { depart: { min: 10000, max: 70000 }, ajout: { min: 1000, max: 29999 } },
+      reponse: { min: 11000, max: 99999 },
+    },
+    CP: { donnees: { depart: { min: 5, max: 60 }, ajout: { min: 2, max: 30 } }, reponse: { min: 7, max: 90 } },
   },
   reglesAccessibles: {
     CE2: {
@@ -26,8 +37,38 @@ export const ajout = definirModele<{ depart: number; ajout: number }>({
       // ++ : nombres jusqu'à 600.
       2: { donnees: { depart: { min: 20, max: 400 }, ajout: { min: 10, max: 199 } }, reponse: { min: 30, max: 599 } },
     },
+    CE1: {
+      // + : petits nombres ; ++ : jusqu’à 100 ; +++ : jusqu’à 500.
+      1: { donnees: { depart: { min: 5, max: 30 }, ajout: { min: 2, max: 9 } }, reponse: { min: 7, max: 39 } },
+      2: { donnees: { depart: { min: 10, max: 79 }, ajout: { min: 5, max: 20 } }, reponse: { min: 15, max: 99 } },
+    },
+    CM1: {
+      // + : jusqu’à 1 000 ; ++ : jusqu’à 6 000 ; +++ : jusqu’à 10 000.
+      1: { donnees: { depart: { min: 100, max: 600 }, ajout: { min: 10, max: 399 } }, reponse: { min: 110, max: 999 } },
+      2: {
+        donnees: { depart: { min: 200, max: 4000 }, ajout: { min: 100, max: 1999 } },
+        reponse: { min: 300, max: 5999 },
+      },
+    },
+    CM2: {
+      // + : jusqu’à 10 000 ; ++ : jusqu’à 60 000 ; +++ : jusqu’à 100 000.
+      1: {
+        donnees: { depart: { min: 1000, max: 7000 }, ajout: { min: 100, max: 2999 } },
+        reponse: { min: 1100, max: 9999 },
+      },
+      2: {
+        donnees: { depart: { min: 5000, max: 40000 }, ajout: { min: 1000, max: 19999 } },
+        reponse: { min: 6000, max: 59999 },
+      },
+    },
+    CP: {
+      // + : jusqu’à 9 ; ++ : jusqu’à 20 ; +++ : jusqu’à 90.
+      1: { donnees: { depart: { min: 2, max: 5 }, ajout: { min: 1, max: 4 } }, reponse: { min: 3, max: 9 } },
+      2: { donnees: { depart: { min: 3, max: 15 }, ajout: { min: 2, max: 5 } }, reponse: { min: 5, max: 20 } },
+    },
   },
   calculer: ({ depart, ajout: b }) => depart + b,
+  histoiresParClasse: { CM1: HISTOIRES_AJOUT_CM, CM2: HISTOIRES_AJOUT_CM },
   erreursTypiques: ({ depart: a, ajout: b }) => [
     { valeur: additionSansRetenue(a, b), erreur: 'retenue oubliée' },
     { valeur: a - b, erreur: 'soustraction au lieu d’addition' },

@@ -5,7 +5,7 @@
  * axe « Repérer le sujet et le verbe ».
  */
 import { conjuguer, pronom } from '../../conjugaison';
-import { definirModeleTexte, majuscule, phrase } from '../../moteur';
+import { definirModeleTexte, majuscule, NIVEAUX_CM, phrase } from '../../moteur';
 import { groupeNominal, tirerNom, tirerVerbe } from '../../phrases';
 
 const DEBUTS = ['Ce matin,', 'Dans la cour,', 'Le soir,', 'Sous la pluie,', 'Après l’école,'];
@@ -15,7 +15,8 @@ export const sujetEtVerbe = definirModeleTexte({
   titre: 'Le sujet et le verbe',
   domaine: 'sujet-verbe',
   competence: 'Repérer le verbe et le groupe sujet dans une phrase simple.',
-  classes: ['CE2'],
+  classes: ['CE2', 'CM1'],
+  niveauxParClasse: { CM1: NIVEAUX_CM },
   // + : un groupe nominal en début de phrase ; ++ : aussi un pronom ou « Capy » ;
   // +++ : aussi un complément placé en tête de phrase (le sujet n'est plus au début).
   construire: (alea, _classe, niveau) => {

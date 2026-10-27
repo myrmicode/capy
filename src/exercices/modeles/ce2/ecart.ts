@@ -5,6 +5,7 @@
  */
 import { soustractionPetitDuGrand } from '../../erreurs';
 import { definirModele, nb } from '../../moteur';
+import { HISTOIRES_ECART_CM } from '../histoiresCM';
 
 export const ecart = definirModele<{ grand: number; petit: number }>({
   id: 'ecart',
@@ -17,6 +18,15 @@ export const ecart = definirModele<{ grand: number; petit: number }>({
       donnees: { grand: { min: 30, max: 999 }, petit: { min: 10, max: 989 } },
       reponse: { min: 2, max: 989 },
     },
+    CE1: { donnees: { grand: { min: 20, max: 500 }, petit: { min: 10, max: 490 } }, reponse: { min: 2, max: 490 } },
+    CM1: {
+      donnees: { grand: { min: 1000, max: 9999 }, petit: { min: 100, max: 9899 } },
+      reponse: { min: 2, max: 9899 },
+    },
+    CM2: {
+      donnees: { grand: { min: 10000, max: 99999 }, petit: { min: 1000, max: 98999 } },
+      reponse: { min: 10, max: 98999 },
+    },
   },
   reglesAccessibles: {
     CE2: {
@@ -25,9 +35,31 @@ export const ecart = definirModele<{ grand: number; petit: number }>({
       // ++ : nombres jusqu'à 500.
       2: { donnees: { grand: { min: 30, max: 500 }, petit: { min: 10, max: 490 } }, reponse: { min: 2, max: 490 } },
     },
+    CE1: {
+      1: { donnees: { grand: { min: 10, max: 30 }, petit: { min: 2, max: 25 } }, reponse: { min: 2, max: 28 } },
+      2: { donnees: { grand: { min: 15, max: 99 }, petit: { min: 5, max: 90 } }, reponse: { min: 2, max: 94 } },
+    },
+    CM1: {
+      1: { donnees: { grand: { min: 100, max: 999 }, petit: { min: 10, max: 989 } }, reponse: { min: 2, max: 989 } },
+      2: {
+        donnees: { grand: { min: 500, max: 5000 }, petit: { min: 100, max: 4900 } },
+        reponse: { min: 2, max: 4900 },
+      },
+    },
+    CM2: {
+      1: {
+        donnees: { grand: { min: 1000, max: 9999 }, petit: { min: 100, max: 9899 } },
+        reponse: { min: 2, max: 9899 },
+      },
+      2: {
+        donnees: { grand: { min: 5000, max: 50000 }, petit: { min: 1000, max: 49000 } },
+        reponse: { min: 10, max: 49000 },
+      },
+    },
   },
   estValide: ({ grand, petit }) => grand > petit,
   calculer: ({ grand, petit }) => grand - petit,
+  histoiresParClasse: { CM1: HISTOIRES_ECART_CM, CM2: HISTOIRES_ECART_CM },
   erreursTypiques: ({ grand: a, petit: b }) => [
     { valeur: a + b, erreur: 'addition des deux quantités au lieu de l’écart' },
     { valeur: soustractionPetitDuGrand(a, b), erreur: 'dans chaque colonne, le plus petit chiffre ôté du plus grand' },

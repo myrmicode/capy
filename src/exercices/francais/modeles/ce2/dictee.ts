@@ -16,7 +16,7 @@ import {
   MOTS_OUTILS,
   type MotDictee,
 } from '../../dictee';
-import { definirModeleTexte, majuscule, type ContenuTexte } from '../../moteur';
+import { definirModeleTexte, majuscule, NIVEAUX_CE1, NIVEAUX_CM, type ContenuTexte } from '../../moteur';
 
 /** Ce qui remplace le mot dans la phrase affichée. */
 export const TROU = '……';
@@ -56,7 +56,8 @@ export const dicteeMots = definirModeleTexte({
   titre: 'La dictée de mots',
   domaine: 'ecrire-mots',
   competence: 'Écrire un mot dicté : graphies simples, puis sons complexes et lettres muettes, puis consonnes doubles.',
-  classes: ['CE2'],
+  classes: ['CE1', 'CE2', 'CM1', 'CM2'],
+  niveauxParClasse: { CE1: NIVEAUX_CE1, CM1: NIVEAUX_CM, CM2: NIVEAUX_CM },
   // + : chaque son s'écrit simplement ; ++ : sons à plusieurs lettres, lettres muettes ;
   // +++ : consonnes doubles, m devant b et p, h muet.
   construire: (alea, _classe, niveau) => dicter(alea, choisirMot(alea, MOTS_DICTEE, niveau)),
@@ -67,7 +68,8 @@ export const motsOutils = definirModeleTexte({
   titre: 'Les petits mots à connaître',
   domaine: 'ecrire-mots',
   competence: 'Écrire sans erreur les mots invariables les plus fréquents (avec, toujours, beaucoup…).',
-  classes: ['CE2'],
+  classes: ['CE1', 'CE2', 'CM1', 'CM2'],
+  niveauxParClasse: { CE1: NIVEAUX_CE1, CM1: NIVEAUX_CM, CM2: NIVEAUX_CM },
   // + : mots courts (avec, dans, très) ; ++ : toujours, souvent, déjà ; +++ : beaucoup, aujourd'hui.
   construire: (alea, _classe, niveau) => dicter(alea, choisirMot(alea, MOTS_OUTILS, niveau)),
 });

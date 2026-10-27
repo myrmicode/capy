@@ -27,7 +27,8 @@ import { useProfils } from '@/store/profils';
 import { couleurs, typo } from '@/theme';
 
 /** Mots qui trahiraient une donnée de santé : jamais dans les réglages, le stockage ou le serveur. */
-const MOTS_DE_SANTE = /diagnos|dyslex|dyscalc|dyspra|dysortho|tdah|trouble|handicap|sant[eé]|patholog|m[eé]dic|maladie|th[eé]rap/i;
+const MOTS_DE_SANTE =
+  /diagnos|dyslex|dyscalc|dyspra|dysortho|tdah|trouble|handicap|sant[eé]|patholog|m[eé]dic|maladie|th[eé]rap/i;
 
 describe('réglages de lecture et de jeu', () => {
   it('relit des réglages abîmés ou incomplets sans erreur, et ignore toute autre donnée', () => {
@@ -104,13 +105,16 @@ describe('thème adapté', () => {
     for (const palette of Object.keys(COULEURS_SYLLABES) as CouleursSyllabes[]) {
       const t = deriverTheme({ ...REGLAGES_PAR_DEFAUT, fond, couleursSyllabes: palette });
       for (const surface of [COULEURS_FOND[fond], couleurs.blanc, couleurs.menthe[100], couleurs.brun[100]]) {
-        for (const c of [...t.couleursSyllabes, t.couleurMuette]) expect(rapportContraste(c, surface)).toBeGreaterThanOrEqual(4.5);
+        for (const c of [...t.couleursSyllabes, t.couleurMuette])
+          expect(rapportContraste(c, surface)).toBeGreaterThanOrEqual(4.5);
       }
     }
   });
 
   it('garde les couleurs demandées quand elles sont déjà assez contrastées', () => {
-    expect(deriverTheme({ ...REGLAGES_PAR_DEFAUT, couleursSyllabes: 'bleuRouge' }).couleursSyllabes).toEqual(COULEURS_SYLLABES.bleuRouge);
+    expect(deriverTheme({ ...REGLAGES_PAR_DEFAUT, couleursSyllabes: 'bleuRouge' }).couleursSyllabes).toEqual(
+      COULEURS_SYLLABES.bleuRouge,
+    );
   });
 });
 
@@ -153,14 +157,23 @@ describe('FALC : tout le contenu a une version facile', () => {
     const problemes: string[] = [];
     for (const niveau of NIVEAUX) {
       for (let g = 0; g < 400; g++) {
-        const ex = modele.generer('CE2', g, { niveau });
+        // Chaque classe du modèle, tour à tour.
+        const ex = modele.generer(modele.classes[g % modele.classes.length], g, { niveau });
         const f = ex.facile;
-        for (const t of [f.enonce, f.question, f.indice, f.explication]) if (!t.trim()) problemes.push(`texte facile vide (${g})`);
-        const textes = ex.nature === 'nombre' ? [f.enonce, f.question, f.indice, f.explication] : [f.question, f.indice, f.explication];
-        for (const t of textes) for (const p of phrasesTropLongues(t)) problemes.push(`phrase de plus de ${MOTS_PAR_PHRASE_FALC} mots : ${p}`);
+        for (const t of [f.enonce, f.question, f.indice, f.explication])
+          if (!t.trim()) problemes.push(`texte facile vide (${g})`);
+        const textes =
+          ex.nature === 'nombre'
+            ? [f.enonce, f.question, f.indice, f.explication]
+            : [f.question, f.indice, f.explication];
+        for (const t of textes)
+          for (const p of phrasesTropLongues(t))
+            problemes.push(`phrase de plus de ${MOTS_PAR_PHRASE_FALC} mots : ${p}`);
         const reponse = ex.nature === 'nombre' ? nb(ex.reponse) : ex.reponse;
-        if (!contient(f.explication, reponse)) problemes.push(`l’explication facile ne cite pas « ${reponse} » : ${f.explication}`);
-        if (ex.nature === 'texte' && !ex.categories && contient(f.indice, reponse)) problemes.push(`l’indice facile donne « ${reponse} »`);
+        if (!contient(f.explication, reponse))
+          problemes.push(`l’explication facile ne cite pas « ${reponse} » : ${f.explication}`);
+        if (ex.nature === 'texte' && !ex.categories && contient(f.indice, reponse))
+          problemes.push(`l’indice facile donne « ${reponse} »`);
         if (ex.nature === 'texte' && f.enonce !== ex.enonce) problemes.push('l’énoncé étudié a changé');
         if (problemes.length > 10) break;
       }
@@ -218,7 +231,6 @@ describe('aides en calcul et attention', () => {
     }
   });
 });
-
 
 describe('chaque option s’active et se désactive seule', () => {
   const option = (cle: string) => OPTIONS.find((o) => o.cle === cle)!;

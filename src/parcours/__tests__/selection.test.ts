@@ -6,8 +6,23 @@ const plus = valeurDe('+');
 const deux = valeurDe('++');
 const trois = valeurDe('+++');
 
+// Les autres axes sont à +++ : seuls les axes cités par chaque test comptent.
+const AUTRES_AXES = [
+  'tables-addition',
+  'denombrer',
+  'ecrire-nombres',
+  'reconnaitre-nombres',
+  'poser-calculer',
+  'fractions',
+];
 const maths = (niveaux: Parameters<typeof appliquerFiche>[3]) =>
-  appliquerFiche(undefined, 'CE2', 'mathematiques', niveaux, '2026-09-20');
+  appliquerFiche(
+    undefined,
+    'CE2',
+    'mathematiques',
+    { ...Object.fromEntries(AUTRES_AXES.map((id) => [id, valeurDe('+++')])), ...niveaux },
+    '2026-09-20',
+  );
 
 describe('thèmes proposés d’après la toile', () => {
   it('ne propose aucun exercice sans toile', () => {
@@ -15,16 +30,18 @@ describe('thèmes proposés d’après la toile', () => {
   });
 
   it('ne propose que les matières dont la fiche a été saisie', () => {
-    const ids = themesProposes('CE2', maths({ 'resoudre-problemes': plus, 'calcul-mental': plus, 'ligne-graduee': plus })).map(
-      (t) => t.domaine,
-    );
+    const ids = themesProposes(
+      'CE2',
+      maths({ 'resoudre-problemes': plus, 'calcul-mental': plus, 'ligne-graduee': plus }),
+    ).map((t) => t.domaine);
     expect(ids.sort()).toEqual(['calcul-mental', 'ligne-graduee', 'resoudre-problemes']);
   });
 
   it('ne propose pas un axe déjà à +++ sur la fiche', () => {
-    const ids = themesProposes('CE2', maths({ 'resoudre-problemes': trois, 'calcul-mental': deux, 'ligne-graduee': plus })).map(
-      (t) => t.domaine,
-    );
+    const ids = themesProposes(
+      'CE2',
+      maths({ 'resoudre-problemes': trois, 'calcul-mental': deux, 'ligne-graduee': plus }),
+    ).map((t) => t.domaine);
     expect(ids).toEqual(['ligne-graduee', 'calcul-mental']);
   });
 
@@ -43,10 +60,15 @@ describe('thèmes proposés d’après la toile', () => {
         'ecrire-mots': trois,
         'comprendre-phrases-lues': trois,
         'comprendre-texte-lu': trois,
+        'comprendre-texte-entendu': trois,
       },
       '2026-09-21',
     );
-    expect(themesProposes('CE2', toile).map((t) => t.domaine)).toEqual(['accord-nom-adjectif', 'resoudre-problemes', 'sujet-verbe']);
+    expect(themesProposes('CE2', toile).map((t) => t.domaine)).toEqual([
+      'accord-nom-adjectif',
+      'resoudre-problemes',
+      'sujet-verbe',
+    ]);
   });
 
   it('garde un thème proposé même quand l’axe progresse, et suit la toile du jour pour l’ordre', () => {

@@ -16,6 +16,9 @@ export const doubles = definirModele<{ nombre: number }>({
       donnees: { nombre: { min: 11, max: 49 } },
       reponse: { min: 22, max: 98 },
     },
+    CE1: { donnees: { nombre: { min: 5, max: 35 } }, reponse: { min: 10, max: 70 } },
+    CM1: { donnees: { nombre: { min: 11, max: 499 } }, reponse: { min: 22, max: 998 } },
+    CM2: { donnees: { nombre: { min: 100, max: 2500 } }, reponse: { min: 200, max: 5000 } },
   },
   reglesAccessibles: {
     CE2: {
@@ -23,6 +26,21 @@ export const doubles = definirModele<{ nombre: number }>({
       1: { donnees: { nombre: { min: 5, max: 25 } }, reponse: { min: 10, max: 50 } },
       // ++ : doubles jusqu'à 35.
       2: { donnees: { nombre: { min: 11, max: 35 } }, reponse: { min: 22, max: 70 } },
+    },
+    CE1: {
+      // + : doubles jusqu’à 10 ; ++ : jusqu’à 15 ; +++ : jusqu’à 35.
+      1: { donnees: { nombre: { min: 1, max: 10 } }, reponse: { min: 2, max: 20 } },
+      2: { donnees: { nombre: { min: 5, max: 15 } }, reponse: { min: 10, max: 30 } },
+    },
+    CM1: {
+      // + : comme en CE2 ; ++ : jusqu’à 99 ; +++ : jusqu’à 499.
+      1: { donnees: { nombre: { min: 11, max: 49 } }, reponse: { min: 22, max: 98 } },
+      2: { donnees: { nombre: { min: 25, max: 99 } }, reponse: { min: 50, max: 198 } },
+    },
+    CM2: {
+      // + : jusqu’à 499 ; ++ : jusqu’à 999 ; +++ : jusqu’à 2 500.
+      1: { donnees: { nombre: { min: 11, max: 499 } }, reponse: { min: 22, max: 998 } },
+      2: { donnees: { nombre: { min: 50, max: 999 } }, reponse: { min: 100, max: 1998 } },
     },
   },
   calculer: ({ nombre }) => 2 * nombre,

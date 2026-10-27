@@ -20,11 +20,11 @@ export function useDicteeAuDemarrage(lecture: string | undefined) {
   }, [lecture, lente, lectureAuto]);
 }
 
-export function BoutonReecouter({ lecture }: { lecture: string }) {
+export function BoutonReecouter({ lecture, titre = 'Réécouter le mot' }: { lecture: string; titre?: string }) {
   const lente = useThemeEnfant().reglages.lectureLente;
   return (
     <Bouton
-      titre="Réécouter le mot"
+      titre={titre}
       variante="secondaire"
       icone={(c) => <IconeHautParleur taille={24} couleur={c} />}
       onPress={() => lireAVoixHaute(lecture, { lente })}

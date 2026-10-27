@@ -2,6 +2,7 @@ import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { nouvelObjet } from '@/collection/objets';
 import { adapterExercice, DOMAINES_SANS_TABLE, nombreDeQuestions } from '@/accessibilite/adaptation';
 import { avecReglagesEnfant, useThemeEnfant } from '@/accessibilite/contexte';
 import { ContexteExplications, type Explications } from '@/accessibilite/explications';
@@ -66,7 +67,7 @@ export function textesALire(jeuId: JeuId, consigne: string, ex: ExerciceQuelconq
   if (ex.nature === 'nombre' && ex.questionsAuChoix && jeuId === 'questionPerdue') {
     return [consigne, ex.enonce, ...ex.questionsAuChoix];
   }
-  if (ex.nature === 'texte' && ex.lecture) return [consigne, ex.lecture];
+  if (ex.lecture) return [consigne, ex.lecture];
   if (ex.nature === 'texte' && ex.lectureAutonome) return [consigne, ex.question];
   return [consigne, ex.enonce, ex.question];
 }
@@ -107,6 +108,8 @@ function EcranEtape() {
   );
   const [partie, setPartie] = useState(0);
   const [debut, setDebut] = useState(() => Date.now());
+  // La progression au début de la partie : à la fin, on voit si un trésor est tombé (après un défi).
+  const [progressionAuDepart, setProgressionAuDepart] = useState(() => profil?.progression);
   // Niveau des exercices : celui de l'enfant sur cette compétence, recalculé à chaque partie.
   const [niveauEtape, setNiveauEtape] = useState(() => (domaine ? niveauPourDomaine(profil?.toile, domaine) : 1));
   const graine = profil ? graineDePartie(profil.id, etapeId, foisAuDepart + partie) : 0;
@@ -287,7 +290,7 @@ function EcranEtape() {
         <Ecran pied={<Bouton titre="Retour" variante="secondaire" onPress={() => router.back()} />}>
           <BulleCapy
             pose="ralentir"
-            texte={`Les exercices de ${profil.classe} arrivent bientôt. Pour l’instant, Capy prépare le CE2.`}
+            texte="Ces exercices arrivent bientôt dans Capy. Choisis un autre thème en attendant."
           />
         </Ecran>
       );
@@ -296,9 +299,11 @@ function EcranEtape() {
 
   if (etat.phase === 'terminee') {
     const etoiles = etoilesPour(etat.reussiesPremierCoup, etat.nombreQuestions);
+    const tresorDefi = enDefi && progressionAuDepart ? nouvelObjet(progressionAuDepart, profil.progression) : null;
     const rejouer = () => {
       setPartie((n) => n + 1);
       if (enDefi) setQuestionsDefi(defiDuJour(partie + 1));
+      setProgressionAuDepart(profil.progression);
       if (domaine) setNiveauEtape(niveauPourDomaine(profil.toile, domaine));
       setRevision(revisionDuJour());
       setDebut(Date.now());
@@ -342,7 +347,9 @@ function EcranEtape() {
           ) : null}
           <Text style={[typo.enonce, styles.centre]}>
             {enDefi
-              ? `Bravo ${profil.prenom} ! Reviens demain : Capy te prépare un nouveau défi.`
+              ? `Bravo ${profil.prenom} ! Reviens demain : Capy te prépare un nouveau défi.${
+                  tresorDefi ? ` Et un trésor pour Capy : ${tresorDefi.nom}. Va le voir dans « Trésors » !` : ''
+                }`
               : enSurprise
                 ? `Bravo ${profil.prenom}, tu as découvert « ${trouvee!.theme.titre} ». Tu le retrouveras dans le carnet de Capy.`
                 : enEntrainement
