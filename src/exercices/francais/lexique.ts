@@ -57,6 +57,9 @@ export const NOMS: readonly Nom[] = [
   nom('plante', 'f', 'objet'),
   nom('maison', 'f', 'objet'),
   nom('boîte', 'f', 'objet'),
+  nom('carotte', 'f', 'objet'),
+  nom('salade', 'f', 'objet'),
+  nom('train', 'm', 'objet'),
 ];
 
 export interface Adjectif {
@@ -66,11 +69,18 @@ export interface Adjectif {
   fp: string;
   /** Se place avant le nom (une petite maison) ou après (une maison verte). */
   avant: boolean;
-  /** Noms avec lesquels l'adjectif a du sens. */
-  pour: readonly Categorie[];
+  /** Noms (au singulier) avec lesquels l'adjectif a du sens : pas de « pomme bleue » ni de « poule gentille ». */
+  pour: readonly string[];
 }
 
-const adj = (ms: string, fs: string, avant: boolean, pour: readonly Categorie[], mp = `${ms}s`, fp = `${fs}s`): Adjectif => ({
+const adj = (
+  ms: string,
+  fs: string,
+  avant: boolean,
+  pour: readonly string[],
+  mp = `${ms}s`,
+  fp = `${fs}s`,
+): Adjectif => ({
   ms,
   fs,
   mp,
@@ -79,17 +89,104 @@ const adj = (ms: string, fs: string, avant: boolean, pour: readonly Categorie[],
   pour,
 });
 
+const TOUS = NOMS.map((n) => n.singulier);
+
 export const ADJECTIFS: readonly Adjectif[] = [
-  adj('petit', 'petite', true, ['animal', 'humain', 'objet']),
-  adj('grand', 'grande', true, ['animal', 'humain', 'objet']),
-  adj('joli', 'jolie', true, ['animal', 'humain', 'objet']),
-  adj('noir', 'noire', false, ['animal', 'objet']),
-  adj('blanc', 'blanche', false, ['animal', 'objet']),
-  adj('vert', 'verte', false, ['objet']),
-  adj('bleu', 'bleue', false, ['objet']),
-  adj('rond', 'ronde', false, ['objet']),
-  adj('lourd', 'lourde', false, ['objet']),
-  adj('gentil', 'gentille', false, ['animal', 'humain']),
+  adj('petit', 'petite', true, TOUS),
+  adj('grand', 'grande', true, TOUS),
+  adj('joli', 'jolie', true, [
+    'fille',
+    'maîtresse',
+    'garçon',
+    'chat',
+    'lapin',
+    'cheval',
+    'fleur',
+    'maison',
+    'robe',
+    'chapeau',
+    'bateau',
+    'voiture',
+    'boîte',
+    'panier',
+    'manteau',
+    'plante',
+    'ballon',
+  ]),
+  adj('noir', 'noire', false, [
+    'chat',
+    'chien',
+    'cheval',
+    'lapin',
+    'poule',
+    'vache',
+    'chapeau',
+    'manteau',
+    'voiture',
+    'cartable',
+    'crayon',
+    'robe',
+    'boîte',
+  ]),
+  adj('blanc', 'blanche', false, [
+    'chat',
+    'chien',
+    'cheval',
+    'lapin',
+    'poule',
+    'vache',
+    'souris',
+    'bateau',
+    'ballon',
+    'fleur',
+    'maison',
+    'robe',
+    'chapeau',
+    'voiture',
+    'balle',
+  ]),
+  adj('vert', 'verte', false, [
+    'pomme',
+    'plante',
+    'crayon',
+    'ballon',
+    'robe',
+    'voiture',
+    'manteau',
+    'cartable',
+    'balle',
+    'boîte',
+    'chapeau',
+    'salade',
+  ]),
+  adj('bleu', 'bleue', false, [
+    'ballon',
+    'livre',
+    'crayon',
+    'chapeau',
+    'bateau',
+    'manteau',
+    'cartable',
+    'robe',
+    'voiture',
+    'boîte',
+    'balle',
+    'fleur',
+    'train',
+  ]),
+  adj('rond', 'ronde', false, ['ballon', 'balle', 'pomme', 'gâteau', 'panier', 'chapeau', 'boîte']),
+  adj('lourd', 'lourde', false, ['livre', 'cartable', 'panier', 'manteau', 'boîte']),
+  adj('gentil', 'gentille', false, [
+    'garçon',
+    'fille',
+    'maîtresse',
+    'voisin',
+    'chien',
+    'chat',
+    'cheval',
+    'lapin',
+    'vache',
+  ]),
 ];
 
 export type Nombre = 'singulier' | 'pluriel';

@@ -6,7 +6,7 @@
  */
 import { conjuguer, pronom } from '../../conjugaison';
 import { definirModeleTexte, majuscule, NIVEAUX_CM, phrase } from '../../moteur';
-import { groupeNominal, tirerNom, tirerVerbe } from '../../phrases';
+import { groupeNominal, tirerAction } from '../../phrases';
 
 const DEBUTS = ['Ce matin,', 'Dans la cour,', 'Le soir,', 'Sous la pluie,', 'Après l’école,'];
 
@@ -25,12 +25,13 @@ export const sujetEtVerbe = definirModeleTexte({
     let sujet: string;
     let pluriel: boolean;
     // Un pronom ou Capy peuvent tout faire ; un groupe nominal dépend du nom.
-    let categorie: 'animal' | 'humain' = 'humain';
+    // Un pronom ou Capy fait ce que fait une personne.
+    let qui = 'humain';
     if (forme === 'gn') {
       const gn = groupeNominal(alea, ['animal', 'humain'], { adjectif: alea.choix([true, false]) });
       sujet = gn.mots.map((m) => m.texte).join(' ');
       pluriel = gn.nombre === 'pluriel';
-      categorie = gn.nom.categorie === 'animal' ? 'animal' : 'humain';
+      qui = gn.nom.singulier;
     } else if (forme === 'pronom') {
       pluriel = alea.choix([true, false]);
       sujet = pronom(pluriel ? 5 : 2, alea.choix([true, false]));
@@ -38,9 +39,8 @@ export const sujetEtVerbe = definirModeleTexte({
       sujet = 'Capy';
       pluriel = false;
     }
-    const infinitif = tirerVerbe(alea, categorie);
+    const { infinitif, objet } = tirerAction(alea, qui);
     const verbe = conjuguer(infinitif, 'present', pluriel ? 5 : 2);
-    const objet = tirerNom(alea, ['objet']);
     const groupeComplement = `${objet.genre === 'm' ? alea.choix(['un', 'le']) : alea.choix(['une', 'la'])} ${objet.singulier}`;
 
     const debut = niveau === 3 && alea.choix([true, false]) ? alea.choix(DEBUTS) : null;

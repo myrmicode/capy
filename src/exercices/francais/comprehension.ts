@@ -69,6 +69,8 @@ export function tirerDifferents<T>(alea: Alea, liste: readonly T[], n: number): 
 }
 
 // --- Actions entre deux animaux ---
+// Des actions plausibles dans les deux sens (le chien suit le chat, le chat suit
+// le chien) : la phrase garde du sens quelle que soit la réponse attendue.
 
 export interface Action {
   present: string;
@@ -79,8 +81,6 @@ export const ACTIONS: readonly Action[] = [
   { present: 'pousse', participe: 'poussé' },
   { present: 'regarde', participe: 'regardé' },
   { present: 'appelle', participe: 'appelé' },
-  { present: 'lave', participe: 'lavé' },
-  { present: 'chatouille', participe: 'chatouillé' },
   { present: 'poursuit', participe: 'poursuivi' },
   { present: 'suit', participe: 'suivi' },
   { present: 'réveille', participe: 'réveillé' },

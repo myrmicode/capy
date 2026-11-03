@@ -8,7 +8,7 @@
  */
 import { conjuguer } from '../../conjugaison';
 import { definirModeleTexte, majuscule, NIVEAUX_CM } from '../../moteur';
-import { groupeNominal, tirerVerbe } from '../../phrases';
+import { groupeNominal, tirerAction } from '../../phrases';
 
 const DEBUTS = ['Ce matin,', 'Dans la cour,', 'Le soir,', 'Sous la pluie,', 'Après l’école,'];
 
@@ -22,9 +22,9 @@ export const phraseEnOrdre = definirModeleTexte({
   // + : sujet sans adjectif ; ++ : avec un adjectif ; +++ : un complément peut ouvrir la phrase.
   construire: (alea, _classe, niveau) => {
     const sujet = groupeNominal(alea, ['animal', 'humain'], { adjectif: niveau >= 2 });
-    const infinitif = tirerVerbe(alea, sujet.nom.categorie);
+    const { infinitif, objet } = tirerAction(alea, sujet.nom.singulier);
     const verbe = conjuguer(infinitif, 'present', sujet.nombre === 'singulier' ? 2 : 5);
-    const complement = groupeNominal(alea, ['objet'], { adjectif: false, nombre: 'singulier' });
+    const complement = groupeNominal(alea, ['objet'], { adjectif: false, nombre: 'singulier', nom: objet });
     const debut = niveau === 3 && alea.choix([true, false]) ? alea.choix(DEBUTS) : null;
 
     const groupeSujet = sujet.mots.map((m) => m.texte);

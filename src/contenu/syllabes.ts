@@ -1890,4 +1890,8 @@ export const SYLLABES: Readonly<Record<string, string>> = {
   colonne: 'co-lonn(e)',
   descends: 'des-cen(ds)',
   guider: 'gui-de(r)',
+  arrosent: 'a-rros(ent)',
+  laver: 'la-ve(r)',
+  rangent: 'rang(ent)',
+  lavent: 'lav(ent)',
 };

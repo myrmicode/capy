@@ -9,7 +9,7 @@ import { definirModeleTexte, majuscule } from '../../moteur';
 import { groupeNominal } from '../../phrases';
 
 /** Ce que les animaux du lexique peuvent faire (les personnes peuvent tout faire). */
-const VERBES_ANIMAUX = ['jouer', 'marcher', 'regarder', 'sauter', 'danser'];
+const VERBES_ANIMAUX = ['jouer', 'marcher', 'sauter'];
 
 /** Compléments du nom, au singulier et au pluriel : ils éloignent le sujet du verbe. */
 const COMPLEMENTS: readonly (readonly [string, string])[] = [
