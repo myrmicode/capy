@@ -3,10 +3,12 @@ import type { ReactElement } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { modeleParId, modeleTexteParId } from '@/exercices';
+import { deplacer, lireChemin, memeCase, type Fleche } from '@/exercices/modeles/quadrillage';
 import { schemasAuChoix } from '@/exercices/schemas';
 
 import { JeuBonFil } from '../JeuBonFil';
 import { JeuCaisse } from '../JeuCaisse';
+import { JeuChemin } from '../JeuChemin';
 import { JeuDictee } from '../JeuDictee';
 import { JeuFunambule } from '../JeuFunambule';
 import { JeuHorloge } from '../JeuHorloge';
@@ -334,5 +336,74 @@ describe('Le bon schéma', () => {
     expect(onRepondre).toHaveBeenLastCalledWith(false);
     await fireEvent.press(screen.getByRole('button', { name: new RegExp(`^Schéma ${bon + 1}\\.`) }));
     expect(onRepondre).toHaveBeenLastCalledWith(true);
+  });
+});
+
+describe('La dictée de phrases', () => {
+  const dictee = () => modeleTexteParId('dictee-phrase')!.generer('CE2', 3, { niveau: 2 });
+
+  it('accepte la phrase bien écrite, sans compter la majuscule ni le point', async () => {
+    const ex = dictee();
+    const onRepondre = jest.fn();
+    await render(<JeuDictee exercice={ex} actif onRepondre={onRepondre} />);
+    expect(screen.getByRole('button', { name: /Réécouter la phrase/ })).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText('La phrase que tu as écrite'), ex.reponse.toLowerCase().replace(/.$/, ''));
+    await fireEvent.press(screen.getByRole('button', { name: 'Valider' }));
+    expect(onRepondre).toHaveBeenCalledWith(true);
+  });
+
+  it('montre le mot à revoir, tel que l’enfant l’a écrit, avec la règle', async () => {
+    const ex = dictee();
+    const faute = ex.distracteurs[0].valeur;
+    const onRepondre = jest.fn();
+    await render(<JeuDictee exercice={ex} actif onRepondre={onRepondre} />);
+    await fireEvent.changeText(screen.getByLabelText('La phrase que tu as écrite'), faute);
+    await fireEvent.press(screen.getByRole('button', { name: 'Valider' }));
+    expect(onRepondre).toHaveBeenCalledWith(false);
+    expect(screen.getByText(/^Relis « /)).toBeTruthy();
+  });
+});
+
+describe('Le chemin de Capy', () => {
+  const exercice = () => modeleTexteParId('coder-chemin')!.generer('CE2', 4, { niveau: 2 });
+  const NOMS: Record<Fleche, string> = { '→': 'la droite', '←': 'la gauche', '↑': 'le haut', '↓': 'le bas' };
+
+  it('accepte le bon chemin, flèche par flèche', async () => {
+    const ex = exercice();
+    const onRepondre = jest.fn();
+    await render(<JeuChemin exercice={ex} actif onRepondre={onRepondre} />);
+    for (const f of lireChemin(ex.reponse)) await fireEvent.press(screen.getByLabelText(`Une case vers ${NOMS[f]}`));
+    await fireEvent.press(screen.getByRole('button', { name: 'Valider' }));
+    expect(onRepondre).toHaveBeenLastCalledWith(true);
+  });
+
+  it('accepte aussi un autre chemin qui mène à la même case', async () => {
+    const ex = exercice();
+    const chemin = lireChemin(ex.reponse);
+    // Les verticales d'abord : un autre ordre, la même arrivée.
+    const autre = [...chemin.filter((f) => f === '↑' || f === '↓'), ...chemin.filter((f) => f === '→' || f === '←')];
+    const grille = ex.illustration!.type === 'quadrillage' ? ex.illustration : null;
+    expect(memeCase(deplacer(grille!.depart!, autre), deplacer(grille!.depart!, chemin))).toBe(true);
+    const onRepondre = jest.fn();
+    await render(<JeuChemin exercice={ex} actif onRepondre={onRepondre} />);
+    for (const f of autre) await fireEvent.press(screen.getByLabelText(`Une case vers ${NOMS[f]}`));
+    await fireEvent.press(screen.getByRole('button', { name: 'Valider' }));
+    expect(onRepondre).toHaveBeenLastCalledWith(true);
+  });
+
+  it('refuse un chemin qui mène ailleurs, et permet d’effacer', async () => {
+    // Un chemin d'au moins deux flèches : la première seule mène ailleurs.
+    let graine = 4;
+    while (lireChemin(modeleTexteParId('coder-chemin')!.generer('CE2', graine, { niveau: 2 }).reponse).length < 2) graine++;
+    const ex = modeleTexteParId('coder-chemin')!.generer('CE2', graine, { niveau: 2 });
+    const [premiere] = lireChemin(ex.reponse);
+    const onRepondre = jest.fn();
+    await render(<JeuChemin exercice={ex} actif onRepondre={onRepondre} />);
+    await fireEvent.press(screen.getByLabelText(`Une case vers ${NOMS[premiere]}`));
+    await fireEvent.press(screen.getByRole('button', { name: 'Effacer' }));
+    expect(screen.getByLabelText('Ton chemin est encore vide')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText(`Une case vers ${NOMS[premiere]}`));
+    await fireEvent.press(screen.getByRole('button', { name: 'Valider' }));
+    expect(onRepondre).toHaveBeenLastCalledWith(false);
   });
 });

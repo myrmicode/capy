@@ -1,7 +1,7 @@
 // Tous les textes que l'enfant lit passent par ce composant : il applique la
 // police, la taille et les espacements choisis, la coloration syllabique,
 // l'alternance des lignes, le surlignage du mot lu par Capy (karaoké) et les
-// mots expliqués au toucher.
+// mots expliqués au toucher, et les mots importants des consignes soulignés.
 import { useState } from 'react';
 import { StyleSheet, Text, View, type StyleProp, type TextLayoutEvent, type TextStyle } from 'react-native';
 
@@ -9,6 +9,7 @@ import { useMotLu } from '@/jeux/retours';
 import { couleurs } from '@/theme';
 
 import { useThemeEnfant } from './contexte';
+import { plagesMotsCles } from './motsCles';
 import { decouperMot, decouperTexte } from './syllabes';
 import { FOND_LIGNE_ALTERNEE, type VarianteTexte } from './theme';
 
@@ -28,6 +29,11 @@ interface PropsTexteAccessible {
   /** Mots qui s'expliquent au toucher (vocabulaire des énoncés de maths). */
   motsExpliques?: Readonly<Record<string, string>>;
   onExpliquer?: (mot: string, explication: string) => void;
+  /**
+   * Souligne les mots importants (« touche », « le plus », « en tout », « pas ») :
+   * pour une consigne ou une question, jamais pour le texte étudié.
+   */
+  motsCles?: boolean;
 }
 
 export function TexteAccessible({
@@ -39,6 +45,7 @@ export function TexteAccessible({
   surligne,
   motsExpliques,
   onExpliquer,
+  motsCles = false,
 }: PropsTexteAccessible) {
   const theme = useThemeEnfant();
   const { reglages } = theme;
@@ -48,6 +55,7 @@ export function TexteAccessible({
   const expliquer = reglages.motsExpliques && motsExpliques !== undefined;
 
   const jetons = decouperTexte(texte);
+  const importants = motsCles ? plagesMotsCles(texte) : [];
   const contenu = jetons.map((j, i) => {
     const fin = j.debut + j.texte.length;
     if (!j.estMot) {
@@ -55,9 +63,15 @@ export function TexteAccessible({
     }
     const lu = motLu !== null && motLu >= j.debut && motLu < fin;
     const enValeur = surligne !== undefined && j.debut < surligne.fin && fin > surligne.debut;
+    const important = importants.some((p) => j.debut < p.fin && fin > p.debut);
     const explication = expliquer ? motsExpliques[j.texte.toLowerCase()] : undefined;
     const morceaux = colorer ? decouperMot(j.texte) : null;
-    const styleMot = [enValeur && styles.surligne, explication !== undefined && styles.motExplique, lu && styles.motLu];
+    const styleMot = [
+      important && styles.motCle,
+      enValeur && styles.surligne,
+      explication !== undefined && styles.motExplique,
+      lu && styles.motLu,
+    ];
     return (
       <Text
         key={i}
@@ -120,6 +134,7 @@ const styles = StyleSheet.create({
     color: couleurs.jaune.texte,
   },
   motExplique: { backgroundColor: couleurs.menthe[100] },
+  motCle: { textDecorationLine: 'underline', textDecorationStyle: 'solid', backgroundColor: couleurs.caramel[100] },
   motLu: { backgroundColor: couleurs.jaune[400], color: couleurs.jaune.texte },
   bande: {
     position: 'absolute',

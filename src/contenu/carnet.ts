@@ -23,6 +23,7 @@ export const CARNET: Partial<Record<DomaineId, PageCarnet>> = {
     exemples: [
       'Lou a 5 billes, on lui en donne 3\u00a0: 5\u00a0+\u00a03\u00a0=\u00a08.',
       'Il y a 4 paquets de 6 fraises\u00a0: 4\u00a0×\u00a06\u00a0=\u00a024.',
+      'Sur un graphique, je suis le haut de la barre jusqu’aux nombres.',
     ],
     astuce:
       'Je dessine l’histoire en barres : le tout en haut, les morceaux dedans, et un point d’interrogation pour ce que je cherche.',
@@ -93,8 +94,12 @@ export const CARNET: Partial<Record<DomaineId, PageCarnet>> = {
     titre: 'Écrire un mot',
     regle:
       'J’écoute bien le mot, je le coupe en syllabes, puis j’écris chaque syllabe. Un même son peut s’écrire de plusieurs façons\u00a0: je pense à un mot que je connais.',
-    exemples: ['mai-son', 'oi-seau\u00a0: «\u00a0oi\u00a0» comme dans roi'],
-    astuce: 'Je relis le mot en suivant les lettres avec le doigt.',
+    exemples: [
+      'mai-son',
+      'oi-seau\u00a0: «\u00a0oi\u00a0» comme dans roi',
+      'Les chats dorment\u00a0: plusieurs chats, donc un s et -ent.',
+    ],
+    astuce: 'Je relis le mot en suivant les lettres avec le doigt. Dans une phrase, je cherche qui fait l’action.',
   },
   'comprendre-phrases-lues': {
     titre: 'Comprendre une phrase',
@@ -171,7 +176,11 @@ export const CARNET: Partial<Record<DomaineId, PageCarnet>> = {
   geometrie: {
     titre: 'Les formes',
     regle: 'Pour reconnaître une figure, je compte ses côtés et je regarde ses coins\u00a0: sont-ils droits\u00a0?',
-    exemples: ['Le carré\u00a0: 4 côtés pareils et 4 angles droits.', 'Le triangle\u00a0: 3 côtés.'],
+    exemples: [
+      'Le carré\u00a0: 4 côtés pareils et 4 angles droits.',
+      'Le triangle\u00a0: 3 côtés.',
+      'Sur une grille, C2, c’est la colonne C et la ligne 2.',
+    ],
     astuce: 'Pour un axe de symétrie, j’imagine que je plie la figure\u00a0: les deux moitiés se superposent.',
   },
   grandeurs: {

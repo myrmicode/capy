@@ -22,10 +22,10 @@ const jour = (texte: string) => new Date(`${texte}T10:00:00`);
 describe('thème « Résoudre des problèmes » CE2', () => {
   const etapes = theme.unites.flatMap((u) => u.etapes);
 
-  it('compte 18 étapes aux identifiants uniques (dont les schémas en barres), avec un coffre par unité', () => {
-    expect(etapes).toHaveLength(18);
-    expect(new Set(etapes.map((e) => e.id)).size).toBe(18);
-    expect(theme.unites.at(-1)?.id).toBe('ce2-rp-schemas');
+  it('compte 21 étapes aux identifiants uniques (dont les schémas en barres et les données), avec un coffre par unité', () => {
+    expect(etapes).toHaveLength(21);
+    expect(new Set(etapes.map((e) => e.id)).size).toBe(21);
+    expect(theme.unites.map((u) => u.id).slice(-2)).toEqual(['ce2-rp-schemas', 'ce2-rp-donnees']);
     expect(new Set(theme.unites.map((u) => u.coffre)).size).toBe(theme.unites.length);
   });
 
@@ -126,7 +126,7 @@ describe('jours et temps', () => {
 describe('chemin du parcours', () => {
   it('met en cours la première étape au départ et verrouille le reste', () => {
     const chemin = cheminDuTheme(theme, progressionVide());
-    expect(chemin).toHaveLength(22);
+    expect(chemin).toHaveLength(26);
     expect(chemin[0]).toMatchObject({ type: 'etape', numero: 1, etat: 'enCours' });
     expect(chemin.slice(1).every((n) => n.etat === 'verrouillee')).toBe(true);
     expect(chemin[5]).toMatchObject({ type: 'coffre', id: 'ce2-rp-u1-coffre' });

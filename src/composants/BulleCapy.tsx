@@ -15,10 +15,19 @@ interface PropsBulleCapy {
   tailleCapy?: number;
   /** Coloration syllabique (contenu des exercices, comme un indice). */
   coloration?: boolean;
+  /** Souligne les mots importants (une consigne). */
+  motsCles?: boolean;
 }
 
 /** Capy qui parle dans une bulle blanche ; le coin tourné vers Capy est arrondi à 6 px. Il bouge un peu selon sa pose. */
-export function BulleCapy({ pose, texte, cote = 'gauche', tailleCapy = 96, coloration = false }: PropsBulleCapy) {
+export function BulleCapy({
+  pose,
+  texte,
+  cote = 'gauche',
+  tailleCapy = 96,
+  coloration = false,
+  motsCles = false,
+}: PropsBulleCapy) {
   const coin =
     cote === 'gauche'
       ? { borderBottomLeftRadius: formes.bulle.coinVersCapy }
@@ -27,7 +36,7 @@ export function BulleCapy({ pose, texte, cote = 'gauche', tailleCapy = 96, color
     <View style={[styles.ligne, cote === 'droite' && styles.inverse]}>
       <CapyAnime pose={pose} taille={tailleCapy} />
       <View style={[styles.bulle, coin]}>
-        <TexteAccessible texte={texte} variante="enonce" coloration={coloration} />
+        <TexteAccessible texte={texte} variante="enonce" coloration={coloration} motsCles={motsCles} />
       </View>
     </View>
   );

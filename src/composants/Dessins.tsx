@@ -1,4 +1,5 @@
-// Les dessins des énoncés : objets à compter, règle graduée, figure géométrique.
+// Les dessins des énoncés : objets à compter, règle graduée, figure géométrique,
+// données (tableau, diagramme en barres) et quadrillage.
 // Le libellé lu par le lecteur d'écran ne donne jamais la réponse.
 import { View } from 'react-native';
 import Svg, { Circle, Line, Path, Polygon, Rect, Text as TexteSvg } from 'react-native-svg';
@@ -6,6 +7,7 @@ import Svg, { Circle, Line, Path, Polygon, Rect, Text as TexteSvg } from 'react-
 import type { Forme, Illustration, IllustrationFigure, IllustrationRegle } from '@/exercices/types';
 import { couleurs, polices } from '@/theme';
 
+import { GraphiqueDonnees, Quadrillage } from './DessinsDonnees';
 import { ObjetsACompter } from './ObjetsACompter';
 
 /** Largeur du dessin de la règle : elle tient dans la carte de l'énoncé sur un téléphone. */
@@ -137,5 +139,9 @@ export function Dessin({ illustration }: { illustration: Illustration }) {
       return <RegleGraduee {...illustration} />;
     case 'figure':
       return <FigureGeometrique {...illustration} />;
+    case 'graphique':
+      return <GraphiqueDonnees {...illustration} />;
+    case 'quadrillage':
+      return <Quadrillage {...illustration} />;
   }
 }

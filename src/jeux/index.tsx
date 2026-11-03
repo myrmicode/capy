@@ -3,6 +3,7 @@ import type { ComponentType } from 'react';
 import { pourNombres, pourTextes } from './garde';
 import { JeuBonFil } from './JeuBonFil';
 import { JeuCaisse } from './JeuCaisse';
+import { JeuChemin } from './JeuChemin';
 import { JeuDictee } from './JeuDictee';
 import { JeuFunambule } from './JeuFunambule';
 import { JeuHorloge } from './JeuHorloge';
@@ -37,6 +38,7 @@ export const COMPOSANTS_JEUX: Record<JeuId, ComponentType<PropsJeu>> = {
   images: pourTextes(JeuImages),
   ouiNon: pourTextes(JeuOuiNon),
   schema: pourNombres(JeuSchema),
+  chemin: pourTextes(JeuChemin),
 };
 
 export { JEUX, type JeuId } from './registre';

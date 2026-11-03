@@ -13,9 +13,12 @@ import { sujetEtVerbe } from './modeles/ce2/sujetVerbe';
 import { synonymes } from './modeles/ce2/synonymes';
 import { familleCM2, intrusCM2, phraseEnOrdreCM2, sujetVerbeCM2, synonymesCM2 } from './modeles/cm2';
 import { decimaux, fractionPartie } from '../modeles/ecritures';
+import { lireGraphique } from '../modeles/donnees';
 import { axesSymetrie, compterCotes, reconnaitreFigure } from '../modeles/formes';
+import { ecrireLeChemin, repererCase, suivreChemin } from '../modeles/quadrillage';
 import { compterSyllabes, nomLettre, premiereSyllabe, premierSon, syllabeEntendue } from './modeles/cp';
 import { comprendreMot, comprendrePhrase } from './modeles/oral';
+import { dicteePhrases } from './modeles/dicteePhrases';
 import { dicteeSyllabes } from './modeles/syllabes';
 
 /** Tous les modèles d'exercices de français. Pour en ajouter un, l'importer ici. */
@@ -34,6 +37,7 @@ export const MODELES_FRANCAIS: readonly ModeleTexte[] = [
   conjugaison,
   dicteeMots,
   motsOutils,
+  dicteePhrases,
   quiFaitQuoi,
   memeSens,
   questionsTexte,
@@ -60,8 +64,14 @@ export const MODELES_FRANCAIS: readonly ModeleTexte[] = [
   // Mathématiques à réponse écrite (fraction, nombre à virgule) : même moteur que le français.
   fractionPartie,
   decimaux,
+  // Lire des tableaux et des graphiques (résoudre des problèmes)
+  lireGraphique,
   // Atelier des formes
   reconnaitreFigure,
   compterCotes,
   axesSymetrie,
+  // Se repérer sur un quadrillage
+  suivreChemin,
+  ecrireLeChemin,
+  repererCase,
 ];

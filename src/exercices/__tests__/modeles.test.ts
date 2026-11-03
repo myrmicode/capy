@@ -19,6 +19,7 @@ const ORACLES: Record<string, (d: Donnees) => number> = {
   payer: (d) => d.prixA + d.prixB,
   'rendre-monnaie': (d) => d.billet - d.prix,
   duree: (d) => d.debut + d.duree,
+  proportionnalite: (d) => (d.prix / d.quantite) * d.autre,
   tables: (d) => d.a * d.b,
   'tables-multiplication': (d) => d.a * d.b,
   'tables-addition': (d) => d.a + d.b,

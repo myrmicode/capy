@@ -17,7 +17,8 @@ export type JeuId =
   | 'horloge'
   | 'images'
   | 'ouiNon'
-  | 'schema';
+  | 'schema'
+  | 'chemin';
 
 export interface DefinitionJeu {
   id: JeuId;
@@ -129,6 +130,10 @@ export const JEUX: Record<JeuId, DefinitionJeu> = {
       'reconnaitre-figure',
       'compter-cotes',
       'axes-symetrie',
+      // Données et repérage
+      'lire-graphique',
+      'suivre-chemin',
+      'reperer-case',
     ],
     accepte: (ex) => ex.nature === 'nombre' || ex.choix.every((m) => m.length <= MOT_LUCIOLE_MAX),
   },
@@ -171,7 +176,7 @@ export const JEUX: Record<JeuId, DefinitionJeu> = {
     titre: 'La dictée de Capy',
     consigne: 'Écoute le mot, écris-le, puis valide.',
     consigneFacile: 'Écoute le mot. Écris-le. Puis valide.',
-    modeles: ['dictee-mots', 'mots-outils', 'dictee-syllabes'],
+    modeles: ['dictee-mots', 'mots-outils', 'dictee-syllabes', 'dictee-phrase'],
     accepte: (ex) => ex.nature === 'texte' && ex.lecture !== undefined,
   },
   passage: {
@@ -233,6 +238,17 @@ export const JEUX: Record<JeuId, DefinitionJeu> = {
     indiceFacile: 'Cherche le tout. Le connaît-on ?',
     modeles: MODELES_AVEC_SCHEMA,
     accepte: (ex) => ex.nature === 'nombre' && schemaDe(ex) !== null,
+  },
+  chemin: {
+    id: 'chemin',
+    titre: 'Le chemin de Capy',
+    consigne: 'Touche les flèches pour guider Capy jusqu’à la bonne case, puis valide.',
+    consigneFacile: 'Touche les flèches pour guider Capy. Puis valide.',
+    indice: 'Compte les cases sur le côté, puis en haut ou en bas.',
+    indiceFacile: 'Compte les cases sur le côté. Puis en haut ou en bas.',
+    modeles: ['coder-chemin'],
+    accepte: (ex) =>
+      ex.nature === 'texte' && ex.illustration?.type === 'quadrillage' && ex.illustration.depart !== undefined,
   },
   reponses: {
     id: 'reponses',

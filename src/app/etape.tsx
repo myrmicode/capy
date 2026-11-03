@@ -434,7 +434,12 @@ function EcranEtape() {
       />
     );
   } else if (etat.phase === 'presque') {
-    const aide = aideApresErreur(etat.essaisRates, { indice, explication: ex.explication, peutReduire });
+    const aide = aideApresErreur(etat.essaisRates, {
+      indice,
+      explication: ex.explication,
+      peutReduire,
+      question: ex.question,
+    });
     pied = (
       <PanneauRetour
         type="presque"
@@ -471,7 +476,7 @@ function EcranEtape() {
     return (
       <Ecran pied={<Bouton titre="C’est parti" onPress={() => setConsigneVue(etat.index)} />}>
         {entete}
-        <BulleCapy pose="capy" texte={consigne} coloration />
+        <BulleCapy pose="capy" texte={consigne} coloration motsCles />
         <Bouton
           titre="Écouter"
           variante="secondaire"
@@ -560,7 +565,16 @@ function EcranEtape() {
           ) : null}
         </View>
 
-        {!calme || etat.phase === 'question' ? <TexteAccessible texte={consigne} variante="texte" coloration /> : null}
+        {!calme || etat.phase === 'question' ? (
+          // Toucher la consigne la fait relire par Capy.
+          <Pressable
+            onPress={() => lire([consigne])}
+            accessibilityRole="button"
+            accessibilityHint="Capy lit la consigne"
+          >
+            <TexteAccessible texte={consigne} variante="texte" coloration motsCles />
+          </Pressable>
+        ) : null}
         {indiceVisible ? <BulleCapy pose="reflechi" tailleCapy={72} texte={indice} coloration /> : null}
         {explication && explication.question === etat.index ? (
           <BulleCapy pose="capy" tailleCapy={72} texte={`« ${explication.mot} » : ${explication.texte}`} />

@@ -168,11 +168,56 @@ export interface IllustrationFigure {
   forme: Forme;
 }
 
-export type Illustration = IllustrationObjets | IllustrationRegle | IllustrationFigure;
+/**
+ * Des données à lire : un diagramme en barres gradué, ou un tableau. Les
+ * barres se lisent sur l'axe gradué (le nombre n'est pas écrit dessus).
+ */
+export interface IllustrationGraphique {
+  type: 'graphique';
+  forme: 'barres' | 'tableau';
+  titre: string;
+  /** Ce qu'on compte (« Nombre d'élèves »), au-dessus des nombres. */
+  unite: string;
+  lignes: readonly { nom: string; valeur: number }[];
+  /** Écart entre deux graduations de l'axe (barres). */
+  pas: number;
+}
+
+/** Une case d'un quadrillage : colonne et ligne, à partir de 0 en haut à gauche. */
+export interface Case {
+  colonne: number;
+  ligne: number;
+}
+
+/** Un quadrillage : des objets posés sur des cases, Capy sur sa case de départ, des repères A, B, C… et 1, 2, 3… */
+export interface IllustrationQuadrillage {
+  type: 'quadrillage';
+  colonnes: number;
+  lignes: number;
+  /** La case de Capy (absente quand on ne cherche qu'une case). */
+  depart?: Case;
+  objets: readonly (Case & { objet: string })[];
+  /** Lettres en haut et chiffres à gauche, pour repérer une case (« C2 »). */
+  reperes?: boolean;
+}
+
+export type Illustration =
+  IllustrationObjets | IllustrationRegle | IllustrationFigure | IllustrationGraphique | IllustrationQuadrillage;
 
 /** Ce qui distingue deux dessins (deux exercices au même énoncé ne sont pas le même exercice). */
 export function cleIllustration(i: Illustration): string {
-  return i.type === 'objets' ? `${i.objet} ${i.nombre}` : i.type === 'regle' ? `regle ${i.debut} ${i.fin}` : i.forme;
+  switch (i.type) {
+    case 'objets':
+      return `${i.objet} ${i.nombre}`;
+    case 'regle':
+      return `regle ${i.debut} ${i.fin}`;
+    case 'figure':
+      return i.forme;
+    case 'graphique':
+      return `${i.forme} ${i.lignes.map((l) => `${l.nom}=${l.valeur}`).join(' ')}`;
+    case 'quadrillage':
+      return `grille ${i.depart ? `${i.depart.colonne},${i.depart.ligne}` : ''} ${i.objets.map((o) => `${o.objet}@${o.colonne},${o.ligne}`).join(' ')}`;
+  }
 }
 
 /** Nombre de côtés de chaque figure (0 pour le cercle et le cœur, qui n'ont pas de côtés droits). */
@@ -191,11 +236,18 @@ export const COTES: Record<Forme, number> = {
 
 /** Les nombres qu'on lit sur le dessin (les graduations de la règle sont en centimètres, les côtés se comptent). */
 export function nombresDuDessin(i: Illustration): number[] {
-  return i.type === 'objets'
-    ? [i.nombre]
-    : i.type === 'regle'
-      ? [i.debut, i.fin, i.debut / 10, i.fin / 10]
-      : [COTES[i.forme]];
+  switch (i.type) {
+    case 'objets':
+      return [i.nombre];
+    case 'regle':
+      return [i.debut, i.fin, i.debut / 10, i.fin / 10];
+    case 'figure':
+      return [COTES[i.forme]];
+    case 'graphique':
+      return i.lignes.map((l) => l.valeur);
+    case 'quadrillage':
+      return [];
+  }
 }
 
 export interface OptionsGeneration {

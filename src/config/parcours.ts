@@ -489,6 +489,53 @@ const avecSchemas = (t: Theme): Theme => {
   return u ? { ...t, unites: [...t.unites, u] } : t;
 };
 
+/**
+ * Lire des données (tableaux, diagrammes en barres) s'ajoute, après les autres
+ * unités, aux thèmes « Résoudre des problèmes » du CE1 au CM2 ; la
+ * proportionnalité, au CM1 et au CM2.
+ */
+function unitesDonnees(classe: Classe): Unite[] {
+  if (classe === 'CP') return [];
+  const p = classe.toLowerCase();
+  const unites = [
+    unite(`${p}-rp-donnees`, 'Le sondage de la classe', 'Lire un tableau ou un graphique, puis répondre.', [
+      ['Lire les données', ['lire-graphique'], ['reponses', 'lucioles'], 5],
+      ['Le plus et le moins', ['lire-graphique'], ['lucioles', 'reponses'], 5],
+      ['Révision', ['lire-graphique'], ['reponses', 'lucioles'], 6],
+    ]),
+  ];
+  if (classe === 'CM1' || classe === 'CM2') {
+    unites.push(
+      unite(`${p}-rp-proportions`, 'Plus on en prend…', 'Deux fois plus, trois fois plus, ou passer par un seul.', [
+        ['Fois plus', ['proportionnalite'], ['reponses', 'questionPerdue'], 5],
+        ['Passer par un seul', ['proportionnalite'], ['questionPerdue', 'reponses'], 5],
+        ['Révision', ['proportionnalite', 'groupements', 'partage'], ['reponses', 'questionPerdue'], 6],
+      ]),
+    );
+  }
+  return unites;
+}
+
+const avecDonnees = (t: Theme): Theme =>
+  t.domaine === 'resoudre-problemes' ? { ...t, unites: [...t.unites, ...unitesDonnees(t.classe)] } : t;
+
+/** La dictée de phrases s'ajoute, après les autres unités, aux thèmes « Écrire des mots ». */
+const avecPhrasesDictees = (t: Theme): Theme => {
+  if (t.domaine !== 'ecrire-mots') return t;
+  const p = t.classe.toLowerCase();
+  return {
+    ...t,
+    unites: [
+      ...t.unites,
+      unite(`${p}-dic-phrases`, 'La dictée de phrases', 'Écouter une phrase et l’écrire, sans oublier les accords.', [
+        ['Petites phrases', ['dictee-phrase'], ['dictee', 'reponses'], 4],
+        ['Les accords', ['dictee-phrase'], ['reponses', 'dictee'], 4],
+        ['Révision', ['dictee-phrase', 'dictee-mots'], ['dictee', 'reponses'], 5],
+      ]),
+    ],
+  };
+};
+
 export const THEMES: readonly Theme[] = [
   RESOUDRE_PROBLEMES_CE2,
   CALCUL_MENTAL_CE2,
@@ -510,7 +557,7 @@ export const THEMES: readonly Theme[] = [
   ...THEMES_NOMBRES,
   ...THEMES_CP,
   ...THEMES_ATELIERS,
-].map((t) => avecSchemas(avecRegle(t)));
+].map((t) => avecPhrasesDictees(avecDonnees(avecSchemas(avecRegle(t)))));
 
 export function themesDe(classe: Classe): Theme[] {
   return THEMES.filter((t) => t.classe === classe);

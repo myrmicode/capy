@@ -17,7 +17,8 @@ interface PropsCarteEnonce {
 
 /**
  * L'histoire du problème et sa question, en 18 px minimum (plus avec les réglages
- * de lecture). En maths, les mots difficiles s'expliquent au toucher.
+ * de lecture). En maths, les mots difficiles s'expliquent au toucher. Les mots
+ * importants de la question sont soulignés.
  */
 export function CarteEnonce({ enonce, question, illustration }: PropsCarteEnonce) {
   const { ecart } = useThemeEnfant();
@@ -32,7 +33,7 @@ export function CarteEnonce({ enonce, question, illustration }: PropsCarteEnonce
     <View style={[styles.carte, { padding: ecart('l'), gap: ecart('s') }]}>
       <TexteAccessible texte={enonce} {...commun} />
       {illustration ? <Dessin illustration={illustration} /> : null}
-      {question ? <TexteAccessible texte={question} couleur={couleurs.sarcelle[900]} {...commun} /> : null}
+      {question ? <TexteAccessible texte={question} couleur={couleurs.sarcelle[900]} motsCles {...commun} /> : null}
     </View>
   );
 }

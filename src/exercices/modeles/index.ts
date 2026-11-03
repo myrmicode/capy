@@ -28,6 +28,7 @@ import {
   mesurerRegle,
   metresEnCentimetres,
 } from './mesures';
+import { proportionnalite } from './proportionnalite';
 import { compterObjets, decomposer, denombrer, ecrireNombre, lireNombre, plusGrand, plusPetit } from './nombres';
 
 /** Tous les modèles d'exercices. Pour en ajouter un, l'importer ici. */
@@ -42,6 +43,7 @@ export const MODELES: readonly ModeleExercice[] = [
   payer,
   rendreMonnaie,
   duree,
+  proportionnalite,
   // Calcul mental
   tables,
   doubles,

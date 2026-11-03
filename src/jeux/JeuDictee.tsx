@@ -1,10 +1,11 @@
-// La dictée de Capy : Capy dit le mot dans une phrase, l'enfant l'écrit au clavier.
+// La dictée de Capy : Capy dit le mot dans une phrase (ou toute une phrase), l'enfant l'écrit au clavier.
 // Le clavier ne propose ni suggestion ni correction : ce serait souffler la réponse.
 import { useRef, useState } from 'react';
 import { Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Bouton, CarteEnonce } from '@/composants';
 import { conseilSaisie, saisieJuste } from '@/exercices/francais/dictee';
+import { conseilPhrase, phraseJuste } from '@/exercices/francais/phrasesDictees';
 import { useThemeEnfant } from '@/accessibilite/contexte';
 import { TexteAccessible } from '@/accessibilite/TexteAccessible';
 import { couleurs, espaces, formes } from '@/theme';
@@ -15,6 +16,7 @@ import type { PropsJeuTexte } from './types';
 /** Lettres accentuées difficiles à trouver sur le clavier d'une tablette. */
 export const LETTRES_SPECIALES = ['é', 'è', 'ê', 'à', 'â', 'ç', 'ù', 'î', 'ô', '’'] as const;
 const LONGUEUR_MAX = 30;
+const LONGUEUR_MAX_PHRASE = 120;
 
 export function JeuDictee({ exercice, actif, onRepondre }: PropsJeuTexte) {
   const [saisie, setSaisie] = useState('');
@@ -24,9 +26,13 @@ export function JeuDictee({ exercice, actif, onRepondre }: PropsJeuTexte) {
   const [conseil, setConseil] = useState<string | null>(null);
   const { typo, cible, ecart } = useThemeEnfant();
   useDicteeAuDemarrage(exercice.lecture);
+  // La même dictée sert pour les mots, les syllabes (CE1) et les phrases.
+  const syllabe = exercice.domaine === 'ecrire-syllabes';
+  const enPhrase = exercice.modeleId === 'dictee-phrase';
+  const longueurMax = enPhrase ? LONGUEUR_MAX_PHRASE : LONGUEUR_MAX;
 
   const ajouter = (lettre: string) => {
-    if (!actif || saisie.length >= LONGUEUR_MAX) return;
+    if (!actif || saisie.length >= longueurMax) return;
     const { start, end } = curseur.current ?? {
       start: saisie.length,
       end: saisie.length,
@@ -42,19 +48,20 @@ export function JeuDictee({ exercice, actif, onRepondre }: PropsJeuTexte) {
   const valider = () => {
     if (!actif || !saisie.trim()) return;
     Keyboard.dismiss();
-    const juste = saisieJuste(saisie, exercice.reponse);
-    setConseil(juste ? null : conseilSaisie(saisie, exercice.reponse));
+    const juste = enPhrase ? phraseJuste(saisie, exercice.reponse) : saisieJuste(saisie, exercice.reponse);
+    if (juste) setConseil(null);
+    else setConseil(enPhrase ? conseilPhrase(saisie, exercice.reponse) : conseilSaisie(saisie, exercice.reponse));
     onRepondre(juste);
   };
-
-  // La même dictée sert pour les mots et pour les syllabes (CE1).
-  const syllabe = exercice.domaine === 'ecrire-syllabes';
 
   return (
     <View style={styles.jeu}>
       <CarteEnonce enonce={exercice.enonce} question={exercice.question} />
       {exercice.lecture ? (
-        <BoutonReecouter lecture={exercice.lecture} titre={syllabe ? 'Réécouter la syllabe' : undefined} />
+        <BoutonReecouter
+          lecture={exercice.lecture}
+          titre={syllabe ? 'Réécouter la syllabe' : enPhrase ? 'Réécouter la phrase' : undefined}
+        />
       ) : null}
 
       <TextInput
@@ -68,9 +75,12 @@ export function JeuDictee({ exercice, actif, onRepondre }: PropsJeuTexte) {
           curseur.current = e.nativeEvent.selection;
         }}
         editable={actif}
-        placeholder={syllabe ? 'Écris la syllabe ici' : 'Écris le mot ici'}
+        placeholder={syllabe ? 'Écris la syllabe ici' : enPhrase ? 'Écris la phrase ici' : 'Écris le mot ici'}
         placeholderTextColor={couleurs.encreDouce}
-        maxLength={LONGUEUR_MAX}
+        maxLength={longueurMax}
+        multiline={enPhrase}
+        // Une phrase se valide avec le bouton : « Entrée » ne doit pas aller à la ligne.
+        submitBehavior={enPhrase ? 'blurAndSubmit' : undefined}
         autoCapitalize="none"
         autoCorrect={false}
         spellCheck={false}
@@ -81,8 +91,10 @@ export function JeuDictee({ exercice, actif, onRepondre }: PropsJeuTexte) {
         keyboardType={Platform.OS === 'android' ? 'visible-password' : 'default'}
         returnKeyType="done"
         onSubmitEditing={valider}
-        accessibilityLabel={syllabe ? 'La syllabe que tu as écrite' : 'Le mot que tu as écrit'}
-        style={[typo.titre2, styles.saisie]}
+        accessibilityLabel={
+          syllabe ? 'La syllabe que tu as écrite' : enPhrase ? 'La phrase que tu as écrite' : 'Le mot que tu as écrit'
+        }
+        style={[enPhrase ? typo.enonce : typo.titre2, styles.saisie, enPhrase && styles.saisiePhrase]}
       />
 
       <View style={[styles.lettres, { gap: ecart('s') }]} accessibilityLabel="Lettres avec accent">
@@ -121,6 +133,7 @@ const styles = StyleSheet.create({
     borderRadius: formes.tuile.rayon,
     paddingHorizontal: espaces.l,
   },
+  saisiePhrase: { minHeight: 96, textAlign: 'left', paddingVertical: espaces.m, textAlignVertical: 'top' },
   lettres: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
   lettre: {
     alignItems: 'center',

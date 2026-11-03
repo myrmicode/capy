@@ -16,6 +16,23 @@ export function uniteRegle(prefixe: string): Unite {
   ]);
 }
 
+/** Se repérer et se déplacer sur un quadrillage : au CP, suivre des flèches ; ensuite, aussi écrire le chemin et repérer une case. */
+function uniteGrille(classe: Classe): Unite {
+  const p = classe.toLowerCase();
+  if (classe === 'CP') {
+    return unite(`${p}-for-grille`, 'La grille de Capy', 'Suivre des flèches, case par case.', [
+      ['Suivre les flèches', ['suivre-chemin'], JEUX, 5],
+      ['Encore des flèches', ['suivre-chemin'], JEUX, 5],
+    ]);
+  }
+  return unite(`${p}-for-grille`, 'La grille de Capy', 'Suivre et écrire un chemin, repérer une case.', [
+    ['Suivre les flèches', ['suivre-chemin'], JEUX, 5],
+    ['Écrire le chemin', ['coder-chemin'], ['chemin', 'reponses'], 5],
+    ['Repérer une case', ['reperer-case'], JEUX, 5],
+    ['Révision', ['suivre-chemin', 'coder-chemin', 'reperer-case'], ['reponses', 'chemin', 'lucioles'], 6],
+  ]);
+}
+
 function formes(classe: Classe): Theme {
   const p = classe.toLowerCase();
   const avecSymetrie = classe === 'CE2' || classe === 'CM1' || classe === 'CM2';
@@ -25,7 +42,7 @@ function formes(classe: Classe): Theme {
     domaine: 'geometrie',
     classe,
     titre: 'Les formes',
-    description: 'Reconnaître les figures, leurs côtés, leurs symétries.',
+    description: 'Reconnaître les figures, se repérer sur une grille.',
     exemple: 'Un carré a 4 côtés pareils.',
     unites: [
       unite(`${p}-for-u1`, 'L’atelier des formes', 'Nommer les figures et regarder comment elles sont faites.', [
@@ -33,6 +50,8 @@ function formes(classe: Classe): Theme {
         ...(avecCotes ? ([['Côtés et sommets', ['compter-cotes'], JEUX, 5]] as const) : []),
         ...(avecSymetrie ? ([['Les axes de symétrie', ['axes-symetrie'], JEUX, 5]] as const) : []),
       ]),
+      // Ajoutée après les autres : la progression des enfants qui ont déjà commencé ne bouge pas.
+      uniteGrille(classe),
     ],
   };
 }
