@@ -82,8 +82,9 @@ function BilanMatiere({ matiere, classe, prenom, toile }: PropsBilanMatiere) {
 
       {horsAppli.length > 0 ? (
         <Text style={typo.petit}>
-          {liste(horsAppli)} : Capy n’enregistre jamais la voix, cette compétence se travaille en lisant à voix haute
-          avec vous, quelques minutes par jour.
+          {liste(horsAppli)} : cette compétence se travaille en lisant à voix haute avec vous, quelques minutes par
+          jour. « Lire à deux », dans l’espace parent, compte les mots bien lus en une minute (Capy n’enregistre jamais
+          la voix).
         </Text>
       ) : null}
     </View>

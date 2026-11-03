@@ -38,12 +38,118 @@ export interface ProgressionEnfant {
   histoires?: Record<string, number>;
   /** Ce que Capy porte (voir collection/objets.ts). Absent sur les anciens profils. */
   tenue?: Tenue;
+  /**
+   * Temps de réponse médian (réponses justes du premier coup), par compétence,
+   * une mesure par étape terminée. Il baisse quand une notion devient automatique.
+   * Absent sur les anciens profils.
+   */
+  vitesse?: Record<string, MesureVitesse[]>;
+  /** Le chrono de Capy (séries d'une minute en calcul), par thème. Absent sur les anciens profils. */
+  chronos?: Record<string, ResultatChrono>;
+  /**
+   * Lire à deux : mots bien lus en une minute, par texte, comptés par l'adulte
+   * qui écoute. Jamais la voix : seulement des nombres. Absent sur les anciens profils.
+   */
+  lectures?: Record<string, MesureLecture[]>;
+}
+
+export interface MesureVitesse {
+  jour: string;
+  secondes: number;
+}
+
+export interface ResultatChrono {
+  /** Meilleur nombre de bonnes réponses en une minute. */
+  record: number;
+  series: number;
+  /** Les dernières séries, de la plus ancienne à la plus récente. */
+  derniers: { jour: string; justes: number }[];
+}
+
+export interface MesureLecture {
+  jour: string;
+  motsParMinute: number;
+  erreurs: number;
 }
 
 /** Étoiles gagnées en ouvrant un coffre. */
 export const ETOILES_COFFRE = 3;
 const JOURS_CONSERVES = 400;
 const JOURS_TEMPS_CONSERVES = 60;
+const MESURES_VITESSE_CONSERVEES = 30;
+const CHRONOS_CONSERVES = 10;
+const LECTURES_CONSERVEES = 12;
+
+/** La valeur du milieu (une réponse très lente, l'enfant distrait, ne fausse pas la mesure). */
+export function mediane(valeurs: readonly number[]): number {
+  if (valeurs.length === 0) return 0;
+  const tries = [...valeurs].sort((a, b) => a - b);
+  const milieu = Math.floor(tries.length / 2);
+  return tries.length % 2 === 1 ? tries[milieu] : (tries[milieu - 1] + tries[milieu]) / 2;
+}
+
+/** Une étape terminée ajoute sa mesure de vitesse à la compétence. */
+export function noterVitesse(
+  p: ProgressionEnfant,
+  domaine: string,
+  secondes: number,
+  maintenant: Date,
+): ProgressionEnfant {
+  const mesure = { jour: dateLocale(maintenant), secondes: Math.round(secondes * 10) / 10 };
+  const avant = p.vitesse?.[domaine] ?? [];
+  return { ...p, vitesse: { ...p.vitesse, [domaine]: [...avant, mesure].slice(-MESURES_VITESSE_CONSERVEES) } };
+}
+
+/**
+ * Une série du chrono de Capy : le record du thème, et le jour et le temps
+ * comptent comme pour une étape. Aucune étoile en moins, jamais d'échec.
+ */
+export function enregistrerChrono(
+  p: ProgressionEnfant,
+  themeId: string,
+  justes: number,
+  dureeSecondes: number,
+  maintenant: Date,
+): ProgressionEnfant {
+  const cle = `chrono:${themeId}`;
+  const avec = enregistrerEtape(p, cle, justes, Math.max(1, justes), dureeSecondes, maintenant);
+  const { [cle]: _fictive, ...etapes } = avec.etapes;
+  const avant = p.chronos?.[themeId];
+  return {
+    ...avec,
+    etapes,
+    chronos: {
+      ...p.chronos,
+      [themeId]: {
+        record: Math.max(avant?.record ?? 0, justes),
+        series: (avant?.series ?? 0) + 1,
+        derniers: [...(avant?.derniers ?? []), { jour: dateLocale(maintenant), justes }].slice(-CHRONOS_CONSERVES),
+      },
+    },
+  };
+}
+
+/** Une lecture à deux : la mesure du texte, et le jour et le temps comptent comme pour une étape. */
+export function enregistrerLecture(
+  p: ProgressionEnfant,
+  texteId: string,
+  mesure: { motsParMinute: number; erreurs: number },
+  dureeSecondes: number,
+  maintenant: Date,
+): ProgressionEnfant {
+  const cle = `lecture:${texteId}`;
+  const avec = enregistrerEtape(p, cle, 1, 1, dureeSecondes, maintenant);
+  const { [cle]: _fictive, ...etapes } = avec.etapes;
+  const avant = p.lectures?.[texteId] ?? [];
+  return {
+    ...avec,
+    etapes,
+    lectures: {
+      ...p.lectures,
+      [texteId]: [...avant, { jour: dateLocale(maintenant), ...mesure }].slice(-LECTURES_CONSERVEES),
+    },
+  };
+}
 
 export function progressionVide(): ProgressionEnfant {
   return { etapes: {}, coffresOuverts: [], jours: [], tempsParJour: {}, entrainement: {} };

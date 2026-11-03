@@ -1,5 +1,7 @@
 // Parcours par thème : des unités d'étapes, chacune terminée par un coffre.
 // Chaque étape choisit les modèles d'exercices travaillés et mélange 2 ou 3 mini-jeux.
+import { modelesPour } from '@/exercices/modeles';
+import { MODELES_AVEC_SCHEMA } from '@/exercices/schemas';
 import type { JeuId } from '@/jeux/registre';
 
 import type { Classe } from './classes';
@@ -455,6 +457,38 @@ const avecRegle = (t: Theme): Theme =>
     ? { ...t, unites: [...t.unites, uniteRegle(t.classe.toLowerCase())] }
     : t;
 
+/**
+ * Les schémas en barres s'ajoutent, après les autres unités, à chaque thème
+ * « Résoudre des problèmes » : on dessine l'histoire avant de calculer. Seules
+ * restent les étapes dont les problèmes existent dans la classe.
+ */
+function uniteSchemas(classe: Classe): Unite | null {
+  const existants = new Set(modelesPour('resoudre-problemes', classe).map((m) => m.id));
+  const garder = (ids: readonly string[]) => ids.filter((id) => existants.has(id));
+  const tous = garder(MODELES_AVEC_SCHEMA);
+  const etapes = (
+    [
+      ['Le tout et les morceaux', garder(['ajout', 'retrait', 'payer', 'rendre-monnaie']), ['schema', 'reponses'], 5],
+      ['Deux barres à comparer', garder(['ecart']), ['schema', 'reponses'], 5],
+      ['Les parts égales', garder(['groupements', 'partage']), ['schema', 'reponses'], 5],
+      ['Révision', tous, ['schema', 'reponses'], 6],
+    ] as const
+  ).filter(([, modeles]) => modeles.length > 0);
+  if (tous.length === 0) return null;
+  return unite(
+    `${classe.toLowerCase()}-rp-schemas`,
+    'Les schémas de Capy',
+    'Dessiner l’histoire en barres, puis calculer.',
+    etapes,
+  );
+}
+
+const avecSchemas = (t: Theme): Theme => {
+  if (t.domaine !== 'resoudre-problemes') return t;
+  const u = uniteSchemas(t.classe);
+  return u ? { ...t, unites: [...t.unites, u] } : t;
+};
+
 export const THEMES: readonly Theme[] = [
   RESOUDRE_PROBLEMES_CE2,
   CALCUL_MENTAL_CE2,
@@ -476,7 +510,7 @@ export const THEMES: readonly Theme[] = [
   ...THEMES_NOMBRES,
   ...THEMES_CP,
   ...THEMES_ATELIERS,
-].map(avecRegle);
+].map((t) => avecSchemas(avecRegle(t)));
 
 export function themesDe(classe: Classe): Theme[] {
   return THEMES.filter((t) => t.classe === classe);

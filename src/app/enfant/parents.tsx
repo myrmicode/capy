@@ -11,7 +11,9 @@ import { niveauPourDomaine } from '@/parcours/niveau';
 import { themesProposes } from '@/parcours/selection';
 import { CONSEILS_PARENTS } from '@/contenu/conseilsParents';
 import { dateEnFrancais, dureeEnFrancais } from '@/parents/format';
+import { derniereLecture } from '@/parcours/lecture';
 import { resumeSemaine } from '@/parents/semaine';
+import { phraseVitesse } from '@/parents/vitesse';
 import { deverrouillerParents, parentsDeverrouilles } from '@/parents/verrou';
 import { dateLocale, serieDeJours, tempsDeLaSemaine } from '@/parcours/progression';
 import { seDeconnecter, supprimerCompte } from '@/serveur/compte';
@@ -176,6 +178,9 @@ function ContenuParents() {
                   {faites} sur {etapes.length}
                 </Text>
               </View>
+              {phraseVitesse(p.vitesse?.[theme.domaine]) ? (
+                <Text style={typo.petit}>{phraseVitesse(p.vitesse?.[theme.domaine])}</Text>
+              ) : null}
             </View>
           );
         })}
@@ -187,6 +192,8 @@ function ContenuParents() {
           </Text>
         ) : null}
       </Section>
+
+      <SectionLecture />
 
       {idees.length > 0 ? (
         <Section titre="Idées de jeux sans écran">
@@ -281,6 +288,32 @@ function ContenuParents() {
         )}
       </Section>
     </>
+  );
+}
+
+/**
+ * Lire à deux : l'enfant lit à voix haute, l'adulte écoute et compte sur l'écran.
+ * La fluence (mots bien lus en une minute) est ce que mesure l'école en « Lire à voix haute ».
+ */
+function SectionLecture() {
+  const { typo } = useThemeEnfant();
+  const profil = useProfilActif();
+  if (!profil) return null;
+  const derniere = derniereLecture(profil.progression);
+  return (
+    <Section titre="Lire à deux">
+      <Text style={typo.texte}>
+        {profil.prenom} lit un texte à voix haute pendant une minute. Vous suivez sur l’écran et touchez les mots mal
+        lus : Capy compte les mots bien lus. Rien n’est enregistré, ni la voix ni le son.
+      </Text>
+      {derniere ? (
+        <Text style={typo.petit}>
+          Dernière lecture : {derniere.mesure.motsParMinute} mots bien lus en une minute (« {derniere.titre} », le{' '}
+          {dateEnFrancais(derniere.mesure.jour)}).
+        </Text>
+      ) : null}
+      <Bouton titre="Lire à deux" variante="secondaire" onPress={() => router.push('/lecture')} />
+    </Section>
   );
 }
 

@@ -32,6 +32,7 @@ import type { Theme } from '@/config/parcours';
 import { HISTOIRES } from '@/contenu/histoires';
 import { graineDuJour, PHRASES_CAPY, phraseDe } from '@/contenu/phrasesCapy';
 import type { PoseCapy } from '@/mascotte';
+import { themesChrono } from '@/parcours/chrono';
 import { QUESTIONS_DEFI } from '@/parcours/defi';
 import {
   avancementDuTheme,
@@ -60,7 +61,7 @@ const LARGEUR_FICHE = 360;
 
 function Parcours() {
   const profil = useProfilActif();
-  const { typo } = useThemeEnfant();
+  const { typo, reglages } = useThemeEnfant();
   const ambianceSoir = useReglages((e) => e.ambianceSoir);
   // Revenu sur son parcours, l'enfant ne retrouve jamais l'espace parent ouvert.
   useFocusEffect(useCallback(() => verrouillerParents(), []));
@@ -203,6 +204,12 @@ function Parcours() {
 
       <CarteDefi fait={defiFait(p, aujourdhui)} etoiles={p.defis?.[aujourdhui] ?? 0} />
       <CarteHistoires lues={Object.keys(p.histoires ?? {}).length} />
+      {/* Pas de course contre la montre en mode calme. */}
+      {!reglages.modeCalme && themesChrono(profil.classe, profil.toile).length > 0 ? (
+        <CarteChrono
+          record={Math.max(0, ...themesChrono(profil.classe, profil.toile).map((t) => p.chronos?.[t.id]?.record ?? 0))}
+        />
+      ) : null}
 
       <View style={[styles.bandeau, { backgroundColor: c.face, borderBottomColor: c.relief }]}>
         <View style={styles.bandeauHaut}>
@@ -494,6 +501,34 @@ function CarteHistoires({ lues }: { lues: number }) {
       <View style={styles.flex}>
         <Text style={[typo.titre3, { color: couleurs.brun[800] }]}>Les histoires de Capy</Text>
         <Text style={[typo.petit, { color: couleurs.brun[800] }]}>{detail}</Text>
+      </View>
+    </SurfaceEnRelief>
+  );
+}
+
+function CarteChrono({ record }: { record: number }) {
+  const { typo, ecart } = useThemeEnfant();
+  const detail =
+    record > 0
+      ? `Une minute de calculs. Ton record : ${record} bonnes réponses.`
+      : 'Une minute de calculs. Essaie de battre ton record !';
+  return (
+    <SurfaceEnRelief
+      onPress={() => router.push('/chrono')}
+      accessibilityRole="button"
+      accessibilityLabel={`Le chrono de Capy. ${detail}`}
+      couleurFace={couleurs.menthe[100]}
+      couleurRelief={couleurs.sarcelle[500]}
+      relief={4}
+      rayon={formes.carte.rayon}
+      styleFace={[styles.defiFace, { padding: ecart('m'), gap: ecart('m') }]}
+    >
+      <View style={styles.defiIcone}>
+        <TuileTheme domaine="calcul-mental" couleurs={couleursMatieres.mathematiques} taille={40} />
+      </View>
+      <View style={styles.flex}>
+        <Text style={[typo.titre3, { color: couleurs.sarcelle[900] }]}>Le chrono de Capy</Text>
+        <Text style={[typo.petit, { color: couleurs.sarcelle[900] }]}>{detail}</Text>
       </View>
     </SurfaceEnRelief>
   );

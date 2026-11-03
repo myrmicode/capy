@@ -42,6 +42,20 @@ export interface ProfilEnfant {
   synchroniseLe?: string;
 }
 
+/** Le résultat d'une étape ou d'une série d'entraînement. */
+interface ResultatPartie {
+  domaine: DomaineId;
+  reussiesPremierCoup: number;
+  nombreQuestions: number;
+  dureeSecondes: number;
+  /** Temps de réponse médian des réponses justes du premier coup (absent s'il y en a trop peu). */
+  tempsReponse?: number;
+}
+
+/** La vitesse de l'étape s'ajoute à celle de la compétence. */
+const avecVitesse = (p: progression.ProgressionEnfant, r: ResultatPartie, m: Date) =>
+  r.tempsReponse === undefined ? p : progression.noterVitesse(p, r.domaine, r.tempsReponse, m);
+
 interface EtatProfils {
   profils: ProfilEnfant[];
   profilActifId: string | null;
@@ -51,19 +65,9 @@ interface EtatProfils {
   modifierProfil: (id: string, modifs: Partial<Pick<ProfilEnfant, 'prenom' | 'classe'>>) => void;
   supprimerProfil: (id: string) => void;
   choisirProfil: (id: string | null) => void;
-  enregistrerEtape: (
-    id: string,
-    etapeId: string,
-    resultat: { domaine: DomaineId; reussiesPremierCoup: number; nombreQuestions: number; dureeSecondes: number },
-    maintenant?: Date,
-  ) => void;
+  enregistrerEtape: (id: string, etapeId: string, resultat: ResultatPartie, maintenant?: Date) => void;
   /** Série d'entraînement libre terminée : étoiles, jour, temps, et la toile du jour évolue comme pour une étape. */
-  enregistrerEntrainement: (
-    id: string,
-    themeId: string,
-    resultat: { domaine: DomaineId; reussiesPremierCoup: number; nombreQuestions: number; dureeSecondes: number },
-    maintenant?: Date,
-  ) => void;
+  enregistrerEntrainement: (id: string, themeId: string, resultat: ResultatPartie, maintenant?: Date) => void;
   /** Enregistre la fiche d'une matière : elle devient la référence de cette matière. */
   enregistrerToile: (id: string, matiere: Matiere, niveaux: Niveaux, maintenant?: Date) => void;
   ouvrirCoffre: (id: string, coffreId: string) => void;
@@ -80,6 +84,16 @@ interface EtatProfils {
   enregistrerDefi: (
     id: string,
     resultat: { reussiesPremierCoup: number; nombreQuestions: number; dureeSecondes: number },
+    maintenant?: Date,
+  ) => void;
+  /** Une série du chrono de Capy : le record du thème, le jour et le temps. */
+  enregistrerChrono: (id: string, themeId: string, justes: number, dureeSecondes: number, maintenant?: Date) => void;
+  /** Une lecture à deux : mots bien lus en une minute (comptés par l'adulte). */
+  enregistrerLecture: (
+    id: string,
+    texteId: string,
+    mesure: { motsParMinute: number; erreurs: number },
+    dureeSecondes: number,
     maintenant?: Date,
   ) => void;
   /** Questions d'une étape terminée : celles qui ont demandé plusieurs essais reviendront plus tard. */
@@ -142,12 +156,16 @@ export const useProfils = create<EtatProfils>()(
           modifier(
             id,
             (p, m) => ({
-              progression: progression.enregistrerEtape(
-                p.progression,
-                etapeId,
-                r.reussiesPremierCoup,
-                r.nombreQuestions,
-                r.dureeSecondes,
+              progression: avecVitesse(
+                progression.enregistrerEtape(
+                  p.progression,
+                  etapeId,
+                  r.reussiesPremierCoup,
+                  r.nombreQuestions,
+                  r.dureeSecondes,
+                  m,
+                ),
+                r,
                 m,
               ),
               toile:
@@ -165,12 +183,16 @@ export const useProfils = create<EtatProfils>()(
           modifier(
             id,
             (p, m) => ({
-              progression: progression.enregistrerEntrainement(
-                p.progression,
-                themeId,
-                r.reussiesPremierCoup,
-                r.nombreQuestions,
-                r.dureeSecondes,
+              progression: avecVitesse(
+                progression.enregistrerEntrainement(
+                  p.progression,
+                  themeId,
+                  r.reussiesPremierCoup,
+                  r.nombreQuestions,
+                  r.dureeSecondes,
+                  m,
+                ),
+                r,
                 m,
               ),
               // Même règle que le parcours ; la fiche de septembre ne change jamais.
@@ -228,6 +250,22 @@ export const useProfils = create<EtatProfils>()(
                 r.dureeSecondes,
                 m,
               ),
+            }),
+            maintenant,
+          ),
+        enregistrerChrono: (id, themeId, justes, dureeSecondes, maintenant = new Date()) =>
+          modifier(
+            id,
+            (p, m) => ({
+              progression: progression.enregistrerChrono(p.progression, themeId, justes, dureeSecondes, m),
+            }),
+            maintenant,
+          ),
+        enregistrerLecture: (id, texteId, mesure, dureeSecondes, maintenant = new Date()) =>
+          modifier(
+            id,
+            (p, m) => ({
+              progression: progression.enregistrerLecture(p.progression, texteId, mesure, dureeSecondes, m),
             }),
             maintenant,
           ),

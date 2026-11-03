@@ -47,10 +47,15 @@ export function JeuDictee({ exercice, actif, onRepondre }: PropsJeuTexte) {
     onRepondre(juste);
   };
 
+  // La même dictée sert pour les mots et pour les syllabes (CE1).
+  const syllabe = exercice.domaine === 'ecrire-syllabes';
+
   return (
     <View style={styles.jeu}>
       <CarteEnonce enonce={exercice.enonce} question={exercice.question} />
-      {exercice.lecture ? <BoutonReecouter lecture={exercice.lecture} /> : null}
+      {exercice.lecture ? (
+        <BoutonReecouter lecture={exercice.lecture} titre={syllabe ? 'Réécouter la syllabe' : undefined} />
+      ) : null}
 
       <TextInput
         value={saisie}
@@ -63,7 +68,7 @@ export function JeuDictee({ exercice, actif, onRepondre }: PropsJeuTexte) {
           curseur.current = e.nativeEvent.selection;
         }}
         editable={actif}
-        placeholder="Écris le mot ici"
+        placeholder={syllabe ? 'Écris la syllabe ici' : 'Écris le mot ici'}
         placeholderTextColor={couleurs.encreDouce}
         maxLength={LONGUEUR_MAX}
         autoCapitalize="none"
@@ -76,7 +81,7 @@ export function JeuDictee({ exercice, actif, onRepondre }: PropsJeuTexte) {
         keyboardType={Platform.OS === 'android' ? 'visible-password' : 'default'}
         returnKeyType="done"
         onSubmitEditing={valider}
-        accessibilityLabel="Le mot que tu as écrit"
+        accessibilityLabel={syllabe ? 'La syllabe que tu as écrite' : 'Le mot que tu as écrit'}
         style={[typo.titre2, styles.saisie]}
       />
 

@@ -15,6 +15,8 @@ import { familleCM2, intrusCM2, phraseEnOrdreCM2, sujetVerbeCM2, synonymesCM2 } 
 import { decimaux, fractionPartie } from '../modeles/ecritures';
 import { axesSymetrie, compterCotes, reconnaitreFigure } from '../modeles/formes';
 import { compterSyllabes, nomLettre, premiereSyllabe, premierSon, syllabeEntendue } from './modeles/cp';
+import { comprendreMot, comprendrePhrase } from './modeles/oral';
+import { dicteeSyllabes } from './modeles/syllabes';
 
 /** Tous les modèles d'exercices de français. Pour en ajouter un, l'importer ici. */
 export const MODELES_FRANCAIS: readonly ModeleTexte[] = [
@@ -50,6 +52,11 @@ export const MODELES_FRANCAIS: readonly ModeleTexte[] = [
   premierSon,
   nomLettre,
   syllabeEntendue,
+  // CP et CE1, à l'oral avec des images
+  comprendreMot,
+  comprendrePhrase,
+  // CE1
+  dicteeSyllabes,
   // Mathématiques à réponse écrite (fraction, nombre à virgule) : même moteur que le français.
   fractionPartie,
   decimaux,

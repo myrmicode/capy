@@ -6,6 +6,7 @@ import { dateLocale, decaler, tempsDeLaSemaine, type ProgressionEnfant } from '@
 import { avecPhotoDeJanvier, symboleDe, type Niveaux, type ToileEnfant } from '@/toile/niveaux';
 
 import { dureeEnFrancais } from './format';
+import { tendanceVitesse } from './vitesse';
 
 interface ProfilResume {
   prenom: string;
@@ -82,6 +83,31 @@ export function resumeSemaine(profil: ProfilResume, maintenant = new Date()): st
   const histoires = Object.keys(p.histoires ?? {}).length;
   if (histoires > 0)
     phrases.push(`${histoires} histoire${histoires > 1 ? 's' : ''} de Capy lue${histoires > 1 ? 's' : ''} jusqu’ici.`);
+
+  // Lire à deux : les lectures de la semaine, et la meilleure.
+  const lectures = Object.values(p.lectures ?? {})
+    .flat()
+    .filter((l) => jours7.has(l.jour));
+  if (lectures.length > 0) {
+    const meilleure = Math.max(...lectures.map((l) => l.motsParMinute));
+    phrases.push(
+      `Lire à deux : ${lectures.length} lecture${lectures.length > 1 ? 's' : ''} cette semaine, jusqu’à ${meilleure} mots bien lus en une minute.`,
+    );
+  }
+
+  // Ce qui devient automatique : des réponses justes plus rapides qu’au début.
+  const plusRapides = Object.entries(p.vitesse ?? {})
+    .filter(([, mesures]) => tendanceVitesse(mesures)?.sens === 'plusRapide')
+    .map(([id]) => domaineDe(profil.classe, id as DomaineId)?.libelle.toLowerCase())
+    .filter((d): d is string => d !== undefined);
+  if (plusRapides.length > 0)
+    phrases.push(`Réponses justes plus rapides qu’au début : ${liste(plusRapides)}. Ça devient automatique.`);
+
+  const chronos = Object.values(p.chronos ?? {}).filter((c) => c.derniers.some((d) => jours7.has(d.jour)));
+  if (chronos.length > 0) {
+    const record = Math.max(...chronos.map((c) => c.record));
+    phrases.push(`Le chrono de Capy : record de ${record} bonnes réponses en une minute.`);
+  }
 
   return phrases;
 }

@@ -12,6 +12,7 @@ import {
   type ExerciceTexte,
   type ModeleTexte,
   type NiveauDifficulte,
+  type Scene,
   type Segment,
   type VersionFacile,
 } from '../types';
@@ -37,6 +38,10 @@ export interface ContenuTexte {
   motsEnDesordre?: string[];
   /** Figure dessinée dans l'énoncé. */
   illustration?: Illustration;
+  /** Les choix sont des images : mots de l'imagier ou scènes. */
+  images?: 'imagier' | 'scenes';
+  /** La scène de chaque choix (clé : le texte du choix). */
+  scenes?: Record<string, Scene>;
   indice: string;
   explication: string;
   /**
@@ -116,6 +121,8 @@ export function definirModeleTexte(def: DefinitionModeleTexte): ModeleTexte {
           ...(contenu.lectureAutonome ? { lectureAutonome: true } : {}),
           ...(contenu.motsEnDesordre ? { motsEnDesordre: contenu.motsEnDesordre } : {}),
           ...(contenu.illustration ? { illustration: contenu.illustration } : {}),
+          ...(contenu.images ? { images: contenu.images } : {}),
+          ...(contenu.scenes ? { scenes: contenu.scenes } : {}),
           indice: contenu.indice,
           explication: contenu.explication,
           facile: {

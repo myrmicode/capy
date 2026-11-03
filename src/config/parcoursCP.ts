@@ -1,10 +1,47 @@
 // Parcours du CP. En français, tout passe par l'oreille : Capy dit le mot, la
-// syllabe ou la lettre, l'enfant touche la réponse. « Comprendre des mots » et
-// « Comprendre des phrases » (à l'oral, avec des images) arrivent ensuite.
+// phrase, la syllabe ou la lettre, l'enfant touche la réponse (une image pour
+// « Comprendre des mots » et « Comprendre des phrases »).
 import type { Theme } from './parcours';
 import { unite } from './unites';
 
 const JEUX = ['reponses', 'lucioles'] as const;
+
+/** « Comprendre des mots » et « Comprendre des phrases », à l'oral avec des images (CP et CE1). */
+export function themesOraux(classe: 'CP' | 'CE1'): Theme[] {
+  const p = classe.toLowerCase();
+  return [
+    {
+      id: `${p}-comprendre-mots`,
+      domaine: 'comprendre-mots',
+      classe,
+      titre: 'Écouter des mots',
+      description: 'Écouter un mot et trouver son dessin.',
+      exemple: 'un hérisson00a0: lequel00a0?',
+      unites: [
+        unite(`${p}-cmo-u1`, 'L’imagier de Capy', 'Connaître beaucoup de mots, même les plus rares.', [
+          ['Les mots de tous les jours', ['comprendre-mot'], ['images', 'ouiNon'], 5],
+          ['Des dessins qui se ressemblent', ['comprendre-mot'], ['images', 'ouiNon'], 5],
+          ['Révision', ['comprendre-mot'], ['images', 'ouiNon'], 6],
+        ]),
+      ],
+    },
+    {
+      id: `${p}-comprendre-phrases`,
+      domaine: 'comprendre-phrases',
+      classe,
+      titre: 'Écouter des phrases',
+      description: 'Écouter une phrase et trouver la bonne image.',
+      exemple: 'Le chat est sous la boîte.',
+      unites: [
+        unite(`${p}-cph-u1`, 'Les images qui parlent', 'Bien écouter les petits mots00a0: sur, sous, les, pas.', [
+          ['Sur ou sous00a0?', ['comprendre-phrase'], ['images', 'ouiNon'], 5],
+          ['Un ou plusieurs00a0?', ['comprendre-phrase'], ['images', 'ouiNon'], 5],
+          ['Révision', ['comprendre-phrase'], ['images', 'ouiNon'], 6],
+        ]),
+      ],
+    },
+  ];
+}
 
 export const THEMES_CP: readonly Theme[] = [
   {
@@ -178,4 +215,5 @@ export const THEMES_CP: readonly Theme[] = [
       ]),
     ],
   },
+  ...themesOraux('CP'),
 ];

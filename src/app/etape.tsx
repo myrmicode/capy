@@ -19,11 +19,15 @@ import {
   IconeEtoile,
   IconeHautParleur,
   PanneauRetour,
+  PoserCalcul,
+  SchemaBarres,
   TableConsultable,
 } from '@/composants';
 import { THEMES, trouverEtape } from '@/config/parcours';
 import { MOTS_EXPLIQUES } from '@/contenu/motsExpliques';
 import type { ExerciceQuelconque } from '@/exercices';
+import { poseDonnee } from '@/exercices/pose';
+import { schemaDe } from '@/exercices/schemas';
 import { COMPOSANTS_JEUX, JEUX, type JeuId } from '@/jeux';
 import { consigneDe, type DefinitionJeu } from '@/jeux/registre';
 import { arreterLecture, celebrer, feliciter, lireAVoixHaute } from '@/jeux/retours';
@@ -32,7 +36,7 @@ import { aideApresErreur, ESSAIS_AVANT_CHOIX_REDUITS } from '@/parcours/aide';
 import { avancement, derouler, etatInitial, pauseDue, resteEnMots } from '@/parcours/deroulement';
 import { genererEtape } from '@/parcours/etape';
 import { niveauPourDomaine } from '@/parcours/niveau';
-import { dateLocale, defiFait, etoilesPour, graineDePartie } from '@/parcours/progression';
+import { dateLocale, defiFait, etoilesPour, graineDePartie, mediane } from '@/parcours/progression';
 import { revisionsDues } from '@/parcours/revision';
 import { genererDefi, QUESTIONS_DEFI } from '@/parcours/defi';
 import { serieEntrainement, themeEnEntrainement, themeEstPropose } from '@/parcours/selection';
@@ -47,6 +51,14 @@ const JEUX_QUI_GARDENT_LEUR_ETAT: readonly JeuId[] = ['marche', 'funambule', 'di
 /** Jeux où les aides visuelles de calcul n'ont pas de sens (le fil gradué est déjà une aide). */
 const JEUX_SANS_AIDE_NOMBRES: readonly JeuId[] = ['funambule', 'horloge'];
 
+/**
+ * Domaines où l'on peut poser le calcul en colonnes (jamais en calcul mental ni
+ * dans les tables : c'est la mémoire des résultats qu'ils travaillent).
+ */
+const DOMAINES_A_POSER: readonly string[] = ['resoudre-problemes', 'poser-calculer'];
+/** Jeux où le brouillon a du sens : on y donne un nombre (pas dans le bon fil, où l'on choisit l'opération). */
+const JEUX_A_POSER: readonly JeuId[] = ['reponses', 'lucioles'];
+
 /** Jeux où Capy peut enlever des réponses après plusieurs essais (voir parcours/aide.ts). */
 const JEUX_A_CHOIX_REDUCTIBLES: readonly JeuId[] = ['reponses', 'lucioles', 'questionPerdue'];
 
@@ -57,6 +69,8 @@ function nombreDePropositions(ex: ExerciceQuelconque, jeu: JeuId): number {
 
 /** Au-delà, on considère que l'enfant a fait une pause : le temps n'est pas compté. */
 const DUREE_MAX_SECONDES = 30 * 60;
+/** Au-delà, une réponse ne dit plus rien de la vitesse (l'enfant a levé les yeux). */
+const TEMPS_REPONSE_MAX_SECONDES = 120;
 
 /**
  * Ce que Capy lit pour une question : la consigne, puis l'énoncé et la question.
@@ -158,6 +172,12 @@ function EcranEtape() {
   // « Une seule chose à la fois » : la consigne d'abord, seule à l'écran.
   const [consigneVue, setConsigneVue] = useState<number | null>(null);
   const [tableOuverte, setTableOuverte] = useState(false);
+  const [schemaOuvert, setSchemaOuvert] = useState<number | null>(null);
+  // Question dont on a ouvert (ou fermé, en « Poser et calculer ») le brouillon.
+  const [poseBasculee, setPoseBasculee] = useState<number | null>(null);
+  // Temps des réponses justes du premier coup : il montre aux parents ce qui devient automatique.
+  const debutQuestion = useRef(0);
+  const tempsReponses = useRef<number[]>([]);
   const [explication, setExplication] = useState<{
     mot: string;
     texte: string;
@@ -224,6 +244,8 @@ function EcranEtape() {
       reussiesPremierCoup: etat.reussiesPremierCoup,
       nombreQuestions: etat.nombreQuestions,
       dureeSecondes,
+      // Une seule réponse ne suffit pas pour parler de vitesse.
+      ...(tempsReponses.current.length >= 2 ? { tempsReponse: mediane(tempsReponses.current) } : {}),
     };
     if (idTheme !== undefined) enregistrerEntrainement(profil.id, idTheme, resultat);
     else enregistrerEtape(profil.id, etapeId, resultat);
@@ -257,6 +279,11 @@ function EcranEtape() {
     return () => clearTimeout(minuteur);
   }, [cleLecture, lectureAuto, lente, etat.essaisRates]);
   useEffect(() => arreterLecture, []);
+
+  // Le chrono de la question part quand elle s'affiche (après la consigne seule, si elle est demandée).
+  useEffect(() => {
+    if (!enConsigne) debutQuestion.current = Date.now();
+  }, [etat.index, enConsigne, partie]);
 
   const explications = useMemo<Explications | null>(
     () =>
@@ -307,6 +334,7 @@ function EcranEtape() {
       if (domaine) setNiveauEtape(niveauPourDomaine(profil.toile, domaine));
       setRevision(revisionDuJour());
       setDebut(Date.now());
+      tempsReponses.current = [];
       envoyer({ type: 'recommencer' });
     };
     return (
@@ -455,6 +483,13 @@ function EcranEtape() {
   }
 
   const montrerTable = reglages.tableConsultable && ex.nature === 'nombre' && !DOMAINES_SANS_TABLE.includes(ex.domaine);
+  // Le schéma en barres de l'histoire, à la demande ; pas quand c'est la question (« Le bon schéma »), ni quand on
+  // cherche la bonne question (le schéma la donnerait).
+  const schema = ex.nature === 'nombre' && q.jeu !== 'schema' && q.jeu !== 'questionPerdue' ? schemaDe(ex) : null;
+  // Le brouillon pour poser le calcul : à la demande dans les problèmes, ouvert d'office en « Poser et calculer ».
+  const peutPoser = ex.nature === 'nombre' && DOMAINES_A_POSER.includes(ex.domaine) && JEUX_A_POSER.includes(q.jeu);
+  const poseParDefaut = ex.domaine === 'poser-calculer';
+  const poseOuverte = peutPoser && poseParDefaut !== (poseBasculee === etat.index);
   // Dans le défi du jour, chaque question a sa compétence, donc son niveau.
   const niveauDeReference = enDefi ? niveauPourDomaine(profil.toile, ex.domaine) : niveauEtape;
   const nombresAide =
@@ -499,6 +534,22 @@ function EcranEtape() {
             icone={(c) => <IconeAmpoule taille={22} couleur={c} />}
             onPress={() => setIndiceOuvert(indiceVisible ? null : etat.index)}
           />
+          {peutPoser ? (
+            <Bouton
+              titre={poseOuverte ? 'Fermer le brouillon' : 'Poser'}
+              variante="secondaire"
+              pleineLargeur={false}
+              onPress={() => setPoseBasculee(poseBasculee === etat.index ? null : etat.index)}
+            />
+          ) : null}
+          {schema ? (
+            <Bouton
+              titre="Schéma"
+              variante="secondaire"
+              pleineLargeur={false}
+              onPress={() => setSchemaOuvert(schemaOuvert === etat.index ? null : etat.index)}
+            />
+          ) : null}
           {montrerTable ? (
             <Bouton
               titre="Table"
@@ -515,6 +566,23 @@ function EcranEtape() {
           <BulleCapy pose="capy" tailleCapy={72} texte={`« ${explication.mot} » : ${explication.texte}`} />
         ) : null}
         {montrerTable && tableOuverte ? <TableConsultable /> : null}
+        {poseOuverte && ex.nature === 'nombre' ? (
+          <PoserCalcul
+            key={etat.index}
+            donnee={poseDonnee(ex)}
+            // En « Poser et calculer », le calcul est la question : les tuiles de réponse servent de vérification.
+            verification={!poseParDefaut}
+          />
+        ) : null}
+        {schema && schemaOuvert === etat.index ? (
+          <View style={styles.schema}>
+            <TexteAccessible
+              texte="Le schéma de l’histoire. Le point d’interrogation, c’est ce qu’on cherche."
+              variante="petit"
+            />
+            <SchemaBarres schema={schema} />
+          </View>
+        ) : null}
         {nombresAide.length > 0 ? <AideNombres nombres={nombresAide} /> : null}
 
         {/* La clé remet le mini-jeu à zéro pour chaque question, et pour chaque nouvel essai du bon fil. */}
@@ -522,7 +590,13 @@ function EcranEtape() {
           key={`${etat.index}-${JEUX_QUI_GARDENT_LEUR_ETAT.includes(q.jeu) ? 0 : etat.essaisRates}`}
           exercice={ex}
           actif={etat.phase === 'question'}
-          onRepondre={(juste) => envoyer({ type: 'repondre', juste })}
+          onRepondre={(juste) => {
+            if (juste && etat.essaisRates === 0)
+              tempsReponses.current.push(
+                Math.min(TEMPS_REPONSE_MAX_SECONDES, (Date.now() - debutQuestion.current) / 1000),
+              );
+            envoyer({ type: 'repondre', juste });
+          }}
         />
       </Ecran>
     </ContexteExplications.Provider>
@@ -561,4 +635,12 @@ const styles = StyleSheet.create({
   centre: { textAlign: 'center' },
   boutonsFin: { gap: espaces.m },
   etoiles: { flexDirection: 'row', gap: espaces.s },
+  schema: {
+    gap: espaces.s,
+    backgroundColor: couleurs.blanc,
+    borderColor: couleurs.bordure,
+    borderWidth: 2,
+    borderRadius: formes.carte.rayon,
+    padding: espaces.m,
+  },
 });

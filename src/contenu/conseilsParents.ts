@@ -29,6 +29,11 @@ export const CONSEILS_PARENTS: Partial<Record<DomaineId, string>> = {
   'comprendre-phrases-lues': 'Faites lire la règle d’un jeu de société ou une recette, puis réalisez-la ensemble.',
   'comprendre-texte-lu':
     'Après l’histoire du soir, posez une question dont la réponse est dans le texte, puis cherchez-la ensemble.',
+  'comprendre-mots':
+    'En lisant un imagier ou un album, montrez une image et demandez son nom ; donnez les mots rares (un hérisson, une boussole).',
+  'comprendre-phrases':
+    'Jouez à « Jacques a dit » avec les petits mots : « mets le doudou sous la chaise, pas sur la table ».',
+  'ecrire-syllabes': 'Dictez une syllabe (bra, chou, moi) et écrivez-la chacun de votre côté, puis comparez.',
   'comprendre-texte-entendu': 'Racontez une courte histoire, puis demandez à l’enfant de la raconter à son tour.',
   geometrie:
     'Cherchez des formes dans la maison\u00a0: une fenêtre rectangle, une assiette ronde, un panneau triangle.',

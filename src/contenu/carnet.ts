@@ -24,7 +24,8 @@ export const CARNET: Partial<Record<DomaineId, PageCarnet>> = {
       'Lou a 5 billes, on lui en donne 3\u00a0: 5\u00a0+\u00a03\u00a0=\u00a08.',
       'Il y a 4 paquets de 6 fraises\u00a0: 4\u00a0×\u00a06\u00a0=\u00a024.',
     ],
-    astuce: 'Je peux faire un petit dessin de l’histoire.',
+    astuce:
+      'Je dessine l’histoire en barres : le tout en haut, les morceaux dedans, et un point d’interrogation pour ce que je cherche.',
   },
   'calcul-mental': {
     titre: 'Calculer dans sa tête',
@@ -110,6 +111,25 @@ export const CARNET: Partial<Record<DomaineId, PageCarnet>> = {
     regle: 'La réponse est dans le texte. Je relis le passage qui parle de la question.',
     exemples: ['Lou part à l’école avec son sac. Où va Lou\u00a0? À l’école.'],
     astuce: 'Je cherche dans le texte les mots de la question.',
+  },
+  'comprendre-mots': {
+    titre: 'Comprendre des mots',
+    regle:
+      'Plus je connais de mots, mieux je comprends les histoires. Un mot nouveau, je le redis et je cherche à quoi il ressemble.',
+    exemples: ['Un hérisson : un petit animal couvert de piquants.', 'Une boussole : elle montre le nord.'],
+    astuce: 'Quand j’entends un mot que je ne connais pas, je demande ce qu’il veut dire.',
+  },
+  'comprendre-phrases': {
+    titre: 'Comprendre une phrase',
+    regle: 'Les petits mots changent tout : sur ou sous, le ou les, et « pas » qui dit le contraire.',
+    exemples: ['Le chat est sur la boîte. Le chat est sous la boîte.', 'Il y a un chien, mais pas de chat.'],
+    astuce: 'J’écoute la phrase jusqu’au bout avant de choisir.',
+  },
+  'ecrire-syllabes': {
+    titre: 'Écrire une syllabe',
+    regle: 'J’écoute chaque son, dans l’ordre, et j’écris la lettre (ou les deux lettres) de chaque son.',
+    exemples: ['bra : b, r, a.', 'chou : « ch » puis « ou ».', 'moi : m, puis « oi ».'],
+    astuce: 'Je dis la syllabe tout doucement, en étirant les sons.',
   },
   'comprendre-texte-entendu': {
     titre: 'Écouter une histoire',

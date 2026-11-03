@@ -8,7 +8,8 @@ import { SurfaceEnRelief } from './SurfaceEnRelief';
 
 export type EtatTuile = 'normal' | 'selectionne' | 'juste' | 'presque' | 'desactive';
 
-const ETATS: Record<EtatTuile, { face: string; relief: string; bordure: string; texte: string }> = {
+/** Couleurs de chaque état d’une tuile (aussi utilisées par les tuiles d’images). */
+export const COULEURS_TUILE: Record<EtatTuile, { face: string; relief: string; bordure: string; texte: string }> = {
   normal: {
     face: couleurs.blanc,
     relief: couleurs.gris[300],
@@ -53,7 +54,7 @@ interface PropsTuileReponse {
 
 /** Tuile de réponse : rayon 16 px, relief 5 px. Les nombres s'affichent en Fredoka 28 px. */
 export function TuileReponse({ libelle, onPress, etat = 'normal', hauteur = 72, coloration = true }: PropsTuileReponse) {
-  const c = ETATS[etat];
+  const c = COULEURS_TUILE[etat];
   const estNombre = typeof libelle === 'number';
   const { typo, cible } = useThemeEnfant();
   return (

@@ -32,9 +32,7 @@ describe('composition d’une étape', () => {
   });
 
   it('renvoie une étape vide quand l’axe n’a pas encore de modèles', () => {
-    expect(genererEtape({ ...BASE, classe: 'CP', domaine: 'comprendre-mots', modeles: undefined, graine: 1 })).toEqual(
-      [],
-    );
+    expect(genererEtape({ ...BASE, classe: 'CE1', domaine: 'lire-mots', modeles: undefined, graine: 1 })).toEqual([]);
   });
 });
 

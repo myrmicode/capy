@@ -51,6 +51,20 @@ const Ligne = z.object({
         }),
       )
       .optional(),
+    vitesse: z.record(z.string(), z.array(z.object({ jour: z.string(), secondes: z.number() }))).optional(),
+    chronos: z
+      .record(
+        z.string(),
+        z.object({
+          record: z.number(),
+          series: z.number(),
+          derniers: z.array(z.object({ jour: z.string(), justes: z.number() })),
+        }),
+      )
+      .optional(),
+    lectures: z
+      .record(z.string(), z.array(z.object({ jour: z.string(), motsParMinute: z.number(), erreurs: z.number() })))
+      .optional(),
   }),
   // Vérifiée et remise au format actuel par migrerToile (anciennes toiles comprises).
   toile: z.unknown().nullable(),

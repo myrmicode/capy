@@ -3,19 +3,23 @@ import type { ReactElement } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { modeleParId, modeleTexteParId } from '@/exercices';
+import { schemasAuChoix } from '@/exercices/schemas';
 
 import { JeuBonFil } from '../JeuBonFil';
 import { JeuCaisse } from '../JeuCaisse';
 import { JeuDictee } from '../JeuDictee';
 import { JeuFunambule } from '../JeuFunambule';
 import { JeuHorloge } from '../JeuHorloge';
+import { JeuImages } from '../JeuImages';
 import { JeuLucioles } from '../JeuLucioles';
 import { JeuMarche } from '../JeuMarche';
 import { JeuOrdre } from '../JeuOrdre';
+import { imageMontree, JeuOuiNon } from '../JeuOuiNon';
 import { JeuQuestionPerdue } from '../JeuQuestionPerdue';
 import { JeuPaniers } from '../JeuPaniers';
 import { JeuPassage } from '../JeuPassage';
 import { JeuReponses } from '../JeuReponses';
+import { JeuSchema } from '../JeuSchema';
 import { JeuWagons } from '../JeuWagons';
 
 const render = (ui: ReactElement) => renderBrut(<GestureHandlerRootView>{ui}</GestureHandlerRootView>);
@@ -277,6 +281,58 @@ describe('L’horloge', () => {
     for (let i = 0; i < ex.donnees.duree; i++)
       await fireEvent.press(screen.getByRole('button', { name: 'Avancer d’une heure' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Valider' }));
+    expect(onRepondre).toHaveBeenLastCalledWith(true);
+  });
+});
+
+describe('Les images', () => {
+  it('accepte la bonne image ; le lecteur d’écran ne dit pas ce qu’elle montre', async () => {
+    const ex = modeleTexteParId('comprendre-mot')!.generer('CP', 5);
+    const onRepondre = jest.fn();
+    await render(<JeuImages exercice={ex} actif onRepondre={onRepondre} />);
+    const rang = ex.choix.indexOf(ex.reponse) + 1;
+    expect(screen.queryByRole('button', { name: ex.reponse })).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: `Image ${rang === 1 ? 2 : 1}` }));
+    expect(onRepondre).toHaveBeenLastCalledWith(false);
+    await fireEvent.press(screen.getByRole('button', { name: `Image ${rang}` }));
+    expect(onRepondre).toHaveBeenLastCalledWith(true);
+  });
+
+  it('dessine une scène par choix pour les phrases', async () => {
+    const ex = modeleTexteParId('comprendre-phrase')!.generer('CE1', 3);
+    await render(<JeuImages exercice={ex} actif onRepondre={jest.fn()} />);
+    expect(screen.getAllByRole('button', { name: /^Image \d$/ })).toHaveLength(ex.choix.length);
+    expect(screen.getByRole('button', { name: 'Réécouter la phrase' })).toBeTruthy();
+  });
+});
+
+describe('C’est bien ça ?', () => {
+  it('montre la bonne image une fois sur deux, et attend « Oui » ou « Non »', async () => {
+    const tirages = Array.from({ length: 200 }, (_, g) => modeleTexteParId('comprendre-phrase')!.generer('CP', g));
+    const justes = tirages.filter((ex) => imageMontree(ex).juste).length;
+    expect(justes).toBeGreaterThan(70);
+    expect(justes).toBeLessThan(130);
+
+    // Une image qui ne va pas avec la phrase : la bonne réponse est « Non ».
+    const ex = tirages.find((e) => !imageMontree(e).juste)!;
+    const onRepondre = jest.fn();
+    await render(<JeuOuiNon exercice={ex} actif onRepondre={onRepondre} />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Oui' }));
+    expect(onRepondre).toHaveBeenLastCalledWith(false);
+    await fireEvent.press(screen.getByRole('button', { name: 'Non' }));
+    expect(onRepondre).toHaveBeenLastCalledWith(true);
+  });
+});
+
+describe('Le bon schéma', () => {
+  it('accepte le schéma qui raconte l’histoire', async () => {
+    const ex = retrait.generer('CE2', 8);
+    const { bon } = schemasAuChoix(ex)!;
+    const onRepondre = jest.fn();
+    await render(<JeuSchema exercice={ex} actif onRepondre={onRepondre} />);
+    await fireEvent.press(screen.getByRole('button', { name: new RegExp(`^Schéma ${bon === 0 ? 2 : 1}\\.`) }));
+    expect(onRepondre).toHaveBeenLastCalledWith(false);
+    await fireEvent.press(screen.getByRole('button', { name: new RegExp(`^Schéma ${bon + 1}\\.`) }));
     expect(onRepondre).toHaveBeenLastCalledWith(true);
   });
 });

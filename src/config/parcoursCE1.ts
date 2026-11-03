@@ -1,7 +1,7 @@
 // Parcours du CE1 : les axes de la fiche que Capy sait faire travailler.
-// « Lire à voix haute » reste hors de l'appli (Capy n'enregistre jamais la voix) ;
-// « Comprendre des mots / des phrases » (à l'oral, avec des images), « Écrire des
-// syllabes » et les nombres (lire, écrire, comparer, dénombrer) arrivent ensuite.
+// « Lire à voix haute » se travaille hors du parcours, avec un adulte (« Lire à
+// deux », dans l'espace parent) : Capy n'enregistre jamais la voix.
+import { themesOraux } from './parcoursCP';
 import type { Theme } from './parcours';
 import { unite } from './unites';
 
@@ -132,4 +132,21 @@ export const THEMES_CE1: readonly Theme[] = [
       ]),
     ],
   },
+  {
+    id: 'ce1-ecrire-syllabes',
+    domaine: 'ecrire-syllabes',
+    classe: 'CE1',
+    titre: 'Écrire des syllabes',
+    description: 'Écouter une syllabe, puis l’écrire.',
+    exemple: 'bra, chou, moi',
+    unites: [
+      unite('ce1-syl-u1', 'Les syllabes de Capy', 'Écrire chaque son entendu, dans l’ordre.', [
+        ['Consonne et voyelle', ['dictee-syllabes'], ['dictee', 'reponses'], 5],
+        ['Les sons à deux lettres', ['dictee-syllabes'], ['dictee', 'reponses'], 5],
+        ['Deux consonnes', ['dictee-syllabes'], ['dictee', 'reponses'], 5],
+        ['Révision', ['dictee-syllabes'], ['dictee', 'reponses'], 6],
+      ]),
+    ],
+  },
+  ...themesOraux('CE1'),
 ];

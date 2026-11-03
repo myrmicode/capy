@@ -36,7 +36,54 @@ export function fusionnerProgression(a: ProgressionEnfant, b: ProgressionEnfant)
     ...(a.histoires || b.histoires ? { histoires: fusionnerMeilleur(a.histoires, b.histoires) } : {}),
     // Absent des deux côtés (anciens profils), il le reste : sinon le profil semblerait modifié.
     ...(a.aRevoir || b.aRevoir ? { aRevoir: fusionnerRevisions(a.aRevoir, b.aRevoir) } : {}),
+    ...(a.vitesse || b.vitesse ? { vitesse: fusionnerListes(a.vitesse, b.vitesse, 30) } : {}),
+    ...(a.lectures || b.lectures ? { lectures: fusionnerListes(a.lectures, b.lectures, 12) } : {}),
+    ...(a.chronos || b.chronos ? { chronos: fusionnerChronos(a.chronos, b.chronos) } : {}),
   };
+}
+
+/**
+ * Mesures datées (vitesse, lectures) : celles des deux appareils, sans doublon,
+ * dans l'ordre des jours, les plus récentes gardées.
+ */
+function fusionnerListes<T extends { jour: string }>(
+  a: Record<string, T[]> = {},
+  b: Record<string, T[]> = {},
+  garder: number,
+): Record<string, T[]> {
+  const fusion: Record<string, T[]> = {};
+  for (const cle of new Set([...Object.keys(a), ...Object.keys(b)])) {
+    const vues = new Set<string>();
+    fusion[cle] = [...(a[cle] ?? []), ...(b[cle] ?? [])]
+      .filter((m) => {
+        const k = JSON.stringify(m);
+        if (vues.has(k)) return false;
+        vues.add(k);
+        return true;
+      })
+      // Tri stable : le même jour, l'ordre d'un appareil est gardé.
+      .sort((x, y) => x.jour.localeCompare(y.jour))
+      .slice(-garder);
+  }
+  return fusion;
+}
+
+function fusionnerChronos(
+  a: NonNullable<ProgressionEnfant['chronos']> = {},
+  b: NonNullable<ProgressionEnfant['chronos']> = {},
+): NonNullable<ProgressionEnfant['chronos']> {
+  const fusion = { ...a };
+  for (const [theme, r] of Object.entries(b)) {
+    const autre = fusion[theme];
+    fusion[theme] = autre
+      ? {
+          record: Math.max(autre.record, r.record),
+          series: Math.max(autre.series, r.series),
+          derniers: fusionnerListes({ x: autre.derniers }, { x: r.derniers }, 10).x,
+        }
+      : r;
+  }
+  return fusion;
 }
 
 /** Pour chaque clé (jour du défi, histoire), la meilleure valeur des deux appareils. */

@@ -257,10 +257,18 @@ export interface ExerciceTexte {
   lecture?: string;
   /** Texte découpé en phrases que l'enfant peut toucher (jeu « La bonne phrase »). */
   phrases?: string[];
-  /** Mots mélangés à remettre dans l'ordre (jeu « La phrase en désordre ») ; la réponse est la phrase. */
   /** Figure dessinée dans l’énoncé. */
   illustration?: Illustration;
+  /** Mots mélangés à remettre dans l'ordre (jeu « La phrase en désordre ») ; la réponse est la phrase. */
   motsEnDesordre?: string[];
+  /**
+   * Les choix sont des images (jeu « Les images ») : le dessin d'un mot de
+   * l'imagier, ou une scène par choix (voir `scenes`). Le texte des choix n'est
+   * jamais affiché : il sert de clé et d'explication.
+   */
+  images?: 'imagier' | 'scenes';
+  /** La scène dessinée pour chaque choix (« Comprendre des phrases ») ; clé : le texte du choix. */
+  scenes?: Record<string, Scene>;
   /**
    * L'enfant lit seul : c'est la compétence travaillée. « Écouter » ne lit alors
    * que la consigne et la question, jamais le texte.
@@ -272,6 +280,21 @@ export interface ExerciceTexte {
 }
 
 export type ExerciceQuelconque = Exercice | ExerciceTexte;
+
+/**
+ * Un objet de l'imagier posé dans une scène, sur une grille de 3 lignes et
+ * 3 colonnes (de 0 à 2 ; 0.5 et 1.5 placent un objet entre deux colonnes).
+ */
+export interface ElementScene {
+  /** Clé de l'imagier (« chat », « boîte »). */
+  objet: string;
+  ligne: number;
+  colonne: number;
+  taille?: 'petit' | 'grand';
+}
+
+/** Une petite scène dessinée, que l'enfant compare à la phrase entendue. */
+export type Scene = readonly ElementScene[];
 
 /** Modèle d'exercice de français, tel que l'utilisent le parcours et les mini-jeux. */
 export interface ModeleTexte {

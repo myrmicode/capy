@@ -68,8 +68,9 @@ export interface Domaine {
   matiere: Matiere;
   libelle: string;
   /**
-   * Vrai si la compétence ne peut pas être travaillée dans Capy (lecture à voix
-   * haute : l'appli n'enregistre jamais la voix). L'axe reste sur la toile.
+   * Vrai si la compétence ne se travaille pas dans le parcours (lecture à voix
+   * haute : l'appli n'enregistre jamais la voix). Elle se travaille avec un adulte,
+   * dans « Lire à deux » (espace parent). L'axe reste sur la toile.
    */
   horsAppli?: boolean;
 }

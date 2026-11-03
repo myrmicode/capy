@@ -1,4 +1,5 @@
 import type { ExerciceQuelconque } from '@/exercices';
+import { MODELES_AVEC_SCHEMA, schemaDe } from '@/exercices/schemas';
 
 export type JeuId =
   | 'marche'
@@ -13,7 +14,10 @@ export type JeuId =
   | 'reponses'
   | 'ordre'
   | 'caisse'
-  | 'horloge';
+  | 'horloge'
+  | 'images'
+  | 'ouiNon'
+  | 'schema';
 
 export interface DefinitionJeu {
   id: JeuId;
@@ -167,7 +171,7 @@ export const JEUX: Record<JeuId, DefinitionJeu> = {
     titre: 'La dictée de Capy',
     consigne: 'Écoute le mot, écris-le, puis valide.',
     consigneFacile: 'Écoute le mot. Écris-le. Puis valide.',
-    modeles: ['dictee-mots', 'mots-outils'],
+    modeles: ['dictee-mots', 'mots-outils', 'dictee-syllabes'],
     accepte: (ex) => ex.nature === 'texte' && ex.lecture !== undefined,
   },
   passage: {
@@ -204,6 +208,32 @@ export const JEUX: Record<JeuId, DefinitionJeu> = {
     modeles: ['duree'],
     accepte: (ex) => ex.nature === 'nombre' && ex.reponse >= 1 && ex.reponse <= 12,
   },
+  images: {
+    id: 'images',
+    titre: 'Les images',
+    consigne: 'Écoute Capy, puis touche la bonne image.',
+    consigneFacile: 'Écoute Capy. Touche la bonne image.',
+    modeles: ['comprendre-mot', 'comprendre-phrase'],
+    accepte: (ex) => ex.nature === 'texte' && ex.images !== undefined,
+  },
+  ouiNon: {
+    id: 'ouiNon',
+    titre: 'C’est bien ça ?',
+    consigne: 'Écoute Capy et regarde l’image. Si elle montre ce qu’il dit, touche « Oui ». Sinon, touche « Non ».',
+    consigneFacile: 'Écoute Capy. Regarde l’image. Touche « Oui » ou « Non ».',
+    modeles: ['comprendre-mot', 'comprendre-phrase'],
+    accepte: (ex) => ex.nature === 'texte' && ex.images !== undefined,
+  },
+  schema: {
+    id: 'schema',
+    titre: 'Le bon schéma',
+    consigne: 'Choisis le schéma qui raconte l’histoire. Le point d’interrogation, c’est ce qu’on cherche.',
+    consigneFacile: 'Choisis le schéma de l’histoire. Le point d’interrogation, c’est ce qu’on cherche.',
+    indice: 'Cherche d’abord le tout : le connaît-on, ou faut-il le trouver ?',
+    indiceFacile: 'Cherche le tout. Le connaît-on ?',
+    modeles: MODELES_AVEC_SCHEMA,
+    accepte: (ex) => ex.nature === 'nombre' && schemaDe(ex) !== null,
+  },
   reponses: {
     id: 'reponses',
     titre: 'La bonne réponse',
@@ -215,7 +245,9 @@ export const JEUX: Record<JeuId, DefinitionJeu> = {
       !(MODELES_PLACER as readonly string[]).includes(ex.modeleId) &&
       !(ex.nature === 'texte' && ex.phrases !== undefined) &&
       // Une phrase à remettre en ordre se construit mot à mot, jamais en choisissant parmi des phrases cassées.
-      !(ex.nature === 'texte' && ex.motsEnDesordre !== undefined),
+      !(ex.nature === 'texte' && ex.motsEnDesordre !== undefined) &&
+      // Les images ne s'écrivent pas : elles se montrent dans « Les images ».
+      !(ex.nature === 'texte' && ex.images !== undefined),
   },
 };
 
