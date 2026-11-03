@@ -92,7 +92,9 @@ export function PoserCalcul({ donnee, verification = true }: PropsPoserCalcul) {
           </Pressable>
         ))}
       </View>
+      {/* Les nombres l'un sous l'autre, comme sur le cahier : ils tiennent sur un téléphone. */}
       <View style={styles.ligne}>
+        <Text style={[styles.chiffre, styles.signeSaisie]} />
         <TextInput
           value={texteA}
           onChangeText={(t) => setTexteA(chiffres(t))}
@@ -102,7 +104,9 @@ export function PoserCalcul({ donnee, verification = true }: PropsPoserCalcul) {
           accessibilityLabel="Le premier nombre"
           style={[styles.champ, styles.chiffre]}
         />
-        <Text style={styles.chiffre}>{operation}</Text>
+      </View>
+      <View style={styles.ligne}>
+        <Text style={[styles.chiffre, styles.signeSaisie]}>{operation}</Text>
         <TextInput
           value={texteB}
           onChangeText={(t) => setTexteB(chiffres(t))}
@@ -131,6 +135,12 @@ function lignesAVerifier(g: GrillePose): { cle: string; attendue: LigneAttendue 
 function Grille({ grille, verification }: { grille: GrillePose; verification: boolean }) {
   const { typo } = useThemeEnfant();
   const n = grille.colonnes;
+  // Sur un petit téléphone, les cases rapetissent pour que toute l'opération tienne.
+  const [largeur, setLargeur] = useState(0);
+  const taille = largeur > 0 ? Math.min(CASE, Math.floor(largeur / (n + 1))) : CASE;
+  const caseTaille = { width: taille, height: taille + 4 };
+  const chiffreTaille =
+    taille < CASE ? { fontSize: Math.round(taille * 0.65), lineHeight: Math.round(taille * 0.8) } : null;
   const [saisies, setSaisies] = useState<Saisies>({});
   const [choisie, setChoisie] = useState<{ ligne: string; colonne: number }>({
     ligne: grille.partiels.length > 0 ? 'p0' : RESULTAT,
@@ -161,10 +171,10 @@ function Grille({ grille, verification }: { grille: GrillePose; verification: bo
 
   const ligneFixe = (signe: string, nombre: number, cle: string) => (
     <View style={styles.rangee} key={cle}>
-      <Text style={[styles.signe, styles.chiffre]}>{signe}</Text>
+      <Text style={[styles.chiffre, chiffreTaille, { width: taille }]}>{signe}</Text>
       {chiffresDe(nombre).map((c, i) => (
-        <View key={i} style={styles.case}>
-          <Text style={styles.chiffre}>{c.trim()}</Text>
+        <View key={i} style={[styles.case, caseTaille]}>
+          <Text style={[styles.chiffre, chiffreTaille]}>{c.trim()}</Text>
         </View>
       ))}
     </View>
@@ -172,12 +182,12 @@ function Grille({ grille, verification }: { grille: GrillePose; verification: bo
 
   const ligneASaisir = (cle: string, libelle: string, signe = '', decalage = 0, petite = false) => (
     <View style={styles.rangee} key={cle}>
-      <Text style={[styles.signe, styles.chiffre]}>{signe}</Text>
+      <Text style={[styles.chiffre, chiffreTaille, { width: taille }]}>{signe}</Text>
       {Array.from({ length: n }, (_, i) => {
         if (i >= n - decalage)
           return (
-            <View key={i} style={styles.case}>
-              <Text style={[styles.chiffre, { color: couleurs.encreDouce }]}>0</Text>
+            <View key={i} style={[styles.case, caseTaille]}>
+              <Text style={[styles.chiffre, chiffreTaille, { color: couleurs.encreDouce }]}>0</Text>
             </View>
           );
         const valeur = saisies[cle]?.[i] ?? '';
@@ -191,13 +201,14 @@ function Grille({ grille, verification }: { grille: GrillePose; verification: bo
             accessibilityLabel={`${libelle}, ${nomColonne(n, i)} : ${valeur || 'vide'}${juste === false ? ', à revoir' : ''}`}
             style={[
               styles.case,
+              caseTaille,
               petite ? styles.caseRetenue : styles.caseSaisie,
               estChoisie && styles.caseChoisie,
               juste === false && styles.caseFausse,
               juste === true && valeur !== '' && styles.caseJuste,
             ]}
           >
-            <Text style={[styles.chiffre, petite && styles.chiffreRetenue]}>{valeur}</Text>
+            <Text style={[styles.chiffre, chiffreTaille, petite && styles.chiffreRetenue]}>{valeur}</Text>
           </Pressable>
         );
       })}
@@ -205,16 +216,16 @@ function Grille({ grille, verification }: { grille: GrillePose; verification: bo
   );
 
   return (
-    <View style={styles.grilleEtClavier}>
+    <View style={styles.grilleEtClavier} onLayout={(e) => setLargeur(Math.floor(e.nativeEvent.layout.width))}>
       <View style={styles.grille} accessibilityLabel={`Le calcul posé : ${grille.a} ${grille.operation} ${grille.b}`}>
         {ligneASaisir(RETENUES, 'Retenue', '', 0, true)}
         {ligneFixe('', grille.a, 'a')}
         {ligneFixe(grille.operation, grille.b, 'b')}
-        <View style={[styles.trait, { width: (n + 1) * CASE }]} />
+        <View style={[styles.trait, { width: (n + 1) * taille }]} />
         {grille.partiels.map((p, i) =>
           ligneASaisir(`p${i}`, `Ligne ${i + 1}`, i === grille.partiels.length - 1 && i > 0 ? '+' : '', p.decalage),
         )}
-        {grille.partiels.length > 0 ? <View style={[styles.trait, { width: (n + 1) * CASE }]} /> : null}
+        {grille.partiels.length > 0 ? <View style={[styles.trait, { width: (n + 1) * taille }]} /> : null}
         {ligneASaisir(RESULTAT, 'Résultat')}
       </View>
 
@@ -273,8 +284,10 @@ const styles = StyleSheet.create({
     backgroundColor: couleurs.menthe[100],
   },
   operationChoisie: { backgroundColor: couleurs.sarcelle[700] },
+  signeSaisie: { width: 28 },
   champ: {
     flex: 1,
+    minWidth: 0,
     minHeight: 56,
     textAlign: 'center',
     borderColor: couleurs.bordure,
@@ -293,7 +306,6 @@ const styles = StyleSheet.create({
   grilleEtClavier: { gap: espaces.m, alignItems: 'center' },
   grille: { alignItems: 'flex-end', paddingVertical: espaces.s },
   rangee: { flexDirection: 'row', alignItems: 'center' },
-  signe: { width: CASE },
   case: { width: CASE, height: CASE + 4, alignItems: 'center', justifyContent: 'center' },
   caseSaisie: { borderBottomWidth: 2, borderColor: couleurs.gris[300], backgroundColor: couleurs.fondPage },
   caseRetenue: { height: 28, borderRadius: 6 },
