@@ -3,6 +3,7 @@
 import type { Classe } from '@/config/classes';
 import { domaineDe, type DomaineId } from '@/config/domaines';
 import { dateLocale, decaler, tempsDeLaSemaine, type ProgressionEnfant } from '@/parcours/progression';
+import { QUESTIONS_TABLES } from '@/parcours/tables';
 import { avecPhotoDeJanvier, symboleDe, type Niveaux, type ToileEnfant } from '@/toile/niveaux';
 
 import { dureeEnFrancais } from './format';
@@ -107,6 +108,17 @@ export function resumeSemaine(profil: ProfilResume, maintenant = new Date()): st
   if (chronos.length > 0) {
     const record = Math.max(...chronos.map((c) => c.record));
     phrases.push(`Le chrono de Capy : record de ${record} bonnes réponses en une minute.`);
+  }
+
+  // Les tables de Capy : celles jouées cette semaine, et celles déjà réussies sans faute.
+  const tables = Object.entries(p.tables ?? {}).filter(([, t]) => t.derniers.some((d) => jours7.has(d.jour)));
+  if (tables.length > 0) {
+    const nom = (cle: string) => (cle === 'toutes' ? 'toutes les tables' : `table de ${cle.replace('table-', '')}`);
+    const sansFaute = tables.filter(([, t]) => t.record === QUESTIONS_TABLES).map(([cle]) => nom(cle));
+    phrases.push(
+      `Les tables de Capy : ${liste(tables.map(([cle]) => nom(cle)))} cette semaine.` +
+        (sansFaute.length > 0 ? ` Sans faute : ${liste(sansFaute)}.` : ''),
+    );
   }
 
   return phrases;

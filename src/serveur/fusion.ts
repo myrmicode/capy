@@ -39,6 +39,7 @@ export function fusionnerProgression(a: ProgressionEnfant, b: ProgressionEnfant)
     ...(a.vitesse || b.vitesse ? { vitesse: fusionnerListes(a.vitesse, b.vitesse, 30) } : {}),
     ...(a.lectures || b.lectures ? { lectures: fusionnerListes(a.lectures, b.lectures, 12) } : {}),
     ...(a.chronos || b.chronos ? { chronos: fusionnerChronos(a.chronos, b.chronos) } : {}),
+    ...(a.tables || b.tables ? { tables: fusionnerChronos(a.tables, b.tables) } : {}),
   };
 }
 

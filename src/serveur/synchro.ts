@@ -65,6 +65,16 @@ const Ligne = z.object({
     lectures: z
       .record(z.string(), z.array(z.object({ jour: z.string(), motsParMinute: z.number(), erreurs: z.number() })))
       .optional(),
+    tables: z
+      .record(
+        z.string(),
+        z.object({
+          record: z.number(),
+          series: z.number(),
+          derniers: z.array(z.object({ jour: z.string(), justes: z.number() })),
+        }),
+      )
+      .optional(),
   }),
   // Vérifiée et remise au format actuel par migrerToile (anciennes toiles comprises).
   toile: z.unknown().nullable(),

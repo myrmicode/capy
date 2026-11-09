@@ -34,6 +34,7 @@ import { graineDuJour, PHRASES_CAPY, phraseDe } from '@/contenu/phrasesCapy';
 import type { PoseCapy } from '@/mascotte';
 import { themesChrono } from '@/parcours/chrono';
 import { QUESTIONS_DEFI } from '@/parcours/defi';
+import { QUESTIONS_TABLES, tablesOuvertes } from '@/parcours/tables';
 import {
   avancementDuTheme,
   cheminDuTheme,
@@ -208,6 +209,13 @@ function Parcours() {
       {!reglages.modeCalme && themesChrono(profil.classe, profil.toile).length > 0 ? (
         <CarteChrono
           record={Math.max(0, ...themesChrono(profil.classe, profil.toile).map((t) => p.chronos?.[t.id]?.record ?? 0))}
+        />
+      ) : null}
+      {/* En mode calme aussi : sans minuteur, à son rythme. */}
+      {tablesOuvertes(profil.classe) ? (
+        <CarteTables
+          sansFaute={Object.values(p.tables ?? {}).filter((t) => t.record === QUESTIONS_TABLES).length}
+          calme={reglages.modeCalme}
         />
       ) : null}
 
@@ -528,6 +536,36 @@ function CarteChrono({ record }: { record: number }) {
       </View>
       <View style={styles.flex}>
         <Text style={[typo.titre3, { color: couleurs.sarcelle[900] }]}>Le chrono de Capy</Text>
+        <Text style={[typo.petit, { color: couleurs.sarcelle[900] }]}>{detail}</Text>
+      </View>
+    </SurfaceEnRelief>
+  );
+}
+
+/** Les tables de Capy : une table au choix, 10 calculs, 7 secondes chacun. */
+function CarteTables({ sansFaute, calme }: { sansFaute: number; calme: boolean }) {
+  const { typo, ecart } = useThemeEnfant();
+  const rythme = calme ? 'à ton rythme' : '7 secondes par calcul';
+  const detail =
+    sansFaute > 0
+      ? `Choisis ta table, ${rythme}. Déjà ${sansFaute} sans faute !`
+      : `Choisis ta table : 10 calculs, ${rythme}.`;
+  return (
+    <SurfaceEnRelief
+      onPress={() => router.push('/tables')}
+      accessibilityRole="button"
+      accessibilityLabel={`Les tables de Capy. ${detail}`}
+      couleurFace={couleurs.blanc}
+      couleurRelief={couleurs.sarcelle[500]}
+      relief={4}
+      rayon={formes.carte.rayon}
+      styleFace={[styles.defiFace, { padding: ecart('m'), gap: ecart('m') }]}
+    >
+      <View style={[styles.defiIcone, { backgroundColor: couleurs.menthe[100] }]}>
+        <TuileTheme domaine="tables-multiplication" couleurs={couleursMatieres.mathematiques} taille={40} />
+      </View>
+      <View style={styles.flex}>
+        <Text style={[typo.titre3, { color: couleurs.sarcelle[900] }]}>Les tables de Capy</Text>
         <Text style={[typo.petit, { color: couleurs.sarcelle[900] }]}>{detail}</Text>
       </View>
     </SurfaceEnRelief>

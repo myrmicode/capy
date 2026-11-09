@@ -47,6 +47,12 @@ export interface ProgressionEnfant {
   /** Le chrono de Capy (séries d'une minute en calcul), par thème. Absent sur les anciens profils. */
   chronos?: Record<string, ResultatChrono>;
   /**
+   * Les tables de Capy (parties de 10 multiplications), par table (« table-7 »,
+   * « toutes ») : le record est le meilleur nombre de réponses justes sur 10.
+   * Absent sur les anciens profils.
+   */
+  tables?: Record<string, ResultatChrono>;
+  /**
    * Lire à deux : mots bien lus en une minute, par texte, comptés par l'adulte
    * qui écoute. Jamais la voix : seulement des nombres. Absent sur les anciens profils.
    */
@@ -121,6 +127,35 @@ export function enregistrerChrono(
     chronos: {
       ...p.chronos,
       [themeId]: {
+        record: Math.max(avant?.record ?? 0, justes),
+        series: (avant?.series ?? 0) + 1,
+        derniers: [...(avant?.derniers ?? []), { jour: dateLocale(maintenant), justes }].slice(-CHRONOS_CONSERVES),
+      },
+    },
+  };
+}
+
+/**
+ * Une partie des tables de Capy : le record de la table, et le jour et le temps
+ * comptent comme pour une étape. Aucune étoile en moins, jamais d'échec.
+ */
+export function enregistrerTables(
+  p: ProgressionEnfant,
+  cleTable: string,
+  justes: number,
+  dureeSecondes: number,
+  maintenant: Date,
+): ProgressionEnfant {
+  const cle = `tables:${cleTable}`;
+  const avec = enregistrerEtape(p, cle, justes, Math.max(1, justes), dureeSecondes, maintenant);
+  const { [cle]: _fictive, ...etapes } = avec.etapes;
+  const avant = p.tables?.[cleTable];
+  return {
+    ...avec,
+    etapes,
+    tables: {
+      ...p.tables,
+      [cleTable]: {
         record: Math.max(avant?.record ?? 0, justes),
         series: (avant?.series ?? 0) + 1,
         derniers: [...(avant?.derniers ?? []), { jour: dateLocale(maintenant), justes }].slice(-CHRONOS_CONSERVES),

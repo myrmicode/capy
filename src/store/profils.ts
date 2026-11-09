@@ -88,6 +88,8 @@ interface EtatProfils {
   ) => void;
   /** Une série du chrono de Capy : le record du thème, le jour et le temps. */
   enregistrerChrono: (id: string, themeId: string, justes: number, dureeSecondes: number, maintenant?: Date) => void;
+  /** Une partie des tables de Capy : le record de la table, le jour et le temps. */
+  enregistrerTables: (id: string, cleTable: string, justes: number, dureeSecondes: number, maintenant?: Date) => void;
   /** Une lecture à deux : mots bien lus en une minute (comptés par l'adulte). */
   enregistrerLecture: (
     id: string,
@@ -258,6 +260,14 @@ export const useProfils = create<EtatProfils>()(
             id,
             (p, m) => ({
               progression: progression.enregistrerChrono(p.progression, themeId, justes, dureeSecondes, m),
+            }),
+            maintenant,
+          ),
+        enregistrerTables: (id, cleTable, justes, dureeSecondes, maintenant = new Date()) =>
+          modifier(
+            id,
+            (p, m) => ({
+              progression: progression.enregistrerTables(p.progression, cleTable, justes, dureeSecondes, m),
             }),
             maintenant,
           ),
